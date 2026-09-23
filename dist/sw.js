@@ -1,5 +1,5 @@
-const CACHE = 'elder-taki-v19';
-const CORE = ['./','./index.html','./styles.css?v=19','./app.js?v=19','./assets/elder-tavern-table.jpg','./assets/model-viewer.min.js','./assets/stylized_beer_mug.glb','./game-engine/cards.js','./game-engine/engine.js','./game-engine/match.js','./game-ai/bot.js','./platform/storage.js','./platform/transport.js','./ui/card.js','./manifest.webmanifest','./favicon.svg'];
+const CACHE = 'elder-taki-v20';
+const CORE = ['./','./index.html','./styles.css?v=20','./app.js?v=20','./assets/elder-tavern-table.jpg','./assets/model-viewer.min.js','./assets/stylized_beer_mug.glb','./assets/duel-opponents.png','./duel/opponents.js','./game-engine/cards.js','./game-engine/engine.js','./game-engine/match.js','./game-ai/bot.js','./platform/storage.js','./platform/transport.js','./ui/card.js','./manifest.webmanifest','./favicon.svg'];
 self.addEventListener('install', event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting())));
 self.addEventListener('activate', event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())));
 self.addEventListener('fetch', event => { if (event.request.method !== 'GET') return; event.respondWith(caches.match(event.request).then(hit => hit || fetch(event.request).then(response => { const copy = response.clone(); caches.open(CACHE).then(cache => cache.put(event.request, copy)); return response; }).catch(() => caches.match('./index.html')))); });

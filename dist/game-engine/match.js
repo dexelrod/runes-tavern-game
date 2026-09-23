@@ -29,6 +29,12 @@ export function createQuickSession({playerCount=3,seed=Date.now()}={}){
   return {version:MATCH_VERSION,mode:'quick',phase:'round',round:1,totalRounds:1,suddenDeath:false,seed,scores:{},roster:null,results:[],championId:null,game:createInitialState({playerCount,seed})};
 }
 
+export function createDuelSession({seed=Date.now(),opponent}={}){
+  if(!opponent?.id)throw new Error('Duel opponent is required');
+  const players=[{id:'p0',name:'אתם',kind:'human',archetype:'wanderer',house:'sun'},{id:'p1',name:opponent.name,kind:'ai',archetype:opponent.archetype,house:opponent.id,duelOpponentId:opponent.id}];
+  return {version:MATCH_VERSION,mode:'duel',phase:'round',round:1,totalRounds:5,suddenDeath:false,seed,opponentId:opponent.id,scores:scoreMap(players),roster:freshRoster(players),results:[],championId:null,game:createInitialState({playerCount:2,players,seed})};
+}
+
 export function calculateRoundScore(game,winnerId=game.winnerId){return game.players.filter(p=>p.id!==winnerId).reduce((sum,p)=>sum+p.hand.length,0);}
 
 export function finishRound(input){
@@ -46,9 +52,9 @@ export function finishRound(input){
 }
 
 export function startNextRound(input){
-  const match=structuredClone(input); if(match.mode!=='tavern'||match.phase!=='betweenRounds')throw new Error('No next round');
+  const match=structuredClone(input); if(!['tavern','duel'].includes(match.mode)||match.phase!=='betweenRounds')throw new Error('No next round');
   if(!match.suddenDeath)match.round++;
-  match.phase='round';match.game=createInitialState({playerCount:4,players:freshRoster(match.roster),seed:match.seed+match.results.length*9973});return match;
+  match.phase='round';match.game=createInitialState({playerCount:match.roster.length,players:freshRoster(match.roster),seed:match.seed+match.results.length*9973});return match;
 }
 
 export function standings(match){return match.roster.map(player=>({...player,score:match.scores[player.id]||0})).toSorted((a,b)=>b.score-a.score||a.name.localeCompare(b.name,'he'));}

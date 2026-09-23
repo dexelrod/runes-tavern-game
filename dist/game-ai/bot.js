@@ -13,7 +13,9 @@ function scoreCard(card, state, hand){
   const personality=currentPlayer(state).archetype;
   if(personality==='mercenary'&&[TYPES.STOP,TYPES.PLUS,TYPES.PLUS2,TYPES.REVERSE].includes(card.type))score+=7;
   if(personality==='hunter'&&[TYPES.KING,TYPES.CHANGE_COLOR].includes(card.type)&&hand.length>3)score-=5;
-  if(personality==='bard')score+=Math.random()*5;
+  if(personality==='bard'){if([TYPES.STOP,TYPES.REVERSE,TYPES.CHANGE_COLOR].includes(card.type))score+=3;score+=Math.random()*4;}
+  if(personality==='scholar'&&[TYPES.KING,TYPES.CHANGE_COLOR].includes(card.type)&&hand.length>3)score-=7;
+  if(personality==='mysterious')score+=Math.random()*3;
   return score+Math.random()*2;
 }
 export function chooseBotAction(state){
