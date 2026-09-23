@@ -4,6 +4,7 @@ import { ACTIONS, applyAction, createInitialState, getLegalCards, isLegalPlay, r
 import { COLORS, TYPES, createDeck, createDeckSet, makeCard } from '../dist/game-engine/cards.js';
 import { cardHTML } from '../dist/ui/card.js';
 import { calculateRoundScore, createQuickSession, createTavernMatch, finishRound, NPC_EASTER_EGGS, restoreSession, serializeSession, standings, startNextRound } from '../dist/game-engine/match.js';
+import { triggerHaptic } from '../dist/platform/storage.js';
 
 let seq=0; const c=(type,color='wild',value=null)=>makeCard(type,color,value,`t${++seq}`);
 function state({hands=[[c(TYPES.NUMBER,'red',3)],[c(TYPES.NUMBER,'blue',4)]],top=c(TYPES.NUMBER,'red',5),activeColor=top.color,players=hands.length}={}){
@@ -12,6 +13,7 @@ function state({hands=[[c(TYPES.NUMBER,'red',3)],[c(TYPES.NUMBER,'blue',4)]],top
 const play=(s,p,card)=>applyAction(s,{type:ACTIONS.PLAY,playerId:p,cardId:card.id});
 
 test('deck removes ordinary twos while retaining +2 cards',()=>{assert.equal(createDeckSet().length,56);assert.equal(createDeck().length,112);assert.equal(createDeck().filter(x=>x.type===TYPES.NUMBER).length,64);assert.equal(createDeck().filter(x=>x.type===TYPES.NUMBER&&x.value===2).length,0);assert.throws(()=>makeCard(TYPES.NUMBER,'red',2),/not part of Elder Taki/);assert.equal(createDeck().filter(x=>x.type===TYPES.PLUS2).length,8)});
+test('unsupported or denied haptics never interrupt a game action',()=>{assert.equal(triggerHaptic('play',true,null),false);assert.equal(triggerHaptic('play',true,{vibrate(){throw new Error('unsupported')}}),false);let pattern;assert.equal(triggerHaptic('play',true,{vibrate(value){pattern=value;return true;}}),true);assert.deepEqual(pattern,[7]);});
 test('deals eight to 2–10 players',()=>{for(const n of [2,4,10]){const s=createInitialState({playerCount:n,seed:2});assert.equal(s.players.length,n);assert.ok(s.players.every(p=>p.hand.length===8))}});
 test('opening card is always a regular number',()=>{for(let seed=1;seed<=80;seed++)assert.equal(createInitialState({playerCount:4,seed}).discardPile[0].type,TYPES.NUMBER)});
 test('legal color match',()=>{const card=c(TYPES.NUMBER,'red',3),s=state({hands:[[card],[c(TYPES.NUMBER,'blue',4)]]});assert.equal(isLegalPlay(s,'p0',card.id),true)});
