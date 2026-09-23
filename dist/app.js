@@ -4,7 +4,7 @@ import { createQuickSession, createTavernMatch, finishRound, restoreSession, sta
 import { LocalGameTransport } from './platform/transport.js';
 import { ambience, clearMatch, feedback, loadMatch, loadSettings, saveMatch, saveSettings } from './platform/storage.js';
 import { chooseBotAction, chooseColor } from './game-ai/bot.js';
-import { cardHTML, sigilHTML } from './ui/card.js';
+import { cardHTML, cardLabel, sigilHTML } from './ui/card.js';
 
 const root=document.querySelector('#app');
 const colorHex={red:'#9f2f24',blue:'#244f78',green:'#456b37',yellow:'#b58222'};
@@ -21,7 +21,7 @@ const dialogue={
 const tavernBanter=['יפה.','לא רע.','באמת?','כמובן.','ידעתי.','נו באמת.','זה היה אישי.','טעות.','בחירה מפוקפקת.','יש לך מזל.','עוד לא סיימתי.','היית חייב?','אני צריך עוד משקה.','הקלפים שונאים אותי.','מרשים. מעצבן, אבל מרשים.','שקט. אני חושב.','יש לי תוכנית.','לא הייתה לי תוכנית.','בדיוק לפי התוכנית.'];
 
 function persist(){if(session)saveMatch(session);}
-function setSession(next){sessionEpoch++;clearTimeout(eventTimer);clearTimeout(quipTimer);clearTimeout(roundEndTimer);quip=null;captionLine='';roundResultVisible=next.phase!=='round';session=next;state=session.game;transport?.disconnect();transport=new LocalGameTransport(state);lastLogLength=state.log.length;lastCounts=Object.fromEntries(state.players.map(p=>[p.id,p.hand.length]));lastHands=Object.fromEntries(state.players.map(p=>[p.id,p.hand.map(card=>card.id)]));lastRenderedTopId=null;drawFlights=[];incomingCardDelays.clear();propRattled.clear();eventBanner=null;transport.subscribeToState((nextState,action)=>{state=nextState;session.game=nextState;onState(action);if(nextState.phase==='finished'&&session.phase==='round'){session=finishRound(session);roundResultVisible=false;const epoch=sessionEpoch;roundEndTimer=setTimeout(()=>{if(epoch!==sessionEpoch)return;roundResultVisible=true;feedback('round',settings);persist();render();},settings.reducedMotion?80:400);}persist();render();scheduleGame();});}
+function setSession(next){sessionEpoch++;clearTimeout(eventTimer);clearTimeout(quipTimer);clearTimeout(roundEndTimer);quip=null;captionLine='';roundResultVisible=next.phase!=='round';session=next;state=session.game;transport?.disconnect();transport=new LocalGameTransport(state);lastLogLength=state.log.length;lastCounts=Object.fromEntries(state.players.map(p=>[p.id,p.hand.length]));lastHands=Object.fromEntries(state.players.map(p=>[p.id,p.hand.map(card=>card.id)]));lastRenderedTopId=null;drawFlights=[];incomingCardDelays.clear();propRattled.clear();eventBanner=null;transport.subscribeToState((nextState,action)=>{state=nextState;session.game=nextState;try{onState(action);}catch(error){console.error('Non-blocking game presentation error',error);screenReaderLine='';captionLine='';}if(nextState.phase==='finished'&&session.phase==='round'){session=finishRound(session);roundResultVisible=false;const epoch=sessionEpoch;roundEndTimer=setTimeout(()=>{if(epoch!==sessionEpoch)return;roundResultVisible=true;feedback('round',settings);persist();render();},settings.reducedMotion?80:400);}persist();render();scheduleGame();});}
 function startSession(mode='tavern',saved=null){
   try{setSession(saved?restoreSession(saved):mode==='tavern'?createTavernMatch({seed:Date.now()}):createQuickSession({playerCount:settings.playerCount,seed:Date.now()}));}
   catch{clearMatch();setSession(mode==='tavern'?createTavernMatch({seed:Date.now()}):createQuickSession({playerCount:settings.playerCount,seed:Date.now()}));}
