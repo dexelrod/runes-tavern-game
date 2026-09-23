@@ -2,6 +2,7 @@ import { TYPES, TYPE_LABEL, WILD } from '../game-engine/cards.js';
 export function cardLabel(card){ return card.type===TYPES.NUMBER ? String(card.value) : TYPE_LABEL[card.type]; }
 function vectorArt(card){
   if(card.type===TYPES.NUMBER)return `<span class="number-glyph">${card.value}</span>`;
+  if(card.type===TYPES.PLUS2)return '<span class="plus-two"><b>+</b><strong>2</strong></span>';
   if(card.type===TYPES.STOP)return '<span class="command-word stop-word">עצור</span>';
   if(card.type===TYPES.REVERSE)return '<span class="reverse-symbol">↻</span>';
   if(card.type===TYPES.CHANGE_COLOR)return '<span class="color-wheel"><i></i><i></i><i></i><i></i></span>';

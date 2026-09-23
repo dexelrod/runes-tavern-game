@@ -28,10 +28,5 @@ export function chooseBotAction(state){
 }
 
 export function runBotStep(state){
-  const player=currentPlayer(state); let next=state;
-  if(state.lastCardWindow?.playerId===player.id && player.hand.length===1 && Math.random()>.025) next=applyAction(next,{type:ACTIONS.DECLARE_LAST,playerId:player.id});
-  next=applyAction(next,chooseBotAction(next));
-  const updated=next.players.find(p=>p.id===player.id);
-  if(next.phase==='playing'&&next.lastCardWindow?.playerId===player.id&&!next.lastCardWindow.declared&&updated?.hand.length===1&&player.kind==='ai'&&Math.random()>.025) next=applyAction(next,{type:ACTIONS.DECLARE_LAST,playerId:player.id});
-  return next;
+  return applyAction(state,chooseBotAction(state));
 }

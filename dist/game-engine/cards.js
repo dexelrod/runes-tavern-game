@@ -8,12 +8,12 @@ export const TYPE_LABEL = {
 
 export function makeCard(type, color = WILD, value = null, id = '') { return { id, type, color, value }; }
 
-// A 56-card set after intentionally removing +3 and Broken +3.
+// A 60-card set after intentionally removing +3 and Broken +3.
 export function createDeckSet(setIndex = 0) {
   const cards = [];
   for (const color of COLORS) {
     for (let value = 1; value <= 9; value++) cards.push(makeCard(TYPES.NUMBER, color, value, `s${setIndex}-${color}-${value}`));
-    for (const type of [TYPES.STOP, TYPES.REVERSE, TYPES.PLUS, TYPES.TAKI]) cards.push(makeCard(type, color, null, `s${setIndex}-${color}-${type}`));
+    for (const type of [TYPES.STOP, TYPES.PLUS2, TYPES.REVERSE, TYPES.PLUS, TYPES.TAKI]) cards.push(makeCard(type, color, null, `s${setIndex}-${color}-${type}`));
   }
   cards.push(makeCard(TYPES.CHANGE_COLOR, WILD, null, `s${setIndex}-change-0`), makeCard(TYPES.CHANGE_COLOR, WILD, null, `s${setIndex}-change-1`));
   cards.push(makeCard(TYPES.SUPER_TAKI, WILD, null, `s${setIndex}-super`));
