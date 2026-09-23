@@ -1,10 +1,10 @@
 {
-  "name": "TAKI בכיס",
-  "short_name": "TAKI",
+  "name": "Elder Taki",
+  "short_name": "Elder Taki",
   "start_url": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#07597b",
-  "theme_color": "#07597b",
+  "background_color": "#1a0d07",
+  "theme_color": "#1a0d07",
   "icons": []
 }

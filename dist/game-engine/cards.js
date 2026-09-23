@@ -8,7 +8,7 @@ export const TYPE_LABEL = {
 
 export function makeCard(type, color = WILD, value = null, id = '') { return { id, type, color, value }; }
 
-// A 60-card set after intentionally removing +3 and Broken +3.
+// One inspectable 60-card Elder Taki set.
 export function createDeckSet(setIndex = 0) {
   const cards = [];
   for (const color of COLORS) {

@@ -10,6 +10,10 @@ function scoreCard(card, state, hand){
   if(card.type===TYPES.CHANGE_COLOR) score+=hand.length<4?8:-6;
   if([TYPES.STOP,TYPES.PLUS,TYPES.REVERSE].includes(card.type)) score+=5;
   if(card.type===TYPES.NUMBER) score+=4;
+  const personality=currentPlayer(state).archetype;
+  if(personality==='mercenary'&&[TYPES.STOP,TYPES.PLUS,TYPES.PLUS2,TYPES.REVERSE].includes(card.type))score+=7;
+  if(personality==='hunter'&&[TYPES.KING,TYPES.CHANGE_COLOR].includes(card.type)&&hand.length>3)score-=5;
+  if(personality==='bard')score+=Math.random()*5;
   return score+Math.random()*2;
 }
 export function chooseBotAction(state){
@@ -18,7 +22,7 @@ export function chooseBotAction(state){
   if(state.taki?.open){
     const legal=getLegalCards(state,player.id);
     if(legal.length) return {type:ACTIONS.PLAY,playerId:player.id,cardId:legal.toSorted((a,b)=>scoreCard(b,state,player.hand)-scoreCard(a,state,player.hand))[0].id};
-    if(state.taki.lastCardId || (state.taki.ownerId===player.id&&state.taki.openedTurn===state.turn)) return {type:ACTIONS.CLOSE_TAKI,playerId:player.id};
+    if(state.taki.ownerId===player.id) return {type:ACTIONS.END_TURN,playerId:player.id};
     return {type:ACTIONS.DRAW,playerId:player.id};
   }
   const legal=getLegalCards(state,player.id);
