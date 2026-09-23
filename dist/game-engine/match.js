@@ -7,12 +7,21 @@ export const TAVERN_ROSTER=Object.freeze([
   {id:'p2',name:'רון',kind:'ai',archetype:'bard',house:'raven'},
   {id:'p3',name:'בראן',kind:'ai',archetype:'mercenary',house:'dragon'}
 ]);
+export const NPC_EASTER_EGGS=Object.freeze(['לוסיאן','איניגו','לידיה','וירן','סורן','ויילין']);
+
+function tavernGuests(roster,seed){
+  return roster.map((player,index)=>{
+    if(player.kind!=='ai')return {...player};
+    const roll=Math.imul(((seed>>>0)+index*0x9e3779b9)>>>0,0x85ebca6b)>>>0;
+    return roll%31===0?{...player,name:NPC_EASTER_EGGS[Math.floor(roll/31)%NPC_EASTER_EGGS.length]}:{...player};
+  });
+}
 
 const freshRoster=roster=>roster.map(({hand,...player})=>({...player}));
 const scoreMap=roster=>Object.fromEntries(roster.map(p=>[p.id,0]));
 
 export function createTavernMatch({seed=Date.now(),roster=TAVERN_ROSTER}={}){
-  const players=freshRoster(roster);
+  const players=freshRoster(tavernGuests(roster,seed));
   return {version:MATCH_VERSION,mode:'tavern',phase:'round',round:1,totalRounds:5,suddenDeath:false,seed,scores:scoreMap(players),roster:players,results:[],championId:null,game:createInitialState({playerCount:4,players,seed})};
 }
 

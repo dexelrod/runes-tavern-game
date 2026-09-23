@@ -23,12 +23,15 @@ function vectorArt(card){
   if(card.type===TYPES.SUPER_TAKI)return `<span class="super-banner"><small>ELDER</small><strong>TAKI</strong><i></i></span>`;
   return `<span class="action-symbol">${cardLabel(card)}</span>`;
 }
-export function cardHTML(card,{small=false,hidden=false,legal=true,selected=false,index=0,total=1}={}){
+export function cardHTML(card,{small=false,hidden=false,legal=true,selected=false,incoming=false,arrivalDelay=0,index=0,total=1}={}){
   if(hidden) return `<div class="card card-back ${small?'small':''}" aria-label="קלף הפוך"><span class="back-sigil">${sigilHTML()}</span></div>`;
   const inherited=card.type===TYPES.SUPER_TAKI&&card.inheritedColor;
   const color=inherited?inherited:(card.color===WILD?'wild':card.color);
   const tilt=(index-(total-1)/2)*3.1;
   const rise=Math.abs(index-(total-1)/2)*2.2;
   const overlap=Math.max(-91,-57-Math.max(0,total-6)*6);
-  return `<button class="card ${color} type-${card.type} ${inherited?'inherited':''} ${small?'small':''} ${legal?'legal':'quiet'} ${selected?'selected':''}" data-card-id="${card.id}" style="--tilt:${tilt}deg;--rise:${rise}px;--i:${index};--overlap:${overlap}px" aria-label="${cardLabel(card)}" aria-disabled="${!legal}"><span class="corner top">${cardLabel(card)}</span><span class="card-art">${vectorArt(card)}</span><span class="corner bottom">${cardLabel(card)}</span><span class="card-scratch"></span></button>`;
+  const faceMark=card.type===TYPES.NUMBER?String(card.value):card.type===TYPES.PLUS2?'+2':'';
+  const spokenColor={red:'אדום',blue:'כחול',green:'ירוק',yellow:'צהוב'}[color]||'';
+  const spokenLabel=card.type===TYPES.NUMBER?`${card.value} ${spokenColor}`:cardLabel(card);
+  return `<button class="card ${color} type-${card.type} ${inherited?'inherited':''} ${small?'small':''} ${legal?'legal':'quiet'} ${selected?'selected':''} ${incoming?'incoming':''}" data-card-id="${card.id}" style="--tilt:${tilt}deg;--rise:${rise}px;--i:${index};--overlap:${overlap}px;--arrive-delay:${arrivalDelay}ms" aria-label="${spokenLabel}" aria-disabled="${!legal}"><span class="corner top">${faceMark}</span><span class="card-art">${vectorArt(card)}</span><span class="card-print">${card.type===TYPES.TAKI?'':cardLabel(card)}</span><span class="card-scratch"></span></button>`;
 }

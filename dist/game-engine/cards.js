@@ -3,16 +3,19 @@ export const WILD = 'wild';
 export const TYPES = Object.freeze({ NUMBER:'number', STOP:'stop', PLUS2:'plus2', REVERSE:'reverse', PLUS:'plus', TAKI:'taki', CHANGE_COLOR:'changeColor', SUPER_TAKI:'superTaki', KING:'king' });
 
 export const TYPE_LABEL = {
-  number:'', stop:'עצור', plus2:'+2', reverse:'↻', plus:'+', taki:'TAKI', changeColor:'צבע', superTaki:'סופר TAKI', king:'מלך'
+  number:'', stop:'עצור', plus2:'+2', reverse:'שנה כיוון', plus:'+', taki:'TAKI', changeColor:'צבע', superTaki:'סופר TAKI', king:'מלך'
 };
 
-export function makeCard(type, color = WILD, value = null, id = '') { return { id, type, color, value }; }
+export function makeCard(type, color = WILD, value = null, id = '') {
+  if(type===TYPES.NUMBER&&value===2)throw new RangeError('Ordinary 2 cards are not part of Elder Taki');
+  return { id, type, color, value };
+}
 
-// One inspectable 60-card Elder Taki set.
+// One inspectable 56-card Elder Taki set. The regular 2 is intentionally omitted.
 export function createDeckSet(setIndex = 0) {
   const cards = [];
   for (const color of COLORS) {
-    for (let value = 1; value <= 9; value++) cards.push(makeCard(TYPES.NUMBER, color, value, `s${setIndex}-${color}-${value}`));
+    for (const value of [1,3,4,5,6,7,8,9]) cards.push(makeCard(TYPES.NUMBER, color, value, `s${setIndex}-${color}-${value}`));
     for (const type of [TYPES.STOP, TYPES.PLUS2, TYPES.REVERSE, TYPES.PLUS, TYPES.TAKI]) cards.push(makeCard(type, color, null, `s${setIndex}-${color}-${type}`));
   }
   cards.push(makeCard(TYPES.CHANGE_COLOR, WILD, null, `s${setIndex}-change-0`), makeCard(TYPES.CHANGE_COLOR, WILD, null, `s${setIndex}-change-1`));
