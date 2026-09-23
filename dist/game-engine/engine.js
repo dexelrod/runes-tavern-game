@@ -48,6 +48,9 @@ function cardFromHand(state, playerId, cardId) { return playerById(state, player
 
 function baseLegal(state, card) {
   if (state.freePlay) return true;
+  // A king can never close a turn. If a defensive fallback ever leaves it on
+  // top, the following player still receives the promised completely free play.
+  if (effectiveTopCard(state)?.type === TYPES.KING && !state.activeColor) return true;
   if (state.activePenalty?.kind === 'plus2') return card.type === TYPES.PLUS2 || card.type === TYPES.KING;
   if (card.type === TYPES.KING) return true;
   if (card.type === TYPES.CHANGE_COLOR || card.type === TYPES.SUPER_TAKI) return true;
@@ -70,7 +73,7 @@ export function getLegalCards(state, playerId = currentPlayer(state).id) { retur
 
 function maybeWin(state, player, cardType) {
   if (player.hand.length) return false;
-  if (cardType === TYPES.PLUS) return false;
+  if (cardType === TYPES.PLUS || cardType === TYPES.KING) return false;
   if (cardType === TYPES.PLUS2) { state.candidateWinnerId = player.id; return false; }
   state.phase='finished'; state.winnerId=player.id; state.log.push({type:'win', playerId:player.id}); return true;
 }
@@ -84,7 +87,11 @@ function resolveFinalEffect(state, player, card, {fromTaki=false}={}) {
   if (card.type === TYPES.PLUS2) { state.activePenalty={kind:'plus2',amount:(state.activePenalty?.amount||0)+2}; state.log.push({type:'plus2',playerId:player.id,amount:state.activePenalty.amount}); maybeWin(state,player,card.type); advance(state); return; }
   if (card.type === TYPES.PLUS) { state.mustPlayAgain=true; state.log.push({type:'playAgain',playerId:player.id}); return; }
   if (card.type === TYPES.TAKI) { state.taki={open:true,color:card.color,ownerId:player.id,openedTurn:state.turn,lastCardId:null,lastCardType:null}; state.activeColor=card.color; state.log.push({type:'takiOpened',playerId:player.id,color:card.color}); autoCloseTakiIfNeeded(state,player); return; }
-  if (card.type === TYPES.SUPER_TAKI) { const inherited=state.activeColor || card.inheritedColor; state.taki={open:true,color:inherited,ownerId:player.id,openedTurn:state.turn,lastCardId:null,lastCardType:null}; state.activeColor=inherited; state.log.push({type:'takiOpened',playerId:player.id,color:inherited}); autoCloseTakiIfNeeded(state,player); return; }
+  if (card.type === TYPES.SUPER_TAKI) {
+    const inherited=state.activeColor || card.inheritedColor;
+    if(!inherited){state.awaitingColor={playerId:player.id,next:'openTaki',cardId:card.id};return;}
+    state.taki={open:true,color:inherited,ownerId:player.id,openedTurn:state.turn,lastCardId:null,lastCardType:null}; state.activeColor=inherited; state.log.push({type:'takiOpened',playerId:player.id,color:inherited}); autoCloseTakiIfNeeded(state,player); return;
+  }
   if (card.type === TYPES.CHANGE_COLOR) { state.awaitingColor={playerId:player.id, next:'advance',pendingWin:player.hand.length===0}; return; }
   if (card.type === TYPES.KING) { state.activePenalty=null; state.taki=null; state.activeColor=null; if(maybeWin(state,player,card.type))return; state.freePlay=true; state.mustPlayAgain=true; return; }
   if (maybeWin(state,player,card.type)) return;
@@ -137,7 +144,12 @@ function drawAction(state, action) {
 
 function chooseColor(state, action) {
   if (!state.awaitingColor || state.awaitingColor.playerId!==action.playerId || !COLORS.includes(action.color)) throw new Error('Cannot choose color');
-  const pendingWin=state.awaitingColor.pendingWin; state.activeColor=action.color; state.awaitingColor=null; state.log.push({type:'color',playerId:action.playerId,color:action.color});
+  const awaiting=state.awaitingColor,pendingWin=awaiting.pendingWin; state.activeColor=action.color; state.awaitingColor=null;
+  if(awaiting.cardId){const chosen=state.discardPile.find(card=>card.id===awaiting.cardId);if(chosen)chosen.inheritedColor=action.color;}
+  state.log.push({type:'color',playerId:action.playerId,color:action.color});
+  if(awaiting.next==='openTaki'){
+    const player=playerById(state,action.playerId);state.taki={open:true,color:action.color,ownerId:player.id,openedTurn:state.turn,lastCardId:null,lastCardType:null};state.log.push({type:'takiOpened',playerId:player.id,color:action.color});autoCloseTakiIfNeeded(state,player);return;
+  }
   if(pendingWin){state.phase='finished';state.winnerId=action.playerId;state.log.push({type:'win',playerId:action.playerId});return;} advance(state);
 }
 

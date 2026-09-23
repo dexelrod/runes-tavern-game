@@ -11,27 +11,29 @@ const crest={
   yellow:`<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="12"/><path d="M32 5v11m0 32v11M5 32h11m32 0h11M13 13l8 8m22 22 8 8m0-38-8 8M21 43l-8 8"/></svg>`
 };
 const icon=(name,body)=>`<svg class="special-icon ${name}" viewBox="0 0 80 80" aria-hidden="true">${body}</svg>`;
-function vectorArt(card){
+function vectorArt(card,activeColor=null){
   if(card.type===TYPES.NUMBER)return `<span class="card-crest">${crest[card.color]||''}</span><span class="number-glyph">${card.value}</span>`;
   if(card.type===TYPES.PLUS2)return `<span class="plus-two"><b>+</b><strong>2</strong></span>`;
   if(card.type===TYPES.STOP)return icon('stop-icon','<path d="M25 65 14 42c-3-7 6-11 10-4l3 5V17c0-8 10-8 10 0v19-21c0-8 10-8 10 0v21-17c0-8 10-8 10 0v22-10c0-8 10-8 10 0v16c0 17-11 25-25 25-8 0-13-2-17-7z"/>');
   if(card.type===TYPES.REVERSE)return icon('reverse-icon','<path d="M18 33c5-15 22-23 37-15l7 4m0 0-3-12m3 12-12 3M62 47c-5 15-22 23-37 15l-7-4m0 0 3 12m-3-12 12-3"/>');
   if(card.type===TYPES.PLUS)return icon('plus-icon','<path d="M33 11h14v22h22v14H47v22H33V47H11V33h22z"/>');
+  if(card.type===TYPES.CHANGE_COLOR&&activeColor)return `<span class="chosen-color ${activeColor}">${crest[activeColor]||''}</span>`;
   if(card.type===TYPES.CHANGE_COLOR)return '<span class="gem-wheel"><i></i><i></i><i></i><i></i><b></b></span>';
   if(card.type===TYPES.KING)return icon('king-icon','<path d="M11 57h58l-5 12H16zm5-7-4-30 17 14 11-23 11 23 17-14-4 30z"/>');
   if(card.type===TYPES.TAKI)return `<span class="taki-banner"><small>ᛏ</small><strong>TAKI</strong><i>${crest[card.color]||''}</i></span>`;
-  if(card.type===TYPES.SUPER_TAKI)return `<span class="super-banner"><small>ELDER</small><strong>TAKI</strong><i></i></span>`;
+  if(card.type===TYPES.SUPER_TAKI)return `<span class="super-banner" aria-hidden="true"><i></i><i></i><i></i><i></i><b>ᛏ</b></span>`;
   return `<span class="action-symbol">${cardLabel(card)}</span>`;
 }
-export function cardHTML(card,{small=false,hidden=false,legal=true,selected=false,incoming=false,arrivalDelay=0,index=0,total=1}={}){
+export function cardHTML(card,{small=false,hidden=false,legal=true,highlight=true,selected=false,incoming=false,arrivalDelay=0,index=0,total=1,activeColor=null}={}){
   if(hidden) return `<div class="card card-back ${small?'small':''}" aria-label="קלף הפוך"><span class="back-sigil">${sigilHTML()}</span></div>`;
   const inherited=card.type===TYPES.SUPER_TAKI&&card.inheritedColor;
-  const color=inherited?inherited:(card.color===WILD?'wild':card.color);
+  const chosen=(card.type===TYPES.CHANGE_COLOR&&activeColor)?activeColor:null;
+  const color=inherited||chosen||(card.color===WILD?'wild':card.color);
   const tilt=(index-(total-1)/2)*3.1;
   const rise=Math.abs(index-(total-1)/2)*2.2;
   const overlap=Math.max(-91,-57-Math.max(0,total-6)*6);
   const faceMark=card.type===TYPES.NUMBER?String(card.value):card.type===TYPES.PLUS2?'+2':'';
   const spokenColor={red:'אדום',blue:'כחול',green:'ירוק',yellow:'צהוב'}[color]||'';
   const spokenLabel=card.type===TYPES.NUMBER?`${card.value} ${spokenColor}`:cardLabel(card);
-  return `<button class="card ${color} type-${card.type} ${inherited?'inherited':''} ${small?'small':''} ${legal?'legal':'quiet'} ${selected?'selected':''} ${incoming?'incoming':''}" data-card-id="${card.id}" style="--tilt:${tilt}deg;--rise:${rise}px;--i:${index};--overlap:${overlap}px;--arrive-delay:${arrivalDelay}ms" aria-label="${spokenLabel}" aria-disabled="${!legal}"><span class="corner top">${faceMark}</span><span class="card-art">${vectorArt(card)}</span><span class="card-print">${card.type===TYPES.TAKI?'':cardLabel(card)}</span><span class="card-scratch"></span></button>`;
+  return `<button class="card ${color} type-${card.type} ${inherited?'inherited':''} ${chosen?'chosen':''} ${small?'small':''} ${legal?'legal':'quiet'} ${legal&&highlight?'playable-hint':''} ${selected?'selected':''} ${incoming?'incoming':''}" data-card-id="${card.id}" style="--tilt:${tilt}deg;--rise:${rise}px;--i:${index};--overlap:${overlap}px;--arrive-delay:${arrivalDelay}ms" aria-label="${spokenLabel}" aria-disabled="${!legal}"><span class="corner top">${faceMark}</span><span class="card-art">${vectorArt(card,activeColor)}</span><span class="card-print">${card.type===TYPES.TAKI||card.type===TYPES.SUPER_TAKI?'':cardLabel(card)}</span><span class="card-scratch"></span></button>`;
 }

@@ -1,7 +1,7 @@
 import { ACTIONS, applyAction, currentPlayer, getLegalCards } from '../game-engine/engine.js';
 import { COLORS, TYPES } from '../game-engine/cards.js';
 
-export function chooseColor(hand){ const counts=Object.fromEntries(COLORS.map(c=>[c,0])); for(const card of hand) if(counts[card.color]!==undefined) counts[card.color]++; return COLORS.toSorted((a,b)=>counts[b]-counts[a])[0]; }
+export function chooseColor(hand, avoid=null){ const counts=Object.fromEntries(COLORS.map(c=>[c,0])); for(const card of hand) if(counts[card.color]!==undefined) counts[card.color]++; const ranked=COLORS.toSorted((a,b)=>counts[b]-counts[a]);return ranked.find(color=>color!==avoid&&counts[color]>0)||ranked.find(color=>color!==avoid)||ranked[0]; }
 function scoreCard(card, state, hand){
   let score=10;
   if(card.type===TYPES.TAKI) score += hand.filter(c=>c.color===card.color).length*8;
@@ -18,7 +18,7 @@ function scoreCard(card, state, hand){
 }
 export function chooseBotAction(state){
   const player=currentPlayer(state);
-  if(state.awaitingColor?.playerId===player.id) return {type:ACTIONS.CHOOSE_COLOR,playerId:player.id,color:chooseColor(player.hand)};
+  if(state.awaitingColor?.playerId===player.id) return {type:ACTIONS.CHOOSE_COLOR,playerId:player.id,color:chooseColor(player.hand,state.activeColor)};
   if(state.taki?.open){
     const legal=getLegalCards(state,player.id);
     if(legal.length) return {type:ACTIONS.PLAY,playerId:player.id,cardId:legal.toSorted((a,b)=>scoreCard(b,state,player.hand)-scoreCard(a,state,player.hand))[0].id};
