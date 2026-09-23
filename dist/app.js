@@ -3,7 +3,7 @@ import { COLORS, TYPES } from './game-engine/cards.js';
 import { createQuickSession, createTavernMatch, finishRound, restoreSession, standings, startNextRound } from './game-engine/match.js';
 import { LocalGameTransport } from './platform/transport.js';
 import { ambience, clearMatch, feedback, loadMatch, loadSettings, saveMatch, saveSettings } from './platform/storage.js';
-import { chooseColor, runBotStep } from './game-ai/bot.js';
+import { chooseBotAction, chooseColor } from './game-ai/bot.js';
 import { cardHTML, sigilHTML } from './ui/card.js';
 
 const root=document.querySelector('#app');
@@ -59,7 +59,21 @@ function scheduleGame(){
   const active=currentPlayer(state);
   if(active.kind==='human'&&state.taki?.open&&state.taki.ownerId===active.id){takiTimer=setTimeout(()=>submit({type:ACTIONS.END_TURN,playerId:active.id}),settings.reducedMotion?500:1450);return;}
   if(active.kind!=='ai')return;
-  botTimer=setTimeout(()=>{try{const next=runBotStep(state);transport.state=next;transport.listeners.forEach(fn=>fn(next,{type:'bot'}));}catch{submit({type:ACTIONS.DRAW,playerId:active.id});}},delay());
+  const playerId=active.id,epoch=sessionEpoch,scheduledTurn=state.turn;
+  botTimer=setTimeout(()=>{
+    if(epoch!==sessionEpoch||!state||session.phase!=='round'||state.phase==='finished')return;
+    const current=currentPlayer(state);
+    if(current.id!==playerId||current.kind!=='ai'||state.turn!==scheduledTurn)return;
+    try{transport.submitAction(chooseBotAction(state));}
+    catch(error){
+      console.error('AI turn action failed',error);
+      if(currentPlayer(state).id===playerId&&state.phase==='playing'){
+        try{transport.submitAction({type:ACTIONS.DRAW,playerId});}
+        catch(fallbackError){console.error('AI fallback draw failed',fallbackError);}
+      }
+      if(state.phase!=='finished'&&currentPlayer(state).kind==='ai')scheduleGame();
+    }
+  },delay());
 }
 
 function homeHTML(){
