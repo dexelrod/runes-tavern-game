@@ -49,7 +49,7 @@ function baseLegal(state, card) {
     if (card.type === TYPES.KING || card.type === TYPES.CHANGE_COLOR) return true;
     if (card.type === TYPES.SUPER_TAKI) return true;
     if (card.color === state.taki.color) return true;
-    return topCard(state)?.type === TYPES.TAKI && card.type === TYPES.TAKI;
+    return false;
   }
   if (state.activeColor && card.color === state.activeColor) return true;
   return cardMatches(card, effectiveTopCard(state));
@@ -80,6 +80,14 @@ function maybeWin(state, player, cardType) {
 }
 function advance(state, steps=1) { state.currentPlayerIndex = nextIndex(state, state.currentPlayerIndex, steps); state.turn++; state.freePlay=false; state.mustPlayAgain=false; }
 
+function passFreshTakiWhenEmpty(state, player) {
+  if (state.phase !== 'playing' || !state.taki?.open || state.taki.lastCardId) return;
+  if (state.taki.ownerId !== player.id || state.taki.openedTurn !== state.turn) return;
+  if (player.hand.some(card => baseLegal(state, card))) return;
+  state.log.push({type:'takiPassed',playerId:player.id,color:state.taki.color});
+  advance(state);
+}
+
 function resolveFinalEffect(state, player, card, {fromTaki=false}={}) {
   state.effectiveTopIndex = state.discardPile.length - 1;
   if (card.color !== WILD) state.activeColor = card.color;
@@ -87,8 +95,8 @@ function resolveFinalEffect(state, player, card, {fromTaki=false}={}) {
   if (card.type === TYPES.REVERSE) { if (state.players.length > 2) state.direction *= -1; advance(state); state.log.push({type:'reverse',direction:state.direction}); maybeWin(state,player,card.type); return; }
   if (card.type === TYPES.PLUS2) { state.activePenalty={kind:'plus2',amount:(state.activePenalty?.amount||0)+2}; maybeWin(state,player,card.type); advance(state); return; }
   if (card.type === TYPES.PLUS) { state.mustPlayAgain=true; state.log.push({type:'playAgain',playerId:player.id}); return; }
-  if (card.type === TYPES.TAKI) { state.taki={open:true,color:card.color,ownerId:player.id,openedTurn:state.turn}; state.activeColor=card.color; maybeWin(state,player,card.type); return; }
-  if (card.type === TYPES.SUPER_TAKI) { const inherited=state.activeColor || card.inheritedColor; state.taki={open:true,color:inherited,ownerId:player.id,openedTurn:state.turn}; state.activeColor=inherited; maybeWin(state,player,card.type); return; }
+  if (card.type === TYPES.TAKI) { state.taki={open:true,color:card.color,ownerId:player.id,openedTurn:state.turn}; state.activeColor=card.color; if(!maybeWin(state,player,card.type))passFreshTakiWhenEmpty(state,player); return; }
+  if (card.type === TYPES.SUPER_TAKI) { const inherited=state.activeColor || card.inheritedColor; state.taki={open:true,color:inherited,ownerId:player.id,openedTurn:state.turn}; state.activeColor=inherited; if(!maybeWin(state,player,card.type))passFreshTakiWhenEmpty(state,player); return; }
   if (card.type === TYPES.CHANGE_COLOR) { state.awaitingColor={playerId:player.id, next:'advance',pendingWin:player.hand.length===0}; return; }
   if (card.type === TYPES.KING) { state.activePenalty=null; state.taki=null; state.activeColor=null; if(maybeWin(state,player,card.type))return; state.freePlay=true; state.mustPlayAgain=true; return; }
   if (maybeWin(state,player,card.type)) return;
@@ -103,8 +111,7 @@ function playCard(state, action) {
   state.discardPile.push(card); state.log.push({type:'play',playerId:player.id,cardId:card.id}); setLastCardWindow(state,player);
   const inTaki=!!state.taki?.open;
   if (inTaki) {
-    if (card.type===TYPES.TAKI && topCard(state)?.id===card.id && card.color!==state.taki.color) { state.taki.color=card.color; state.taki.ownerId=player.id; state.taki.openedTurn=state.turn; state.activeColor=card.color; }
-    else if (card.type===TYPES.CHANGE_COLOR || card.type===TYPES.KING) { state.taki=null; resolveFinalEffect(state,player,card,{fromTaki:true}); }
+    if (card.type===TYPES.CHANGE_COLOR || card.type===TYPES.KING) { state.taki=null; resolveFinalEffect(state,player,card,{fromTaki:true}); }
     else { state.taki.lastCardId=card.id; state.taki.lastCardType=card.type; state.activeColor=state.taki.color; }
     return;
   }

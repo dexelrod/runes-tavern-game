@@ -12,6 +12,6 @@ function vectorArt(card){
 }
 export function cardHTML(card,{small=false,hidden=false,legal=true,selected=false,index=0,total=1}={}){
   if(hidden) return `<div class="card card-back ${small?'small':''}" aria-label="Hidden card"><span>T</span></div>`;
-  const inherited=card.type===TYPES.SUPER_TAKI&&card.inheritedColor;const color=inherited?inherited:(card.color===WILD?'wild':card.color); const tilt=(index-(total-1)/2)*3.2; const rise=Math.abs(index-(total-1)/2)*1.4;const overlap=Math.max(-88,-53-Math.max(0,total-5)*6);
+  const inherited=card.type===TYPES.SUPER_TAKI&&card.inheritedColor;const color=inherited?inherited:(card.color===WILD?'wild':card.color); const tilt=(index-(total-1)/2)*3.4; const rise=Math.abs(index-(total-1)/2)*2.4;const overlap=Math.max(-88,-57-Math.max(0,total-5)*6);
   return `<button class="card ${color} type-${card.type} ${inherited?'inherited':''} ${small?'small':''} ${legal?'legal':'quiet'} ${selected?'selected':''}" data-card-id="${card.id}" style="--tilt:${tilt}deg;--rise:${rise}px;--i:${index};--overlap:${overlap}px" aria-label="${cardLabel(card)}" aria-disabled="${!legal}"><span class="corner top">${cardLabel(card)}</span><span class="card-art">${vectorArt(card)}</span><span class="corner bottom">${cardLabel(card)}</span></button>`;
 }
