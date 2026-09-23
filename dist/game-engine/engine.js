@@ -1,6 +1,6 @@
 import { COLORS, WILD, TYPES, createDeck, shuffled, cardMatches } from './cards.js';
 
-export const ACTIONS = Object.freeze({ PLAY:'playCard', DRAW:'drawCard', CHOOSE_COLOR:'chooseColor', CLOSE_TAKI:'closeTaki', END_TURN:'endTurn', DECLARE_LAST:'declareLastCard', RESPOND_BROKEN3:'respondWithBrokenThree', RESOLVE_REACTION:'resolveReaction' });
+export const ACTIONS = Object.freeze({ PLAY:'playCard', DRAW:'drawCard', CHOOSE_COLOR:'chooseColor', CLOSE_TAKI:'closeTaki', END_TURN:'endTurn', DECLARE_LAST:'declareLastCard' });
 export const clone = value => structuredClone(value);
 const nextIndex = (state, from = state.currentPlayerIndex, steps = 1) => (from + state.direction * steps % state.players.length + state.players.length) % state.players.length;
 export const currentPlayer = state => state.players[state.currentPlayerIndex];
@@ -10,15 +10,23 @@ const playerById = (state, id) => state.players.find(p => p.id === id);
 
 export function createInitialState({ playerCount = 3, humanPlayers = 1, seed = Date.now(), players } = {}) {
   const count = Math.max(2, Math.min(10, playerCount));
-  const roster = players || Array.from({length:count}, (_, i) => ({ id:`p${i}`, name:i < humanPlayers ? (i ? `Player ${i+1}` : 'You') : ['Milo','Lumi','Pip','Nori','Zig','Coco','Ari','Bibi','Toto'][i-1] || `Bot ${i}`, kind:i < humanPlayers ? 'human' : 'ai' }));
+  const roster = players || Array.from({length:count}, (_, i) => ({ id:`p${i}`, name:i < humanPlayers ? (i ? `שחקן ${i+1}` : 'אתם') : ['מילו','לומי','פיפ','נורי','זיג','קוקו','ארי','ביבי','טוטו'][i-1] || `בוט ${i}`, kind:i < humanPlayers ? 'human' : 'ai' }));
   const deck = shuffled(createDeck(), seed); const dealt = roster.map(p => ({...p, hand:[], declaredLastCard:false}));
   for (let n=0;n<8;n++) for (const p of dealt) p.hand.push(deck.pop());
-  const opening = deck.pop();
-  return { version:1, seed, phase:'playing', players:dealt, drawPile:deck, discardPile:[opening], effectiveTopIndex:0, currentPlayerIndex:0, direction:1, activeColor:opening.color === WILD ? COLORS[seed % COLORS.length] : opening.color, activePenalty:null, taki:null, freePlay:false, mustPlayAgain:false, awaitingColor:null, pendingReaction:null, lastCardWindow:null, candidateWinnerId:null, winnerId:null, turn:1, log:[{type:'start', cardId:opening.id}] };
+  // The opening card is always a number. Command cards stay in the draw pile.
+  const openingIndex = deck.findLastIndex(card => card.type === TYPES.NUMBER);
+  const [opening] = deck.splice(openingIndex, 1);
+  return { version:2, seed, phase:'playing', players:dealt, drawPile:deck, discardPile:[opening], effectiveTopIndex:0, currentPlayerIndex:0, direction:1, activeColor:opening.color, activePenalty:null, taki:null, freePlay:false, mustPlayAgain:false, awaitingColor:null, lastCardWindow:null, candidateWinnerId:null, winnerId:null, turn:1, log:[{type:'start', cardId:opening.id}] };
 }
 
 export function serializeState(state) { return JSON.stringify(state); }
-export function restoreState(json) { const state = JSON.parse(json); if (state.version !== 1) throw new Error('Unsupported saved game'); return state; }
+export function restoreState(json) {
+  const state = JSON.parse(json); if (![1,2].includes(state.version)) throw new Error('Unsupported saved game');
+  const removed=new Set(['plus3','brokenPlus3']);
+  for(const player of state.players)player.hand=player.hand.filter(card=>!removed.has(card.type));
+  state.drawPile=state.drawPile.filter(card=>!removed.has(card.type));state.discardPile=state.discardPile.filter(card=>!removed.has(card.type));
+  delete state.pendingReaction;state.effectiveTopIndex=Math.max(0,Math.min(state.effectiveTopIndex,state.discardPile.length-1));state.version=2;return state;
+}
 
 function recycle(state) {
   if (state.drawPile.length || state.discardPile.length <= 1) return;
@@ -33,13 +41,11 @@ function drawCards(state, playerId, amount) { const p = playerById(state, player
 function cardFromHand(state, playerId, cardId) { return playerById(state, playerId)?.hand.find(c => c.id === cardId); }
 
 function baseLegal(state, card) {
-  if (state.freePlay) return card.type !== TYPES.BROKEN3 || !state.activePenalty;
-  if (state.activePenalty?.kind === 'plus2') return card.type === TYPES.PLUS2 || card.type === TYPES.PLUS3 || card.type === TYPES.KING;
-  if ([TYPES.KING, TYPES.PLUS3].includes(card.type)) return true;
+  if (state.freePlay) return true;
+  if (state.activePenalty?.kind === 'plus2') return card.type === TYPES.PLUS2 || card.type === TYPES.KING;
+  if (card.type === TYPES.KING) return true;
   if (card.type === TYPES.CHANGE_COLOR || card.type === TYPES.SUPER_TAKI) return true;
-  if (card.type === TYPES.BROKEN3) return topCard(state)?.type !== TYPES.PLUS2;
   if (state.taki?.open) {
-    if (card.type === TYPES.PLUS3 || card.type === TYPES.BROKEN3) return false;
     if (card.type === TYPES.KING || card.type === TYPES.CHANGE_COLOR) return true;
     if (card.type === TYPES.SUPER_TAKI) return true;
     if (card.color === state.taki.color) return true;
@@ -50,7 +56,7 @@ function baseLegal(state, card) {
 }
 
 export function isLegalPlay(state, playerId, cardId) {
-  if (state.phase !== 'playing' || state.pendingReaction || state.awaitingColor) return false;
+  if (state.phase !== 'playing' || state.awaitingColor) return false;
   if (currentPlayer(state).id !== playerId) return false;
   const card = cardFromHand(state, playerId, cardId); return !!card && baseLegal(state, card);
 }
@@ -85,12 +91,6 @@ function resolveFinalEffect(state, player, card, {fromTaki=false}={}) {
   if (card.type === TYPES.SUPER_TAKI) { const inherited=state.activeColor || card.inheritedColor; state.taki={open:true,color:inherited,ownerId:player.id,openedTurn:state.turn}; state.activeColor=inherited; maybeWin(state,player,card.type); return; }
   if (card.type === TYPES.CHANGE_COLOR) { state.awaitingColor={playerId:player.id, next:'advance',pendingWin:player.hand.length===0}; return; }
   if (card.type === TYPES.KING) { state.activePenalty=null; state.taki=null; state.activeColor=null; if(maybeWin(state,player,card.type))return; state.freePlay=true; state.mustPlayAgain=true; return; }
-  if (card.type === TYPES.PLUS3) {
-    const total=(state.activePenalty?.kind==='plus2'?state.activePenalty.amount:0)+3;
-    state.pendingReaction={type:'brokenPlus3',sourcePlayerId:player.id,amount:total,fromPlus2:!!state.activePenalty,eligiblePlayerIds:state.players.filter(p=>p.hand.some(c=>c.type===TYPES.BROKEN3)).map(p=>p.id),resumeIndex:nextIndex(state),underIndex:state.discardPile.length-2};
-    state.effectiveTopIndex=state.pendingReaction.underIndex; return;
-  }
-  if (card.type === TYPES.BROKEN3) { drawCards(state,player.id,3); state.log.push({type:'voluntaryBroken3',playerId:player.id}); advance(state); return; }
   if (maybeWin(state,player,card.type)) return;
   advance(state);
 }
@@ -112,7 +112,7 @@ function playCard(state, action) {
 }
 
 function drawAction(state, action) {
-  if (state.phase!=='playing'||state.pendingReaction||state.awaitingColor||currentPlayer(state).id!==action.playerId) throw new Error('Cannot draw');
+  if (state.phase!=='playing'||state.awaitingColor||currentPlayer(state).id!==action.playerId) throw new Error('Cannot draw');
   expireLastCardWindow(state, action.playerId); const p=currentPlayer(state);
   if (state.activePenalty?.kind==='plus2') { const amount=state.activePenalty.amount; drawCards(state,p.id,amount); state.activePenalty=null; state.log.push({type:'drawPenalty',playerId:p.id,amount}); if (state.candidateWinnerId && playerById(state,state.candidateWinnerId).hand.length===0) { state.phase='finished'; state.winnerId=state.candidateWinnerId; return; } }
   else { drawCards(state,p.id,1); state.log.push({type:'draw',playerId:p.id,amount:1}); }
@@ -135,19 +135,6 @@ function chooseColor(state, action) {
   if(pendingWin){state.phase='finished';state.winnerId=action.playerId;state.log.push({type:'win',playerId:action.playerId});return;} advance(state);
 }
 
-function respondBroken3(state, action) {
-  const r=state.pendingReaction; if (!r || r.type!=='brokenPlus3' || !r.eligiblePlayerIds.includes(action.playerId)) throw new Error('No reaction available');
-  const p=playerById(state,action.playerId); const idx=p.hand.findIndex(c=>c.id===action.cardId&&c.type===TYPES.BROKEN3); if(idx<0) throw new Error('Broken +3 required');
-  const [card]=p.hand.splice(idx,1); state.discardPile.push(card); const selfCounter=p.id===r.sourcePlayerId; if(!selfCounter)drawCards(state,r.sourcePlayerId,r.amount); state.activePenalty=null; state.pendingReaction=null; state.effectiveTopIndex=r.underIndex; state.currentPlayerIndex=r.resumeIndex; state.turn++; state.log.push({type:'broken3',playerId:p.id,targetId:r.sourcePlayerId,amount:selfCounter?0:r.amount}); setLastCardWindow(state,p); if(selfCounter&&p.hand.length===0){state.phase='finished';state.winnerId=p.id;state.log.push({type:'win',playerId:p.id});}
-}
-function resolveReaction(state) {
-  const r=state.pendingReaction; if(!r) throw new Error('No reaction'); state.pendingReaction=null;
-  if(r.fromPlus2){ state.activePenalty={kind:'plus2',amount:r.amount}; state.currentPlayerIndex=r.resumeIndex; state.turn++; }
-  else { for(const p of state.players) if(p.id!==r.sourcePlayerId) drawCards(state,p.id,3); state.currentPlayerIndex=r.resumeIndex; state.turn++; }
-  state.effectiveTopIndex=r.underIndex; state.log.push({type:'plus3Resolved',sourcePlayerId:r.sourcePlayerId,amount:r.amount});
-  const source=playerById(state,r.sourcePlayerId); if(source.hand.length===0){state.phase='finished';state.winnerId=source.id;}
-}
-
 export function applyAction(input, action) {
   const state=clone(input); if (state.phase==='finished') throw new Error('Game finished');
   switch(action.type){
@@ -157,8 +144,6 @@ export function applyAction(input, action) {
     case ACTIONS.CLOSE_TAKI: closeTaki(state,action,false); break;
     case ACTIONS.END_TURN: if(state.taki?.open) closeTaki(state,action,true); else if(state.mustPlayAgain) drawAction(state,{type:ACTIONS.DRAW,playerId:action.playerId}); else throw new Error('Cannot end turn'); break;
     case ACTIONS.DECLARE_LAST: { const p=playerById(state,action.playerId); if(!p||p.hand.length!==1||state.lastCardWindow?.playerId!==p.id) throw new Error('No declaration window'); p.declaredLastCard=true; state.lastCardWindow.declared=true; state.log.push({type:'lastCard',playerId:p.id}); break; }
-    case ACTIONS.RESPOND_BROKEN3: respondBroken3(state,action); break;
-    case ACTIONS.RESOLVE_REACTION: resolveReaction(state); break;
     default: throw new Error('Unknown action');
   }
   return state;

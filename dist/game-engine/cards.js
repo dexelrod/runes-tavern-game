@@ -1,14 +1,14 @@
 export const COLORS = ['red', 'blue', 'green', 'yellow'];
 export const WILD = 'wild';
-export const TYPES = Object.freeze({ NUMBER:'number', STOP:'stop', PLUS2:'plus2', REVERSE:'reverse', PLUS:'plus', TAKI:'taki', CHANGE_COLOR:'changeColor', SUPER_TAKI:'superTaki', KING:'king', PLUS3:'plus3', BROKEN3:'brokenPlus3' });
+export const TYPES = Object.freeze({ NUMBER:'number', STOP:'stop', PLUS2:'plus2', REVERSE:'reverse', PLUS:'plus', TAKI:'taki', CHANGE_COLOR:'changeColor', SUPER_TAKI:'superTaki', KING:'king' });
 
 export const TYPE_LABEL = {
-  number:'', stop:'STOP', plus2:'+2', reverse:'↻', plus:'+', taki:'TAKI', changeColor:'COLOR', superTaki:'SUPER TAKI', king:'KING', plus3:'+3', brokenPlus3:'BREAK 3'
+  number:'', stop:'עצור', plus2:'+2', reverse:'↻', plus:'+', taki:'TAKI', changeColor:'צבע', superTaki:'סופר TAKI', king:'מלך'
 };
 
 export function makeCard(type, color = WILD, value = null, id = '') { return { id, type, color, value }; }
 
-// One official 58-card set: 36 numbers, 16 colored commands and 6 colorless cards.
+// A 56-card set after intentionally removing +3 and Broken +3.
 export function createDeckSet(setIndex = 0) {
   const cards = [];
   for (const color of COLORS) {
@@ -18,8 +18,6 @@ export function createDeckSet(setIndex = 0) {
   cards.push(makeCard(TYPES.CHANGE_COLOR, WILD, null, `s${setIndex}-change-0`), makeCard(TYPES.CHANGE_COLOR, WILD, null, `s${setIndex}-change-1`));
   cards.push(makeCard(TYPES.SUPER_TAKI, WILD, null, `s${setIndex}-super`));
   cards.push(makeCard(TYPES.KING, WILD, null, `s${setIndex}-king`));
-  cards.push(makeCard(TYPES.PLUS3, WILD, null, `s${setIndex}-plus3`));
-  cards.push(makeCard(TYPES.BROKEN3, WILD, null, `s${setIndex}-broken3`));
   return cards;
 }
 

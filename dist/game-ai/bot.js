@@ -7,7 +7,6 @@ function scoreCard(card, state, hand){
   if(card.type===TYPES.TAKI) score += hand.filter(c=>c.color===card.color).length*8;
   if(card.type===TYPES.PLUS2 && state.activePenalty) score+=50;
   if(card.type===TYPES.KING) score+=state.activePenalty?70:-12;
-  if(card.type===TYPES.PLUS3) score+=hand.length<4?18:-8;
   if(card.type===TYPES.CHANGE_COLOR) score+=hand.length<4?8:-6;
   if([TYPES.STOP,TYPES.PLUS,TYPES.REVERSE].includes(card.type)) score+=5;
   if(card.type===TYPES.NUMBER) score+=4;
