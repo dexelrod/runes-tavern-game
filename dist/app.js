@@ -55,20 +55,22 @@ function onState(action){
 function delay(){const base=settings.difficulty==='quick'?620:settings.difficulty==='thoughtful'?1350:900;const archetype=currentPlayer(state)?.archetype;return base+(archetype==='hunter'?180:archetype==='bard'?-90:0);}
 function scheduleGame(){
   clearTimeout(botTimer);clearTimeout(takiTimer);
-  if(!state||session.phase!=='round'||state.phase==='finished')return;
+  if(!state){root.dataset.aiScheduler='no-state';return;}
+  if(session.phase!=='round'||state.phase==='finished'){root.dataset.aiScheduler=`inactive:${session.phase}:${state.phase}`;return;}
   const active=currentPlayer(state);
+  root.dataset.aiScheduler=`check:${session.phase}:${state.phase}:${active.kind}:${active.id}:${state.turn}`;
   if(active.kind==='human'&&state.taki?.open&&state.taki.ownerId===active.id){takiTimer=setTimeout(()=>submit({type:ACTIONS.END_TURN,playerId:active.id}),settings.reducedMotion?500:1450);return;}
-  if(active.kind!=='ai')return;
+  if(active.kind!=='ai'){root.dataset.aiScheduler=`not-ai:${active.kind}:${active.id}`;return;}
   const playerId=active.id,epoch=sessionEpoch,scheduledTurn=state.turn;
-  console.info('AI turn scheduled',{playerId,epoch,scheduledTurn});
+  root.dataset.aiScheduler=`scheduled:${playerId}:${epoch}:${scheduledTurn}`;
   botTimer=setTimeout(()=>{
-    console.info('AI timer fired',{playerId,epoch,currentEpoch:sessionEpoch,scheduledTurn,currentTurn:state?.turn,phase:session?.phase,gamePhase:state?.phase});
-    if(epoch!==sessionEpoch||!state||session.phase!=='round'||state.phase==='finished'){console.warn('AI timer stopped by session guard');return;}
+    root.dataset.aiScheduler=`fired:${playerId}:${epoch}:${sessionEpoch}:${scheduledTurn}:${state?.turn}`;
+    if(epoch!==sessionEpoch||!state||session.phase!=='round'||state.phase==='finished'){root.dataset.aiScheduler+=':session-guard';return;}
     const current=currentPlayer(state);
-    if(current.id!==playerId||current.kind!=='ai'||state.turn!==scheduledTurn){console.warn('AI timer stopped by turn guard',{currentId:current.id,kind:current.kind,currentTurn:state.turn});return;}
-    try{transport.submitAction(chooseBotAction(state));}
+    if(current.id!==playerId||current.kind!=='ai'||state.turn!==scheduledTurn){root.dataset.aiScheduler+=`:turn-guard:${current.id}:${current.kind}:${state.turn}`;return;}
+    try{transport.submitAction(chooseBotAction(state));root.dataset.aiScheduler=`submitted:${playerId}:${state.turn}`;}
     catch(error){
-      console.error('AI turn action failed',error);
+      root.dataset.aiScheduler=`error:${String(error)}`;console.error('AI turn action failed',error);
       if(currentPlayer(state).id===playerId&&state.phase==='playing'){
         try{transport.submitAction({type:ACTIONS.DRAW,playerId});}
         catch(fallbackError){console.error('AI fallback draw failed',fallbackError);}
