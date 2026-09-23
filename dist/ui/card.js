@@ -1,6 +1,9 @@
 import { TYPES, TYPE_LABEL, WILD } from '../game-engine/cards.js';
 
 export function cardLabel(card){ return card.type===TYPES.NUMBER ? String(card.value) : TYPE_LABEL[card.type]; }
+export function sigilHTML(className='elder-sigil'){
+  return `<svg class="${className}" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 7 43 20 57 32 43 44 32 57 21 44 7 32 21 20zM32 7v50M7 32h50M21 20l22 24M43 20 21 44"/><circle cx="32" cy="32" r="8"/><path d="M32 16c7 0 12 3 16 8M48 32c0 7-3 12-8 16M32 48c-7 0-12-3-16-8M16 32c0-7 3-12 8-16"/></svg>`;
+}
 const crest={
   green:`<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 52V28M32 35C19 34 13 25 12 13c9 2 16 7 20 15m0 6c12-1 19-9 20-21-9 2-16 7-20 15"/></svg>`,
   blue:`<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M10 42c15-24 29-30 44-26-9 4-15 10-19 18 8-2 14-1 19 1-13 2-23 8-31 17 1-6 0-11-3-15z"/></svg>`,
@@ -21,7 +24,7 @@ function vectorArt(card){
   return `<span class="action-symbol">${cardLabel(card)}</span>`;
 }
 export function cardHTML(card,{small=false,hidden=false,legal=true,selected=false,index=0,total=1}={}){
-  if(hidden) return `<div class="card card-back ${small?'small':''}" aria-label="קלף הפוך"><span class="back-rune">ET</span></div>`;
+  if(hidden) return `<div class="card card-back ${small?'small':''}" aria-label="קלף הפוך"><span class="back-sigil">${sigilHTML()}</span></div>`;
   const inherited=card.type===TYPES.SUPER_TAKI&&card.inheritedColor;
   const color=inherited?inherited:(card.color===WILD?'wild':card.color);
   const tilt=(index-(total-1)/2)*3.1;
