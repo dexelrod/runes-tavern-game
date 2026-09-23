@@ -60,10 +60,12 @@ function scheduleGame(){
   if(active.kind==='human'&&state.taki?.open&&state.taki.ownerId===active.id){takiTimer=setTimeout(()=>submit({type:ACTIONS.END_TURN,playerId:active.id}),settings.reducedMotion?500:1450);return;}
   if(active.kind!=='ai')return;
   const playerId=active.id,epoch=sessionEpoch,scheduledTurn=state.turn;
+  console.info('AI turn scheduled',{playerId,epoch,scheduledTurn});
   botTimer=setTimeout(()=>{
-    if(epoch!==sessionEpoch||!state||session.phase!=='round'||state.phase==='finished')return;
+    console.info('AI timer fired',{playerId,epoch,currentEpoch:sessionEpoch,scheduledTurn,currentTurn:state?.turn,phase:session?.phase,gamePhase:state?.phase});
+    if(epoch!==sessionEpoch||!state||session.phase!=='round'||state.phase==='finished'){console.warn('AI timer stopped by session guard');return;}
     const current=currentPlayer(state);
-    if(current.id!==playerId||current.kind!=='ai'||state.turn!==scheduledTurn)return;
+    if(current.id!==playerId||current.kind!=='ai'||state.turn!==scheduledTurn){console.warn('AI timer stopped by turn guard',{currentId:current.id,kind:current.kind,currentTurn:state.turn});return;}
     try{transport.submitAction(chooseBotAction(state));}
     catch(error){
       console.error('AI turn action failed',error);
