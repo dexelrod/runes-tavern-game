@@ -26,7 +26,7 @@ function startSession(mode='tavern',saved=null){
   catch{clearMatch();setSession(mode==='tavern'?createTavernMatch({seed:Date.now()}):createQuickSession({playerCount:settings.playerCount,seed:Date.now()}));}
   view='game';sheet=null;eventBanner=null;ambience.start(settings);render();scheduleGame();
 }
-function submit(action){try{transport.submitAction(action);selected=null;}catch{hint='אי אפשר לשחק את הקלף הזה עכשיו';feedback('invalid',settings);render();setTimeout(()=>{hint='';render();},850);}}
+function submit(action){const beforeTurn=state?.turn,beforeTop=state?topCard(state)?.id:null;try{transport.submitAction(action);selected=null;}catch(error){const advanced=!!state&&(state.turn!==beforeTurn||topCard(state)?.id!==beforeTop);root.dataset.lastActionFailure=`${error?.name||'Error'}: ${error?.message||String(error)}`;console.error('Game action or update failed',error);hint=advanced?'':'אי אפשר לשחק את הקלף הזה עכשיו';if(!advanced)feedback('invalid',settings);render();if(advanced)scheduleGame();else setTimeout(()=>{hint='';render();},850);}}
 function showEvent(kind,targetId=null,amount=null){clearTimeout(eventTimer);eventBanner={kind,targetId,amount};eventTimer=setTimeout(()=>{eventBanner=null;captionLine='';root.querySelector('.table-event')?.remove();root.querySelector('.direction-engraving')?.classList.remove('lit');root.querySelectorAll('.stop-seal').forEach(node=>node.remove());root.querySelectorAll('.opponent.sealed').forEach(node=>node.classList.remove('sealed'));root.querySelector('.taki-clasp.opening')?.classList.remove('opening');},settings.reducedMotion?60:620);}
 function showQuip(player,text,force=false){if(!settings.dialogue||!text||(!force&&Date.now()-lastQuipAt<6500))return;lastQuipAt=Date.now();clearTimeout(quipTimer);quip={player,text};quipTimer=setTimeout(()=>{quip=null;render();},Math.min(3000,1600+text.length*45));}
 function botLine(playerId,trigger){const player=state.players.find(p=>p.id===playerId),pool=dialogue[player?.archetype]?.[trigger]||[];return pool[Math.floor(Math.random()*pool.length)];}
@@ -71,7 +71,7 @@ function scheduleGame(){
         try{transport.submitAction({type:ACTIONS.DRAW,playerId});}
         catch(fallbackError){console.error('AI fallback draw failed',fallbackError);}
       }
-      if(state.phase!=='finished'&&currentPlayer(state).kind==='ai')scheduleGame();
+      if(state.phase!=='finished'&&currentPlayer(state).kind==='ai'){try{render();}catch(renderError){console.error('AI recovery render failed',renderError);}scheduleGame();}
     }
   },delay());
 }
