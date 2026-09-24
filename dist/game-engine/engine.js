@@ -42,6 +42,7 @@ function recycle(state) {
   state.discardPile = state.discardPile.filter((_, i) => keepIndexes.has(i));
   state.effectiveTopIndex = Math.max(0,state.discardPile.findIndex(c => c.id === effectiveId));
   state.drawPile = shuffled(recycled, state.seed + state.turn + state.log.length);
+  state.log.push({type:'shuffle',amount:state.drawPile.length});
 }
 function drawCards(state, playerId, amount) { const p = playerById(state, playerId); for (let i=0;i<amount;i++) { recycle(state); const card=state.drawPile.pop(); if (card) p.hand.push(card); } }
 function cardFromHand(state, playerId, cardId) { return playerById(state, playerId)?.hand.find(c => c.id === cardId); }

@@ -1,0 +1,23 @@
+.draw-pile.deck-settling {
+  animation: deck-settle 1.12s cubic-bezier(.18, .78, .2, 1) both;
+  transform-origin: 50% 90%;
+}
+
+@keyframes deck-settle {
+  0% {
+    transform: translateY(-18px) rotate(-2.4deg);
+    filter: drop-shadow(0 22px 10px #0005);
+    opacity: .72;
+  }
+  28% { transform: translateY(-8px) rotate(1.8deg); }
+  62% { transform: translateY(-3px) rotate(-.7deg); }
+  88% {
+    transform: translateY(2px) rotate(.2deg);
+    filter: drop-shadow(0 6px 4px #000c);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0) rotate(0);
+    filter: drop-shadow(0 10px 7px #000b);
+  }
+}
