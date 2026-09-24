@@ -162,3 +162,6 @@
 @media(max-height:740px){.quick-one-on-one .quick-opponent{top:-43px;scale:.9}.quick-one-on-one .hand-area{transform:translateY(-25px)}.quick-one-on-one .hand{height:184px}.quick-opponent .seat-props{scale:.88}.quick-one-on-one .center,.quick-one-on-one .direction-engraving{top:58%}}
 @media(max-width:370px){.quick-opponent-name{right:7px}.quick-opponent .physical-fan>i{transform:translateX(calc(var(--offset)*12px)) rotate(calc(var(--offset)*2.5deg))}.quick-opponent .seat-props{left:0}.quick-one-on-one .hand-area{transform:translateY(-32px)}}
 @media(prefers-reduced-motion:reduce){.quick-one-on-one .turn-whisper.turn-cue span{animation:turn-cue-static .65s ease both}@keyframes turn-cue-static{0%,100%{opacity:0}12%,75%{opacity:1}}}
+/* v32: keep side-player identity and card counts inside the visible table. */
+.seat-left,.seat-far-left{left:max(4px,env(safe-area-inset-left))}
+.seat-right,.seat-far-right{right:max(4px,env(safe-area-inset-right))}

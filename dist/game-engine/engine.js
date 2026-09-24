@@ -75,7 +75,7 @@ export function getLegalCards(state, playerId = currentPlayer(state).id) { retur
 
 function maybeWin(state, player, cardType) {
   if (player.hand.length) return false;
-  if (cardType === TYPES.PLUS || cardType === TYPES.KING) return false;
+  if (cardType === TYPES.PLUS) return false;
   if (cardType === TYPES.PLUS2) { state.candidateWinnerId = player.id; return false; }
   state.phase='finished'; state.winnerId=player.id; state.log.push({type:'win', playerId:player.id}); return true;
 }
