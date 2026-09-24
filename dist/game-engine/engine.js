@@ -125,6 +125,9 @@ function autoCloseTakiIfNeeded(state, player) {
 function playCard(state, action) {
   if (!isLegalPlay(state, action.playerId, action.cardId)) throw new Error('Illegal card');
   const player=playerById(state,action.playerId); const index=player.hand.findIndex(c=>c.id===action.cardId); const [card]=player.hand.splice(index,1);
+  // A King makes exactly the next card unrestricted. If that card is a Plus,
+  // its forced follow-up must obey the Plus card's colour/type as usual.
+  if(state.freePlay)state.freePlay=false;
   if (card.type===TYPES.SUPER_TAKI) card.inheritedColor=state.activeColor || action.color || null;
   state.discardPile.push(card); state.log.push({type:'play',playerId:player.id,cardId:card.id});
   const inTaki=!!state.taki?.open;
