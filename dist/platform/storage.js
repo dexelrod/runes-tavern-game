@@ -1,5 +1,5 @@
 const SETTINGS='taki-pocket-settings'; const MATCH='taki-pocket-match';
-export const defaults={playerCount:3,difficulty:'normal',sound:true,ambience:true,music:true,sfxVolume:.9,ambienceVolume:.18,musicVolume:.32,dialogue:true,captions:false,haptics:true,reducedMotion:false,playableHints:true,tutorial:true,duelOpponent:'ron',duelRecords:{}};
+export const defaults={playerCount:3,difficulty:'normal',sound:true,ambience:true,music:true,sfxVolume:.9,ambienceVolume:.18,musicVolume:.14,dialogue:true,captions:false,haptics:true,reducedMotion:false,playableHints:true,tutorial:true,duelOpponent:'ron',duelRecords:{}};
 export function loadSettings(){ try{return {...defaults,...JSON.parse(localStorage.getItem(SETTINGS)||'{}')};}catch{return {...defaults};} }
 export function saveSettings(value){localStorage.setItem(SETTINGS,JSON.stringify(value));}
 export function saveMatch(state){localStorage.setItem(MATCH,JSON.stringify(state));}

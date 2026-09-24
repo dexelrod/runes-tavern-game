@@ -20,7 +20,7 @@ export const SOUND_LIBRARY=Object.freeze({
 
 export const AMBIENCE_TRACKS=Object.freeze(['tavern-loop-1.wav','tavern-loop-2.wav','tavern-loop-3.wav','tavern-loop-4.wav'].map(asset));
 export const MUSIC_TRACK=asset('elder-taki-round.wav');
-const CHANNEL_DEFAULTS={sfx:.9,ambience:.18,music:.32};
+const CHANNEL_DEFAULTS={sfx:.9,ambience:.18,music:.14};
 
 export class AudioSystem{
   constructor(){
@@ -39,7 +39,8 @@ export class AudioSystem{
     this.enabled=settings.sound!==false;
     this.channels.sfx=Number.isFinite(settings.sfxVolume)?Math.max(0,Math.min(1,settings.sfxVolume)):CHANNEL_DEFAULTS.sfx;
     this.channels.ambience=Number.isFinite(settings.ambienceVolume)?Math.max(0,Math.min(1,settings.ambienceVolume)):CHANNEL_DEFAULTS.ambience;
-    this.channels.music=Number.isFinite(settings.musicVolume)?Math.max(0,Math.min(1,settings.musicVolume)):CHANNEL_DEFAULTS.music;
+    const requestedMusic=Number.isFinite(settings.musicVolume)?Math.max(0,settings.musicVolume):CHANNEL_DEFAULTS.music;
+    this.channels.music=Math.min(CHANNEL_DEFAULTS.music,requestedMusic);
     if(!this.enabled){this.stopAmbience();this.stopMusic();}
     else{
       if(this.ambienceNode&&!this.ambienceNode.paused)this.fadeAmbience(this.channels.ambience,350);

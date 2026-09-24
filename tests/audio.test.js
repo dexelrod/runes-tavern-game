@@ -58,7 +58,7 @@ test('round soundtrack loops on the music channel and can be stopped independent
     assert.equal(system.musicNode.src,MUSIC_TRACK);
     assert.equal(system.musicNode.loop,true);
     assert.equal(system.musicNode.paused,false);
-    assert.equal(system.musicNode.volume,.24);
+    assert.equal(system.musicNode.volume,.14);
     system.stopMusic();
     assert.equal(system.musicNode.paused,true);
   }finally{
