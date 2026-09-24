@@ -1,5 +1,5 @@
-const CACHE = 'elder-taki-v29';
-const CORE = ['./','./index.html','./styles.css?v=29','./audio.css?v=29','./app.js?v=29','./assets/elder-tavern-table.jpg','./assets/model-viewer.min.js','./assets/stylized_beer_mug.glb','./assets/duel-opponents.png','./duel/opponents.js','./game-engine/cards.js','./game-engine/engine.js','./game-engine/match.js','./game-ai/bot.js','./platform/audio.js','./platform/storage.js','./platform/transport.js','./ui/card.js','./manifest.webmanifest','./favicon.svg'];
+const CACHE = 'elder-taki-v30';
+const CORE = ['./','./index.html','./styles.css?v=30','./audio.css?v=30','./app.js?v=30','./assets/elder-tavern-table.jpg','./assets/model-viewer.min.js','./assets/stylized_beer_mug.glb','./assets/duel-opponents.png','./duel/opponents.js','./game-engine/cards.js','./game-engine/engine.js','./game-engine/match.js','./game-ai/bot.js','./platform/audio.js','./platform/storage.js','./platform/transport.js','./ui/card.js','./manifest.webmanifest','./favicon.svg'];
 
 const remember = async request => {
   const response = await fetch(request);
