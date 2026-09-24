@@ -21,6 +21,7 @@ function vectorArt(card,activeColor=null){
   if(card.type===TYPES.CHANGE_COLOR)return '<span class="gem-wheel"><i></i><i></i><i></i><i></i><b></b></span>';
   if(card.type===TYPES.KING)return icon('king-icon','<path d="M11 57h58l-5 12H16zm5-7-4-30 17 14 11-23 11 23 17-14-4 30z"/>');
   if(card.type===TYPES.TAKI)return `<span class="taki-banner"><small>ᛏ</small><strong>TAKI</strong><i>${crest[card.color]||''}</i></span>`;
+  if(card.type===TYPES.SUPER_TAKI&&card.inheritedColor)return `<span class="chosen-color super-chosen ${card.inheritedColor}" aria-hidden="true">${crest[card.inheritedColor]||''}<b>ᛏ</b></span>`;
   if(card.type===TYPES.SUPER_TAKI)return `<span class="super-banner" aria-hidden="true"><i></i><i></i><i></i><i></i><b>ᛏ</b></span>`;
   return `<span class="action-symbol">${cardLabel(card)}</span>`;
 }
@@ -35,5 +36,5 @@ export function cardHTML(card,{small=false,hidden=false,legal=true,highlight=tru
   const faceMark=card.type===TYPES.NUMBER?String(card.value):card.type===TYPES.PLUS2?'+2':'';
   const spokenColor={red:'אדום',blue:'כחול',green:'ירוק',yellow:'צהוב'}[color]||'';
   const spokenLabel=card.type===TYPES.NUMBER?`${card.value} ${spokenColor}`:cardLabel(card);
-  return `<button class="card ${color} type-${card.type} ${inherited?'inherited':''} ${chosen?'chosen':''} ${small?'small':''} ${legal?'legal':'quiet'} ${legal&&highlight?'playable-hint':''} ${selected?'selected':''} ${incoming?'incoming':''}" data-card-id="${card.id}" style="--tilt:${tilt}deg;--rise:${rise}px;--i:${index};--overlap:${overlap}px;--arrive-delay:${arrivalDelay}ms" aria-label="${spokenLabel}" aria-disabled="${!legal}"><span class="corner top">${faceMark}</span><span class="card-art">${vectorArt(card,activeColor)}</span><span class="card-print">${card.type===TYPES.TAKI||card.type===TYPES.SUPER_TAKI?'':cardLabel(card)}</span><span class="card-scratch"></span></button>`;
+  return `<button class="card ${color} type-${card.type} ${inherited?'inherited':''} ${chosen?'chosen':''} ${small?'small':''} ${legal?'legal':'quiet'} ${legal&&highlight?'playable-hint':''} ${selected?'selected':''} ${incoming?'incoming':''}" data-card-id="${card.id}" style="--tilt:${tilt}deg;--rise:${rise}px;--i:${index};--overlap:${overlap}px;--arrive-delay:${arrivalDelay}ms" aria-label="${spokenLabel}" aria-disabled="${!legal}"><span class="corner top">${faceMark}</span><span class="card-art">${vectorArt(card,activeColor)}</span><span class="card-print">${card.type===TYPES.TAKI?'':cardLabel(card)}</span><span class="card-scratch"></span></button>`;
 }

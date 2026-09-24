@@ -71,3 +71,8 @@
 .duel-table .duel-name{left:16px;right:auto;top:52px;max-width:112px}
 .duel-table .duel-speech{left:42%;top:105px;max-width:160px}
 @media(max-width:370px){.duel-table .duel-name{left:10px;right:auto;top:52px;max-width:100px}.duel-table .duel-speech{left:40%;top:102px;max-width:140px}.duel-table .score-slate{right:4px;width:104px}}
+
+.super-chosen{position:relative;color:#f4e2b5}
+.super-chosen svg{opacity:.28}
+.super-chosen b{position:absolute;inset:0;display:grid;place-items:center;color:#f7e7bd;font:700 22px Georgia,serif;text-shadow:0 2px 3px #0008}
+.card.type-superTaki .card-print{font-size:8px;font-weight:700;letter-spacing:.02em}
