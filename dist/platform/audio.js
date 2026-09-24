@@ -2,6 +2,11 @@ const asset=name=>new URL(`../assets/audio/${name}`,import.meta.url).href;
 
 export const SOUND_LIBRARY=Object.freeze({
   cardPlay:{src:asset('card-play.wav'),channel:'sfx',volume:.58,cooldown:55,maxVoices:3,rateJitter:.018,volumeJitter:.035},
+  cardPlayVariation1:{src:asset('card-play-variation-1.wav'),channel:'sfx',volume:.58,cooldown:45,maxVoices:3,rateJitter:.014,volumeJitter:.025},
+  cardPlayVariation2:{src:asset('card-play-variation-2.wav'),channel:'sfx',volume:.58,cooldown:45,maxVoices:3,rateJitter:.014,volumeJitter:.025},
+  cardPlayVariation3:{src:asset('card-play-variation-3.wav'),channel:'sfx',volume:.58,cooldown:45,maxVoices:3,rateJitter:.014,volumeJitter:.025},
+  cardPlayVariation4:{src:asset('card-play-variation-4.wav'),channel:'sfx',volume:.58,cooldown:45,maxVoices:3,rateJitter:.014,volumeJitter:.025},
+  cardPlayVariation5:{src:asset('card-play-variation-5.wav'),channel:'sfx',volume:.58,cooldown:45,maxVoices:3,rateJitter:.014,volumeJitter:.025},
   cardPlaySoft:{src:asset('card-play-soft.wav'),channel:'sfx',volume:.48,cooldown:45,maxVoices:3,rateJitter:.022,volumeJitter:.04},
   cardDraw:{src:asset('card-draw.wav'),channel:'sfx',volume:.68,cooldown:80,maxVoices:2,rateJitter:.014,volumeJitter:.025},
   drawMultiple:{src:asset('draw-multiple-cards.wav'),channel:'sfx',volume:.72,cooldown:500,maxVoices:1},
@@ -18,6 +23,7 @@ export const SOUND_LIBRARY=Object.freeze({
   loseHand:{src:asset('lose-hand.wav'),channel:'sfx',volume:.78,cooldown:1800,maxVoices:1}
 });
 
+export const CARD_PLAY_VARIATIONS=Object.freeze(['cardPlay','cardPlayVariation1','cardPlayVariation2','cardPlayVariation3','cardPlayVariation4','cardPlayVariation5']);
 export const AMBIENCE_TRACKS=Object.freeze(['tavern-loop-1.wav','tavern-loop-2.wav','tavern-loop-3.wav','tavern-loop-4.wav'].map(asset));
 export const MUSIC_TRACK=asset('elder-taki-round.wav');
 const CHANNEL_DEFAULTS={sfx:.9,ambience:.18,music:.14};
@@ -28,6 +34,7 @@ export class AudioSystem{
     this.channels={...CHANNEL_DEFAULTS};
     this.pools=new Map();
     this.lastPlayed=new Map();
+    this.lastCardPlayVariation=null;
     this.timers=new Set();
     this.ambienceNode=null;
     this.ambienceFrame=0;
@@ -75,6 +82,13 @@ export class AudioSystem{
     this.lastPlayed.set(name,now);
     const promise=node.play();if(promise?.catch)promise.catch(()=>{});
     return node;
+  }
+  playCardPlacement({soft=false,delay=0,volume=1,rate=1}={}){
+    if(soft)return this.play('cardPlaySoft',{delay,volume,rate});
+    const choices=CARD_PLAY_VARIATIONS.filter(name=>name!==this.lastCardPlayVariation);
+    const name=choices[Math.floor(Math.random()*choices.length)];
+    this.lastCardPlayVariation=name;
+    return this.play(name,{delay,volume,rate});
   }
   startAmbience(){
     if(!this.enabled||this.channels.ambience<=0||typeof Audio==='undefined')return;

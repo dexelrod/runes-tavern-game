@@ -89,7 +89,7 @@ async function animateCardMovement(action){
   else{
     const calmStyle=session.mode==='duel'&&action.playerId==='p1'&&['quiet','measured'].includes(currentDuelOpponent().cardPlayStyle);
     const soft=!!state.taki?.open||calmStyle||(action.playerId!=='p0'&&String(card?.id||'').split('').reduce((sum,char)=>sum+char.charCodeAt(0),0)%3===0);
-    audioSystem.play(soft?'cardPlaySoft':'cardPlay',{delay:duration-20});
+    audioSystem.playCardPlacement({soft,delay:duration-20});
   }
   if(!draw)source?.classList.add('motion-source');
   await Promise.all(Array.from({length:count},(_,index)=>animateOneCard({source,destination,card,mode,duration,delay:index*110,index})));

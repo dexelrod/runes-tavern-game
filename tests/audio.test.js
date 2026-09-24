@@ -2,10 +2,10 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { AMBIENCE_TRACKS, AudioSystem, MUSIC_TRACK, SOUND_LIBRARY } from '../dist/platform/audio.js';
+import { AMBIENCE_TRACKS, AudioSystem, CARD_PLAY_VARIATIONS, MUSIC_TRACK, SOUND_LIBRARY } from '../dist/platform/audio.js';
 
 const expectedSounds=[
-  'cardPlay','cardPlaySoft','cardDraw','drawMultiple','shuffle','deckPutDown',
+  'cardPlay','cardPlayVariation1','cardPlayVariation2','cardPlayVariation3','cardPlayVariation4','cardPlayVariation5','cardPlaySoft','cardDraw','drawMultiple','shuffle','deckPutDown',
   'takiOpen','takiClose','colorChange','stopSkip','reverse','plusCard',
   'lastCard','winHand','loseHand'
 ];
@@ -13,7 +13,25 @@ const expectedSounds=[
 test('custom sound library exposes every gameplay cue',()=>{
   assert.deepEqual(Object.keys(SOUND_LIBRARY),expectedSounds);
   assert.equal(AMBIENCE_TRACKS.length,4);
-  assert.equal(new Set([...Object.values(SOUND_LIBRARY).map(sound=>sound.src),...AMBIENCE_TRACKS,MUSIC_TRACK]).size,20);
+  assert.equal(CARD_PLAY_VARIATIONS.length,6);
+  assert.equal(new Set([...Object.values(SOUND_LIBRARY).map(sound=>sound.src),...AMBIENCE_TRACKS,MUSIC_TRACK]).size,25);
+});
+
+test('card placement rotates physical variations without immediate repeats and preserves soft play',()=>{
+  const NativeAudio=globalThis.Audio,random=Math.random;
+  globalThis.Audio=class{
+    constructor(src){this.src=src;this.paused=true;this.ended=false;this.currentTime=0;this.volume=1;this.playbackRate=1;}
+    play(){this.paused=false;return Promise.resolve();}
+    pause(){this.paused=true;}
+  };
+  Math.random=()=>0;
+  try{
+    const system=new AudioSystem();
+    const first=system.playCardPlacement(),second=system.playCardPlacement(),soft=system.playCardPlacement({soft:true});
+    assert.ok(first&&second&&soft);
+    assert.notEqual(first.src,second.src);
+    assert.equal(soft.src,SOUND_LIBRARY.cardPlaySoft.src);
+  }finally{globalThis.Audio=NativeAudio;Math.random=random;}
 });
 
 test('every registered sound is a readable WAV asset',()=>{
