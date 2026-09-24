@@ -128,8 +128,9 @@ export class AudioSystem{
   stopAll(){
     for(const timer of this.timers)clearTimeout(timer);this.timers.clear();
     for(const pool of this.pools.values())for(const node of pool){node.pause();node.currentTime=0;}
-    this.stopAmbience();
-    this.stopMusic(true);
+    cancelAnimationFrame(this.ambienceFrame);cancelAnimationFrame(this.musicFrame);
+    if(this.ambienceNode){this.ambienceNode.pause();this.ambienceNode.currentTime=0;this.ambienceNode=null;}
+    if(this.musicNode){this.musicNode.pause();this.musicNode.currentTime=0;}
   }
 }
 

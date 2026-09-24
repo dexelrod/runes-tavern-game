@@ -48,6 +48,13 @@ function drawCards(state, playerId, amount) { const p = playerById(state, player
 function cardFromHand(state, playerId, cardId) { return playerById(state, playerId)?.hand.find(c => c.id === cardId); }
 
 function baseLegal(state, card) {
+  // A King grants one unrestricted play, but once that play opens a TAKI the
+  // sequence itself is still restricted to the TAKI's colour.
+  if (state.taki?.open) {
+    if (card.type === TYPES.KING || card.type === TYPES.CHANGE_COLOR) return true;
+    if (card.type === TYPES.SUPER_TAKI) return true;
+    return card.color === state.taki.color;
+  }
   if (state.freePlay) return true;
   // A king can never close a turn. If a defensive fallback ever leaves it on
   // top, the following player still receives the promised completely free play.
@@ -55,12 +62,6 @@ function baseLegal(state, card) {
   if (state.activePenalty?.kind === 'plus2') return card.type === TYPES.PLUS2 || card.type === TYPES.KING;
   if (card.type === TYPES.KING) return true;
   if (card.type === TYPES.CHANGE_COLOR || card.type === TYPES.SUPER_TAKI) return true;
-  if (state.taki?.open) {
-    if (card.type === TYPES.KING || card.type === TYPES.CHANGE_COLOR) return true;
-    if (card.type === TYPES.SUPER_TAKI) return true;
-    if (card.color === state.taki.color) return true;
-    return false;
-  }
   if (state.activeColor && card.color === state.activeColor) return true;
   return cardMatches(card, effectiveTopCard(state));
 }

@@ -75,8 +75,10 @@ async function animateCardMovement(action){
   const player=state.players.find(item=>item.id===action.playerId);if(!player)return;
   const draw=action.type===ACTIONS.DRAW,card=draw?null:player.hand.find(item=>item.id===action.cardId);
   const source=draw?root.querySelector('[data-draw-anchor]'):(action.playerId==='p0'&&showAllCards?root.querySelector(`.all-cards-grid [data-card-id="${action.cardId}"]`):handAnchor(action.playerId)),destination=draw?handAnchor(action.playerId):root.querySelector('[data-discard-anchor]');
-  const mode=draw?'back':action.playerId==='p0'?'front':'flip';
-  const count=draw?Math.min(state.activePenalty?.amount||1,8):1,duration=draw?560:620;
+  // Opponent cards stay face-down in flight and are revealed by the discard
+  // pile after landing. This avoids mobile 3D clipping and face flashes.
+  const mode=draw||action.playerId!=='p0'?'back':'front';
+  const count=draw?Math.min(state.activePenalty?.amount||1,8):1,duration=draw?500:action.playerId==='p0'?500:390;
   audioSystem.setSettings(settings);
   if(draw&&state.drawPile.length===0&&state.discardPile.length>1){
     source?.classList.add('deck-settling');audioSystem.play('shuffle');
@@ -238,4 +240,10 @@ function bind(){
 if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 function registerWebMCP(){const context=document.modelContext;if(!context?.registerTool)return;try{void Promise.resolve(context.registerTool({name:'read_game_state',title:'Read Elder Taki game',description:'Read the current Elder Taki match status.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true,untrustedContentHint:false},execute(){return session?{mode:session.mode,phase:session.phase,round:session.round,totalRounds:session.totalRounds,suddenDeath:session.suddenDeath,scores:session.scores,currentPlayer:currentPlayer(state).name,activeColor:state.activeColor,humanCardCount:state.players[0].hand.length,opponents:state.players.slice(1).map(p=>({name:p.name,cardCount:p.hand.length}))}:{phase:'home'};}})).catch(()=>{});}catch{}}
 root.addEventListener('pointerdown',()=>audioSystem.prime(),{once:true,capture:true});
+const suspendAudio=()=>audioSystem.stopAll();
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){suspendAudio();return;}
+  if(view==='game'&&settings.sound){if(settings.ambience)audioSystem.startAmbience();if(settings.music)audioSystem.startMusic();}
+});
+window.addEventListener('pagehide',suspendAudio);
 registerWebMCP();render();
