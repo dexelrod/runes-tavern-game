@@ -48,7 +48,11 @@ function submit(action){
 }
 function cardMotionProxy(card,mode){
   const proxy=document.createElement('div');proxy.className=`travelling-card ${mode}`;proxy.setAttribute('aria-hidden','true');
-  proxy.innerHTML=`<div class="travelling-inner"><div class="travelling-back"><span>${sigilHTML()}</span></div><div class="travelling-front">${card?cardHTML(card,{activeColor:state.activeColor}):''}</div></div>`;
+  // Face-down travel contains no hidden front at all. Some mobile WebKit
+  // builds briefly paint a backface during compositing, which exposed and
+  // clipped the bot's card even with backface-visibility enabled.
+  const front=mode==='front'?`<div class="travelling-front">${card?cardHTML(card,{activeColor:state.activeColor}):''}</div>`:'';
+  proxy.innerHTML=`<div class="travelling-inner"><div class="travelling-back"><span>${sigilHTML()}</span></div>${front}</div>`;
   document.body.append(proxy);return proxy;
 }
 function handAnchor(playerId){
