@@ -55,14 +55,14 @@ function animateOneCard({source,destination,card,mode,duration,delay=0,index=0})
   const from=source.getBoundingClientRect(),to=destination.getBoundingClientRect(),playing=mode!=='back';
   const startW=Math.max(30,Math.min(104,from.width||52)),startH=startW*1.4,endW=Math.max(34,Math.min(playing?104:58,to.width||52)),endH=endW*1.4;
   const sx=from.left+from.width/2-startW/2,sy=from.top+from.height/2-startH/2,ex=to.left+to.width/2-endW/2,ey=to.top+to.height/2-endH/2;
-  const dx=ex-sx,dy=ey-sy,arc=Math.max(42,Math.min(95,Math.hypot(dx,dy)*.16));
+  const dx=ex-sx,dy=ey-sy,bend=Math.max(12,Math.min(30,Math.hypot(dx,dy)*.055)),ratio=endW/startW;
   const proxy=cardMotionProxy(card,mode);Object.assign(proxy.style,{left:`${sx}px`,top:`${sy}px`,width:`${startW}px`,height:`${startH}px`});
   const frames=[
-    {transform:`translate3d(0,0,0) rotate(${playing?-5:3+index*2}deg) scale(.96)`,filter:'brightness(.82)',offset:0},
-    {transform:`translate3d(${dx*.08}px,${dy*.08-18}px,0) rotate(${playing?-10:7}deg) scale(1.08)`,filter:'brightness(1.08)',offset:.14},
-    {transform:`translate3d(${dx*.54}px,${dy*.54-arc}px,0) rotate(${playing?8:-9}deg) scale(${endW/startW*.88})`,filter:'brightness(1.12)',offset:.58},
-    {transform:`translate3d(${dx}px,${dy-4}px,0) rotate(${playing?-2:2}deg) scale(${endW/startW*1.03})`,filter:'brightness(1.04)',offset:.9},
-    {transform:`translate3d(${dx}px,${dy}px,0) rotate(0deg) scale(${endW/startW})`,filter:'brightness(1)',offset:1}
+    {transform:'translate3d(0,0,0) rotate(0deg) scale(1)',filter:'brightness(.92)',offset:0},
+    {transform:`translate3d(${dx*.16}px,${dy*.16-bend*.55}px,0) rotate(${playing?-2:1}deg) scale(${1+(ratio-1)*.12})`,filter:'brightness(1.02)',offset:.16},
+    {transform:`translate3d(${dx*.55}px,${dy*.55-bend}px,0) rotate(${playing?2:-2}deg) scale(${1+(ratio-1)*.54})`,filter:'brightness(1.04)',offset:.55},
+    {transform:`translate3d(${dx*.88}px,${dy*.88-bend*.42}px,0) rotate(${playing?0.7:-0.7}deg) scale(${1+(ratio-1)*.88})`,filter:'brightness(1.02)',offset:.88},
+    {transform:`translate3d(${dx}px,${dy}px,0) rotate(0deg) scale(${ratio})`,filter:'brightness(1)',offset:1}
   ];
   return new Promise(resolve=>{setTimeout(()=>{const animation=proxy.animate(frames,{duration,easing:'cubic-bezier(.2,.72,.18,1)',fill:'forwards'});animation.finished.catch(()=>{}).finally(()=>{proxy.remove();resolve();});},delay);});
 }
@@ -71,9 +71,9 @@ async function animateCardMovement(action){
   const draw=action.type===ACTIONS.DRAW,card=draw?null:player.hand.find(item=>item.id===action.cardId);
   const source=draw?root.querySelector('[data-draw-anchor]'):(action.playerId==='p0'&&showAllCards?root.querySelector(`.all-cards-grid [data-card-id="${action.cardId}"]`):handAnchor(action.playerId)),destination=draw?handAnchor(action.playerId):root.querySelector('[data-discard-anchor]');
   const mode=draw?'back':action.playerId==='p0'?'front':'flip';
-  const count=draw?Math.min(state.activePenalty?.amount||1,8):1,duration=draw?620:690;
+  const count=draw?Math.min(state.activePenalty?.amount||1,8):1,duration=draw?560:620;
   if(!draw)source?.classList.add('motion-source');
-  await Promise.all(Array.from({length:count},(_,index)=>animateOneCard({source,destination,card,mode,duration,delay:index*130,index})));
+  await Promise.all(Array.from({length:count},(_,index)=>animateOneCard({source,destination,card,mode,duration,delay:index*110,index})));
   if(!draw)source?.classList.remove('motion-source');
 }
 function showEvent(kind,playerId=null,amount=null,cardId=null){clearTimeout(eventTimer);eventBanner={kind,playerId,targetId:playerId,amount,cardId};eventTimer=setTimeout(()=>{eventBanner=null;captionLine='';root.querySelector('.direction-engraving')?.classList.remove('lit');root.querySelectorAll('.stop-seal').forEach(node=>node.remove());root.querySelectorAll('.opponent.sealed').forEach(node=>node.classList.remove('sealed'));},settings.reducedMotion?200:900);}
