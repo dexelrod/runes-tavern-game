@@ -37,7 +37,7 @@ function startSession(mode='tavern',saved=null){
   const fresh=()=>mode==='tavern'?createTavernMatch({seed:Date.now()}):mode==='duel'?createDuelSession({seed:Date.now(),opponent:getDuelOpponent(settings.duelOpponent)}):createQuickSession({playerCount:settings.playerCount,seed:Date.now()});
   try{setSession(saved?restoreSession(saved):fresh());}
   catch{clearMatch();setSession(fresh());}
-  view='game';sheet=null;eventBanner=null;audioSystem.setSettings(settings);if(settings.ambience)audioSystem.startAmbience();deckSettling=!saved;render();if(!saved)beginDeckArrival();scheduleGame();
+  view='game';sheet=null;eventBanner=null;audioSystem.setSettings(settings);if(settings.ambience)audioSystem.startAmbience();if(settings.music)audioSystem.startMusic();deckSettling=!saved;render();if(!saved)beginDeckArrival();scheduleGame();
 }
 function commitAction(action){const beforeTurn=state?.turn,beforeTop=state?topCard(state)?.id:null;if(action.type===ACTIONS.DRAW&&action.playerId==='p0')blockAiUntil=Date.now()+500;try{transport.submitAction(action);selected=null;if(action.type===ACTIONS.PLAY)showAllCards=false;}catch(error){const advanced=!!state&&(state.turn!==beforeTurn||topCard(state)?.id!==beforeTop);console.error('Game action or update failed',error);hint=advanced?'':'אי אפשר לשחק את הקלף הזה עכשיו';if(!advanced)feedback('invalid',settings);render();if(advanced)scheduleGame();else setTimeout(()=>{hint='';render();},850);}}
 function submit(action){
@@ -202,16 +202,21 @@ function sheetHTML(){
   if(!sheet)return'';
   if(sheet==='quick')return `<div class="sheet-wrap"><article class="tavern-sheet"><h2>משחק מהיר</h2><p>יד אחת, בלי ניקוד מצטבר.</p><label>מספר שחקנים</label><div class="segmented">${[2,3,4,6,8,10].map(n=>`<button data-players="${n}" class="${settings.playerCount===n?'on':''}">${n}</button>`).join('')}</div><button class="parchment-button primary" data-quick>להתחיל</button><button class="text-link" data-close-sheet>חזרה</button></article></div>`;
   if(sheet==='rules')return `<div class="sheet-wrap"><article class="tavern-sheet rules"><h2>חוקי Elder Taki</h2><p>התאימו צבע, מספר או סמל. אם משכתם קלף, הוא יחכה לתור הבא. הראשון שמרוקן את היד מנצח.</p><h3>TAKI</h3><p>TAKI פותח רצף בצבע אחד. אפשר להמשיך לשחק או ללחוץ על <b>סגירת TAKI</b>. רק הפקודה האחרונה ברצף פועלת; אחרי פלוס חייבים לשחק שוב.</p><h3>מלך וסופר TAKI</h3><p><b>מלך</b> מבטל כל מגבלה, אבל לעולם לא מסיים תור — חייבים להניח אחריו קלף נוסף. אם מלך נשאר על הערימה, השחקן הבא רשאי להניח כל קלף. סופר TAKI אחרי מלך מאפשר לבחור את צבע הרצף.</p><h3>דו־קרב בפונדק</h3><p>חמישה סיבובים מול יריב אחד. המנצח מקבל נקודה על כל קלף שנותר בידי המפסיד. כל חמשת הסיבובים משוחקים; שוויון מוביל ליד אחרונה.</p><h3>משחק פונדק</h3><p>חמישה סיבובים מול שלושה יריבים. המנצח בכל יד מקבל נקודה על כל קלף שנותר בידי האחרים. שוויון אחרי הסיבוב החמישי מוביל ליד מכרעת.</p><h3>הקלפים העתיקים</h3><p><b>עצור</b> מדלג, <b>שנה כיוון</b> הופך את הסדר, <b>פלוס</b> מעניק מהלך נוסף, <b>2+</b> מצטבר ו<b>שנה צבע</b> בוחר בית.</p><button class="parchment-button" data-close-sheet>הבנתי</button></article></div>`;
-  return `<div class="sheet-wrap"><article class="tavern-sheet"><h2>${sheet==='pause'?'המשחק מושהה':'הגדרות'}</h2>${toggleRow('צלילי משחק','sound')}${toggleRow('אווירת פונדק','ambience')}${toggleRow('דברי יריבים','dialogue')}${toggleRow('כתוביות לאירועי משחק','captions')}${toggleRow('הדגשת קלפים שאפשר לשחק','playableHints')}${toggleRow('רטט','haptics')}${toggleRow('צמצום תנועה','reducedMotion')}<button class="parchment-button" data-close-sheet>${sheet==='pause'?'לחזור לשולחן':'סיום'}</button>${sheet==='pause'?'<button class="text-link" data-home>שמירה ויציאה</button>':''}</article></div>`;
+  return `<div class="sheet-wrap"><article class="tavern-sheet"><h2>${sheet==='pause'?'המשחק מושהה':'הגדרות'}</h2>${toggleRow('צלילי משחק','sound')}${toggleRow('מוזיקת רקע','music')}${toggleRow('אווירת פונדק','ambience')}${toggleRow('דברי יריבים','dialogue')}${toggleRow('כתוביות לאירועי משחק','captions')}${toggleRow('הדגשת קלפים שאפשר לשחק','playableHints')}${toggleRow('רטט','haptics')}${toggleRow('צמצום תנועה','reducedMotion')}<button class="parchment-button" data-close-sheet>${sheet==='pause'?'לחזור לשולחן':'סיום'}</button>${sheet==='pause'?'<button class="text-link" data-home>שמירה ויציאה</button>':''}</article></div>`;
 }
 function toggleRow(label,key){return `<div class="toggle-row"><label>${label}</label><button class="iron-switch ${settings[key]?'on':''}" data-toggle="${key}" aria-pressed="${settings[key]}"><i></i></button></div>`;}
 
 function render(){root.innerHTML=view==='home'?homeHTML():view==='duelSelect'?duelSelectHTML():gameHTML();bind();}
-function goHome(){clearTimeout(botTimer);clearTimeout(takiTimer);clearTimeout(eventTimer);clearTimeout(roundEndTimer);clearTimeout(duelIdleTimer);clearTimeout(deckAudioTimer);audioSystem.stopAmbience();view='home';sheet=null;render();}
+function goHome(){clearTimeout(botTimer);clearTimeout(takiTimer);clearTimeout(eventTimer);clearTimeout(roundEndTimer);clearTimeout(duelIdleTimer);clearTimeout(deckAudioTimer);audioSystem.stopAmbience();audioSystem.stopMusic(true);view='home';sheet=null;render();}
 function bind(){
   root.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>{sheet=b.dataset.open;render();});
   root.querySelectorAll('[data-close-sheet]').forEach(b=>b.onclick=()=>{sheet=null;render();});
-  root.querySelectorAll('[data-toggle]').forEach(b=>b.onclick=()=>{settings[b.dataset.toggle]=!settings[b.dataset.toggle];saveSettings(settings);audioSystem.setSettings(settings);if(b.dataset.toggle==='ambience'||b.dataset.toggle==='sound'){if(view==='game'&&settings.sound&&settings.ambience)audioSystem.startAmbience();else audioSystem.stopAmbience();}render();});
+  root.querySelectorAll('[data-toggle]').forEach(b=>b.onclick=()=>{
+    const key=b.dataset.toggle;settings[key]=!settings[key];saveSettings(settings);audioSystem.setSettings(settings);
+    if(key==='ambience'||key==='sound'){if(view==='game'&&settings.sound&&settings.ambience)audioSystem.startAmbience();else audioSystem.stopAmbience();}
+    if(key==='music'||key==='sound'){if(view==='game'&&settings.sound&&settings.music)audioSystem.startMusic();else audioSystem.stopMusic();}
+    render();
+  });
   root.querySelectorAll('[data-players]').forEach(b=>b.onclick=()=>{settings.playerCount=+b.dataset.players;saveSettings(settings);render();});
   root.querySelector('[data-duel]')?.addEventListener('click',()=>{view='duelSelect';sheet=null;render();});
   root.querySelectorAll('[data-opponent]').forEach(b=>b.onclick=()=>{settings.duelOpponent=b.dataset.opponent;saveSettings(settings);clearMatch();startSession('duel');});
