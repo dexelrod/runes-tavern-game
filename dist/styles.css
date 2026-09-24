@@ -112,3 +112,53 @@
 @keyframes table-card-idle-scattered{0%,86%,100%{transform:rotate(21deg) translate(0)}90%{transform:rotate(20deg) translate(-1px,1px)}94%{transform:rotate(22deg) translate(1px,0)}}
 @media(max-height:760px){.elder-home .table-choices{margin-bottom:4px}.elder-home .resume-marker{min-height:53px;padding-block:5px}.elder-home .primary-modes .mode-plaque{min-height:108px;grid-template-rows:58px auto;padding-top:6px}.elder-home .mode-plaque .single-card{width:39px;height:54px}.elder-home .mode-plaque .coin-stack{transform:scale(.91)}.elder-home .duel-invite{min-height:50px}.elder-home .duel-invite:before{top:-12px}.elder-home .duel-invite .duel-cameo{width:41px;height:41px}.elder-home .table-tools{height:26px}}
 @media(max-width:370px){.elder-home .primary-modes{gap:9px}.elder-home .duel-invite{width:92%;grid-template-columns:45px 1fr 18px}.elder-home .mode-copy strong{font-size:17px}}
+/* v31: Quick Play 1v1 reads as a physical duel across the table. */
+.table-shell .rune-menu{width:34px;height:33px;left:10px;padding:0 8px;gap:4px;opacity:.72;border-color:#806442;background:#17201dcc;box-shadow:inset 0 0 0 1px #0b1210,0 4px 8px #0007;transition:opacity .16s,filter .16s}
+.table-shell .rune-menu:hover,.table-shell .rune-menu:focus-visible{opacity:1;filter:brightness(1.12)}
+.table-shell .rune-menu i{opacity:.8}
+
+.quick-one-on-one .quick-opponent{top:-50px;left:50%;width:min(390px,96vw);height:170px;transform:translateX(-50%);text-align:initial;pointer-events:none}
+.quick-opponent:before{inset:-12px 28px 4px;background:radial-gradient(ellipse at 50% 72%,var(--active) 0,transparent 67%)}
+.quick-opponent-name{position:absolute;z-index:12;right:12px;top:7px;min-width:112px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:5px 8px 5px 10px;border-right:2px solid #bd914b;background:linear-gradient(90deg,transparent,#16100bdc 38%);color:#ead6a8;text-shadow:0 2px 3px #000}
+.quick-opponent-name>b{font:600 16px Georgia,"Noto Sans Hebrew",serif}
+.quick-opponent-name>span{display:flex;align-items:baseline;gap:4px;color:#cfb77f}
+.quick-opponent-name bdi{font:700 15px Georgia,serif;color:#efd49a}
+.quick-opponent-name small{font-size:10px}
+.quick-opponent .physical-fan{position:absolute;z-index:9;left:50%;top:50px;width:282px;height:91px;margin:0;transform:translateX(-50%) perspective(280px) rotateX(11deg) rotate(180deg);transform-style:preserve-3d}
+.quick-opponent .physical-fan>i{width:42px;height:61px;border-color:#c79a50;border-radius:4px;box-shadow:inset 0 0 0 4px #421310,0 7px 8px #000b;transform:translateX(calc(var(--offset)*14px)) rotate(calc(var(--offset)*2.65deg));transform-origin:50% 125%;transition:transform .22s cubic-bezier(.2,.8,.2,1),filter .22s}
+.quick-opponent .physical-fan svg{width:22px;height:22px;color:#c9a15a}
+.quick-opponent.active .physical-fan>i{filter:brightness(1.05);box-shadow:inset 0 0 0 4px #421310,0 7px 8px #000b,0 0 9px #c9953a30}
+.quick-opponent.active:after{content:"";position:absolute;z-index:14;top:42px;left:50%;width:8px;height:8px;padding:0;border:1px solid #c79b55;border-radius:1px;background:#a97731;box-shadow:0 0 10px #d8ae5c99;transform:translateX(-50%) rotate(45deg)}
+.quick-opponent .seat-props{z-index:10;left:7px;right:auto;top:45px;width:92px;height:88px;transform:rotate(-3deg)}
+.quick-opponent .beer-prop{width:72px;height:80px;filter:drop-shadow(0 9px 7px #000b)}
+.quick-opponent .coin-prop{right:-1px;bottom:3px;transform:rotate(8deg)}
+.quick-opponent .speech{top:39px;left:74%;max-width:155px;white-space:normal;text-align:center}
+.quick-opponent .stop-seal{top:56px}
+
+.quick-one-on-one .hand-area{transform:translateY(-44px)}
+.quick-one-on-one .hand{height:209px;padding-inline:10px}
+.quick-one-on-one .turn-whisper{position:absolute;z-index:65;left:0;right:0;top:0;height:34px;background:none;pointer-events:none}
+.quick-one-on-one .turn-whisper.turn-cue span{animation:turn-cue-pass 1.65s ease both}
+.quick-one-on-one .turn-whisper span{font-size:14px;padding:4px 13px;border-color:#b68c4b;background:#1a120bd9;box-shadow:0 4px 12px #0008,0 0 12px #d1a24a38}
+@keyframes turn-cue-pass{0%{opacity:0;transform:translateY(8px) scale(.94)}16%,58%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-5px) scale(.98)}}
+
+.human-turn .hand-area{filter:drop-shadow(0 0 8px #d6b15b30)}
+.human-turn .hand-area:before{opacity:.14}
+.card.legal.playable-hint{filter:brightness(1.025);box-shadow:0 5px 0 #2a170e66,0 9px 16px #0008,0 0 0 1px #eac86f78,0 0 8px color-mix(in srgb,var(--active) 58%,transparent)}
+.active-stone{box-shadow:0 0 5px currentColor,inset 2px 2px #fff3}
+
+.direction-arrows{inset:0;width:270px;height:270px;filter:drop-shadow(0 0 2px #73bdd066);opacity:.72;mix-blend-mode:screen}
+.direction-arrows path{fill:none;stroke:#71aebc;stroke-width:4.2;stroke-linecap:round;stroke-linejoin:round;opacity:.68}
+.direction-arrows .rune-route{stroke-dasharray:15 4 27 6 9 4}
+.direction-arrows .rune-head{stroke-width:5.2;opacity:.8}
+.direction-engraving.counter .direction-arrows{filter:drop-shadow(0 0 2px #aa93c666)}
+.direction-engraving.counter .direction-arrows path{stroke:#9d8abb}
+.direction-engraving.lit .direction-arrows{animation:cosmic-direction .7s ease}
+
+.deck-count{right:-16px;bottom:-12px;width:39px;height:31px;border-radius:46% 54% 48% 52%;transform:rotate(-8deg);background:radial-gradient(ellipse at 35% 27%,#d8af60,#8d5f2a 68%,#422a13);border:1px solid #4d3017;color:#28180c;font:700 13px Georgia,serif;text-shadow:0 1px #e0c27b;box-shadow:inset 0 0 0 3px #b57f36,inset 0 0 0 4px #5b3718,0 5px 7px #0009}
+.deck-count:before{content:"";position:absolute;inset:5px;border:1px dotted #60401f;border-radius:50%;opacity:.8}
+.deck-count bdi{position:relative;z-index:2;transform:rotate(8deg)}
+
+@media(max-height:740px){.quick-one-on-one .quick-opponent{top:-43px;scale:.9}.quick-one-on-one .hand-area{transform:translateY(-25px)}.quick-one-on-one .hand{height:184px}.quick-opponent .seat-props{scale:.88}.quick-one-on-one .center,.quick-one-on-one .direction-engraving{top:58%}}
+@media(max-width:370px){.quick-opponent-name{right:7px}.quick-opponent .physical-fan>i{transform:translateX(calc(var(--offset)*12px)) rotate(calc(var(--offset)*2.5deg))}.quick-opponent .seat-props{left:0}.quick-one-on-one .hand-area{transform:translateY(-32px)}}
+@media(prefers-reduced-motion:reduce){.quick-one-on-one .turn-whisper.turn-cue span{animation:turn-cue-static .65s ease both}@keyframes turn-cue-static{0%,100%{opacity:0}12%,75%{opacity:1}}}

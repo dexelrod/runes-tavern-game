@@ -30,9 +30,11 @@ export function cardHTML(card,{small=false,hidden=false,legal=true,highlight=tru
   const inherited=card.type===TYPES.SUPER_TAKI&&card.inheritedColor;
   const chosen=(card.type===TYPES.CHANGE_COLOR&&activeColor)?activeColor:null;
   const color=inherited||chosen||(card.color===WILD?'wild':card.color);
-  const tilt=(index-(total-1)/2)*3.1;
-  const rise=Math.abs(index-(total-1)/2)*2.2;
-  const overlap=Math.max(-91,-57-Math.max(0,total-6)*6);
+  const spread=Math.max(1.55,3.1-Math.max(0,total-7)*.24);
+  const tilt=(index-(total-1)/2)*spread;
+  const rise=Math.abs(index-(total-1)/2)*Math.max(1.35,2.2-Math.max(0,total-8)*.1);
+  const handWidth=Math.min(432,Math.max(304,(globalThis.innerWidth||390)-40));
+  const overlap=total<2?0:Math.max(-84,(handWidth-102)/(total-1)-102);
   const faceMark=card.type===TYPES.NUMBER?String(card.value):card.type===TYPES.PLUS2?'+2':'';
   const spokenColor={red:'אדום',blue:'כחול',green:'ירוק',yellow:'צהוב'}[color]||'';
   const spokenLabel=card.type===TYPES.NUMBER?`${card.value} ${spokenColor}`:cardLabel(card);
