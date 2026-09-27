@@ -37,3 +37,16 @@ test('scene uses independent world, seat and viewport coordinate layers',()=>{
   assert.match(css,/table-wood-v37\.jpg/);
   assert.doesNotMatch(css,/elder-tavern-table\.jpg/);
 });
+
+test('landscape camera crops the table as furniture instead of framing a board',()=>{
+  assert.match(css,/camera-over-furniture composition/);
+  assert.match(css,/\.table-body\{\s*border:0;/);
+  assert.match(css,/--table-left:-12%;--table-right:-12%;--table-top:18%;--table-bottom:-72%/);
+  assert.match(css,/\.scene-home\{--table-left:-10%;--table-right:-10%;--table-top:32%;--table-bottom:-58%\}/);
+});
+
+test('duel character is composited behind a physical far rim',()=>{
+  assert.match(app,/class="duel-depth-rim"/);
+  assert.match(css,/\.duel-depth-rim\{/);
+  assert.match(css,/\.duel-presence \.duel-sprite\{[\s\S]*mask-image:radial-gradient/);
+});
