@@ -50,3 +50,15 @@ test('duel character is composited behind a physical far rim',()=>{
   assert.match(css,/\.duel-depth-rim\{/);
   assert.match(css,/\.duel-presence \.duel-sprite\{[\s\S]*mask-image:radial-gradient/);
 });
+
+test('compact art direction stays layered, deterministic, and safe-area aware',()=>{
+  for(const variable of ['--scene-density','--engraving-opacity','--ambient-light-strength','--seat-spacing','--prop-scale','--mobile-hand-zone'])assert.ok(css.includes(variable),`missing ${variable}`);
+  assert.match(css,/@media \(max-width:599px\)/);
+  assert.match(css,/height:100dvh/);
+  assert.match(css,/min-height:100svh/);
+  assert.match(css,/env\(safe-area-inset-bottom\)/);
+  assert.match(app,/class="seat-trinket"/);
+  assert.match(css,/\.seat-props\.bard \.seat-trinket/);
+  assert.match(css,/\.seat-props\.mercenary \.seat-trinket/);
+  assert.match(css,/\.seat-props\.scholar \.seat-trinket/);
+});
