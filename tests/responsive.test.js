@@ -69,7 +69,18 @@ test('finish pass shares one physical depth language without restoring turn narr
   }
   assert.match(css,/\.opponent\.active:after,\.duel-opponent\.active:after\{content:none\}/);
   assert.match(css,/\.hand \.card\.selected\{[^}]*scale\(1\.015\)/);
-  assert.match(app,/class="resume-game-token"/);
+  assert.match(app,/cardBackStackHTML\('resume-game-token'\)/);
+});
+
+test('environmental refinement uses real cards, seat-local prop stories, and an opaque menu mug',()=>{
+  assert.match(app,/cardBackStackHTML\('mode-token menu-card-stack quick-card-stack'\)/);
+  assert.match(app,/cardBackStackHTML\('abandoned-cards'\)/);
+  assert.match(css,/\.card\.card-back\{background:var\(--oxblood\)/);
+  assert.match(css,/\.scene-home \.world-mug\{[^}]*opacity:1/);
+  assert.match(css,/\.scene-home \.world-coins\{display:none!important\}/);
+  assert.match(css,/\.seat-props\.bard \.beer-prop,\.seat-props\.scholar \.beer-prop\{display:none\}/);
+  assert.match(css,/\.seat-left \.seat-props\{left:-47px/);
+  assert.match(css,/radial-gradient\(circle at 8px 50%/);
 });
 
 test('mode-specific framing refines mobile and portrait tablet compositions',()=>{

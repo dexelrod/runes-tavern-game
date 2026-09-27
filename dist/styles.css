@@ -596,3 +596,104 @@
 }
 
 .reduced-motion .card,.reduced-motion .mode-plaque,.reduced-motion .resume-marker,.reduced-motion .duel-invite,.reduced-motion .seat-marker{transition-duration:.01ms!important}
+
+/* v41: environmental objects own table territory; they are not adornments
+   glued to card hands. Menu miniatures reuse the live card-back component. */
+.menu-card-stack,.resume-game-token,.abandoned-cards{position:relative;display:block;pointer-events:none}
+.card.card-back{background:var(--oxblood) repeating-linear-gradient(45deg,transparent 0 10px,#d3a15333 10px 12px)}
+.menu-card-stack{width:76px;height:68px}
+.menu-card-stack .card,.resume-game-token .card,.abandoned-cards .card{
+  position:absolute;
+  margin:0;
+  padding:0;
+  min-width:0;
+  transform-origin:center;
+  transition:none;
+}
+.menu-card-stack .card{top:1px;left:50%;width:43px;height:61px;border-radius:4px}
+.menu-card-stack .card:first-child{transform:translateX(-68%) rotate(-7deg)!important}
+.menu-card-stack .card:last-child{transform:translateX(-32%) rotate(6deg)!important}
+.menu-card-stack .back-sigil{inset:10px 7px;border-radius:3px}.menu-card-stack .back-sigil svg{width:24px;height:24px}
+
+.resume-game-token{position:absolute;z-index:2;right:12px;top:50%;width:34px;height:42px;transform:translateY(-50%) rotate(1deg);background:none;border:0;box-shadow:none}
+.resume-game-token:before{content:none}
+.resume-game-token .card{top:2px;left:5px;width:25px;height:35px;border-radius:3px;box-shadow:inset 0 0 0 2px #421310,0 3px 4px #0008}
+.resume-game-token .card:first-child{transform:translate(-4px,3px) rotate(-8deg)!important}
+.resume-game-token .card:last-child{transform:translate(3px,0) rotate(6deg)!important}
+.resume-game-token .card:before{inset:3px}.resume-game-token .card:after{display:none}
+.resume-game-token .back-sigil{inset:7px 5px;border-radius:2px}.resume-game-token .back-sigil svg{width:13px;height:13px}
+
+.scene-home .world-coins{display:none!important}
+.scene-home .world-mug{display:block;right:-42px;top:29%;width:112px;height:142px;opacity:1;transform:rotate(-7deg);filter:drop-shadow(0 13px 9px #000c)}
+.scene-home .loose-coins{right:5%;top:43%;width:68px;height:34px;opacity:.88;transform:rotate(7deg)}
+.scene-home .cup-ring{left:7%;top:43%;opacity:.66}
+.scene-home .table-stain{position:absolute;left:28%;top:36%;width:58px;height:25px;border-radius:50%;background:radial-gradient(ellipse,#2b12072b,transparent 69%);transform:rotate(-13deg);mix-blend-mode:multiply}
+.abandoned-cards{position:absolute;z-index:5;left:9%;top:34%;width:82px;height:72px;transform:rotate(-4deg)}
+.abandoned-cards .card{top:4px;left:10px;width:39px;height:55px;border-radius:4px;box-shadow:inset 0 0 0 3px #421310,0 5px 7px #0008}
+.abandoned-cards .card:first-child{transform:translate(0,5px) rotate(-12deg)!important}
+.abandoned-cards .card:last-child{transform:translate(25px,0) rotate(8deg)!important}
+.abandoned-cards .card:before{inset:4px}.abandoned-cards .card:after{display:none}
+.abandoned-cards .back-sigil{inset:10px 7px;border-radius:3px}.abandoned-cards .back-sigil svg{width:22px;height:22px}
+.scene-home .table-engraving{opacity:.17;filter:drop-shadow(0 2px #bd7b3f4f)}
+
+.seat-props{width:104px;height:88px;filter:none}
+.seat-props:after{left:7px;right:9px;bottom:1px;height:11px;background:#070403a6;filter:blur(5px)}
+.seat-props .beer-prop{width:76px;height:82px;filter:drop-shadow(0 7px 4px #000b)}
+.seat-props .coin-prop{right:1px;bottom:4px;width:42px;height:25px}
+.seat-props.hunter .coin-prop b:nth-child(3),.seat-props.mercenary .coin-prop b:nth-child(n+2){display:none}
+.seat-props.bard .beer-prop,.seat-props.scholar .beer-prop{display:none}
+.seat-props.bard .coin-prop b:nth-child(n+2),.seat-props.scholar .coin-prop b:nth-child(n+2){display:none}
+.seat-trinket{display:none;position:absolute;z-index:3;box-shadow:0 4px 4px #0009,inset 0 1px #ffffff18}
+.seat-props.bard .seat-trinket{display:block;left:12px;top:31px;width:38px;height:20px;border:1px solid #64401f;border-radius:58% 42% 51% 49%;background:linear-gradient(145deg,#b48242,#6e3f1d);transform:rotate(13deg)}
+.seat-props.mercenary .seat-trinket{display:block;right:9px;top:13px;width:19px;height:19px;border:2px solid #77736a;border-radius:50%;background:#302c28;transform:rotate(-8deg)}
+.seat-props.scholar .seat-trinket{display:block;left:7px;top:24px;width:42px;height:30px;border:1px solid #72552e;border-radius:2px;background:linear-gradient(110deg,#b99b68,#dbc895);transform:rotate(-8deg)}
+
+.turn-whisper span{
+  min-width:92px;
+  padding:4px 14px 5px;
+  border:1px solid #a27a43;
+  border-radius:2px 3px 1px 3px;
+  background:
+    radial-gradient(circle at 8px 50%,#d6b36a 0 1px,#5b3d1d 1.5px 2.5px,transparent 3px),
+    radial-gradient(circle at calc(100% - 8px) 50%,#d6b36a 0 1px,#5b3d1d 1.5px 2.5px,transparent 3px),
+    repeating-linear-gradient(0deg,transparent 0 5px,#d9a75c08 5px 6px),
+    linear-gradient(176deg,#4b2d19,#2d1a10 52%,#1a0e09);
+  color:#f1d69a;
+  box-shadow:inset 0 1px #e0b66747,inset 0 0 0 2px #1409057d,0 3px 0 #0b0503,0 7px 8px #0008;
+  text-shadow:0 1px #160b06;
+  transform:perspective(140px) rotateX(5deg) rotate(-.65deg);
+}
+.turn-whisper span:after{left:11%;right:11%;bottom:-9px;height:9px;background:radial-gradient(ellipse,#0804038c,transparent 70%)}
+.human-turn .turn-whisper{color:inherit;text-shadow:none}
+
+@media (max-width:599px){
+  .scene-home .world-mug{right:-57px;top:10.5%;width:116px;height:146px;opacity:1;transform:rotate(-8deg)}
+  .scene-home .loose-coins{right:3%;top:25.5%;scale:1;opacity:.9}
+  .scene-home .cup-ring{left:3%;top:31%;width:70px;height:70px;opacity:.68}
+  .scene-home .table-stain{left:29%;top:24%;opacity:.7}
+  .scene-home .table-engraving{top:30.5dvh;width:min(82vw,340px);height:min(31dvh,255px);opacity:.52;filter:drop-shadow(0 2px #d69a5c82)}
+  .abandoned-cards{left:7%;top:23.5%;scale:.94}
+
+  .seat-props{scale:1.08}
+  .seat-left .seat-props{left:-47px;right:auto;top:66px;transform:rotate(-5deg)}
+  .seat-right .seat-props{right:-47px;left:auto;top:64px;transform:rotate(5deg)}
+  .seat-left .seat-props.bard,.seat-left .seat-props.scholar{left:-10px}
+  .seat-right .seat-props.bard,.seat-right .seat-props.scholar{right:-10px}
+  .seat-top .seat-props{left:108px;right:auto;top:48px;scale:1.05;transform:rotate(3deg)}
+  .quick-opponent .seat-props{left:-22px;right:auto;top:43px;scale:1.12;transform:rotate(-4deg)}
+  .quick-opponent .seat-props.bard,.quick-opponent .seat-props.scholar{left:14px}
+  .turn-whisper span{min-width:88px;padding:4px 12px 5px;font-size:13px}
+}
+
+@media (min-width:600px) and (orientation:portrait){
+  .scene-home .table-engraving{opacity:.25}
+  .scene-home .world-mug{right:-48px;top:23%;width:128px;height:160px}
+  .abandoned-cards{left:8%;top:39%;scale:1.12}.scene-home .cup-ring{left:7%;top:47%}.scene-home .loose-coins{right:7%;top:40%}
+}
+
+@media (min-width:760px) and (min-aspect-ratio:11/10){
+  .seat-left .seat-props,.seat-far-left .seat-props{left:112px;right:auto;top:54px;scale:1.06}
+  .seat-right .seat-props,.seat-far-right .seat-props{right:112px;left:auto;top:54px;scale:1.06}
+  .seat-top .seat-props{left:132px;right:auto;top:43px;scale:1.08}
+  .quick-opponent .seat-props{left:2%;right:auto;top:53px;scale:1.08}
+}
