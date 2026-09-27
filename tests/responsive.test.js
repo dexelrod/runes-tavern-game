@@ -27,3 +27,13 @@ test('card travel resolves source and destination anchors from the live DOM',()=
   assert.match(app,/data-discard-anchor/);
   assert.match(app,/data-hand-anchor/);
 });
+
+test('scene uses independent world, seat and viewport coordinate layers',()=>{
+  for(const layer of ['tavern-environment','table-body','table-surface','table-engraving','scene-lighting','environment-props','seat-layer','gameplay-anchors','viewport-space']){
+    assert.ok(app.includes(layer)||css.includes(layer),`missing scene layer ${layer}`);
+  }
+  for(const space of ['data-space="world"','data-space="seat"','data-space="viewport"'])assert.ok(app.includes(space),`missing ${space}`);
+  assert.match(css,/tavern-environment-v37\.jpg/);
+  assert.match(css,/table-wood-v37\.jpg/);
+  assert.doesNotMatch(css,/elder-tavern-table\.jpg/);
+});
