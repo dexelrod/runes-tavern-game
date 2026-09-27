@@ -520,6 +520,22 @@
   .duel-table .center,.duel-table .direction-engraving,.duel-table .direction-arrows{top:61%}.duel-table .status-stack{top:-58px}
 }
 
+/* Portrait tablets keep the same menu world, but compose the choices through
+   the middle of the table instead of pinning them to the near edge. */
+@media (min-width:600px) and (max-width:899px) and (orientation:portrait){
+  .elder-home .table-choices{
+    margin-top:clamp(190px,25dvh,260px);
+    margin-bottom:auto;
+  }
+  .scene-home .table-engraving{
+    top:31%;
+    width:68%;
+    height:36%;
+    opacity:.19;
+    filter:drop-shadow(0 2px #c8894a4d);
+  }
+}
+
 @media (max-width:599px) and (max-height:700px){
   .elder-home .home-title{margin-top:14px}.elder-home .home-title .title-sigil{width:29px;height:29px}.elder-home .home-title h1{font-size:34px}
   .elder-home .table-choices{margin-top:clamp(44px,8dvh,62px);gap:7px}.elder-home .primary-modes .mode-plaque{min-height:102px;grid-template-rows:53px auto;padding-top:5px}.elder-home .mode-plaque .single-card{width:36px;height:50px}.elder-home .mode-plaque .coin-stack{transform:scale(.85)}.elder-home .duel-invite{min-height:49px}.elder-home .table-tools{height:26px}
@@ -531,3 +547,52 @@
   .elder-home .home-scene{padding-inline:12px}.elder-home .table-choices{gap:7px}.elder-home .primary-modes{gap:7px}.elder-home .mode-copy strong{font-size:16px}.elder-home .duel-invite{width:94%}
   .opponent{width:118px}.seat-marker>span{font-size:11px}.seat-left,.seat-far-left{left:2px}.seat-right,.seat-far-right{right:2px}.center{gap:19px}.score-slate{width:84px}
 }
+
+/* v40: finish-pass material and interaction tokens. These shadows all assume
+   the same warm light direction so cards, props and plaques share one room. */
+:root{
+  --physical-shadow-card:0 3px 0 #24120873,0 8px 13px #0008;
+  --physical-shadow-raised:0 5px 0 #24120866,0 14px 22px #000a;
+  --physical-shadow-prop:drop-shadow(0 5px 3px #000a);
+  --physical-shadow-plaque:inset 0 1px #d4aa6230,inset 0 0 0 2px #090d0c70,0 3px 0 #0905039c,0 8px 13px #0008;
+}
+
+.card{box-shadow:var(--physical-shadow-card)}
+.hand .card.selected{transform:translateY(-30px) rotate(0) scale(1.015);box-shadow:var(--physical-shadow-raised);z-index:70}
+.card.legal.playable-hint{filter:brightness(1.025);box-shadow:var(--physical-shadow-card),0 0 0 1px #e4bc6970}
+.card.quiet{filter:saturate(.76) brightness(.9);opacity:.9}
+.beer-prop,.duel-mug,.world-mug{filter:var(--physical-shadow-prop)}
+.mode-plaque,.resume-marker,.duel-invite{box-shadow:var(--physical-shadow-plaque)}
+.mode-plaque,.resume-marker,.duel-invite,.seat-marker{transition:transform .16s ease-out,filter .16s ease-out,box-shadow .16s ease-out}
+.mode-plaque:active,.resume-marker:active,.duel-invite:active{transform:translateY(2px) rotate(0);box-shadow:inset 0 1px #d4aa6224,inset 0 0 0 2px #090d0c70,0 1px 0 #090503a8,0 4px 8px #0008}
+@media (hover:hover){
+  .hand .card.legal:hover{transform:translateY(-29px) rotate(0) scale(1.012);box-shadow:var(--physical-shadow-raised);filter:brightness(1.045);z-index:70}
+  .mode-plaque:hover,.resume-marker:hover,.duel-invite:hover{filter:brightness(1.08)}
+}
+
+.resume-game-token{position:absolute;z-index:2;right:12px;top:50%;width:23px;height:32px;display:grid;place-items:center;transform:translateY(-50%) rotate(5deg);color:#c99b52;border:1px solid #b28445;border-radius:3px;background:var(--oxblood) repeating-linear-gradient(45deg,transparent 0 5px,#d1a24d2b 5px 6px);box-shadow:inset 0 0 0 2px #421310,0 4px 5px #0008;pointer-events:none}
+.resume-game-token:before{content:"";position:absolute;inset:1px;z-index:-1;border:1px solid #8e6a3d;border-radius:3px;background:#4e1918;transform:translate(-5px,3px) rotate(-9deg)}
+.resume-game-token svg{width:13px;height:13px}.resume-marker .resume-kicker,.resume-marker>strong,.resume-marker>small{padding-right:32px}
+
+.seat-marker{border-color:#84643e;border-radius:2px 4px 2px 3px;background:linear-gradient(92deg,#151d1bec,#2c1d16e8 58%,#18110de8),repeating-linear-gradient(8deg,transparent 0 8px,#d0a35a08 8px 9px);box-shadow:var(--physical-shadow-plaque)}
+.seat-marker:after{content:"";position:absolute;inset:3px;border-top:1px solid #d0a65a1f;border-bottom:1px solid #08040266;pointer-events:none}
+.opponent.active:after,.duel-opponent.active:after{content:none}
+.opponent.active .seat-marker{border-color:#d2a657;box-shadow:inset 0 1px #f0c9773d,inset 0 0 0 2px #090d0c70,0 3px 0 #0905039c,0 8px 13px #0008,0 0 12px color-mix(in srgb,var(--active) 32%,transparent);transform:translateY(-1px) scale(1.025)}
+.opponent.active .opponent-fan>i{filter:brightness(1.045)}
+.quick-opponent .physical-fan{translate:-50% 0;transform:perspective(280px) rotateX(11deg) rotate(180deg)}
+
+.score-slate{border-color:#80633f;border-radius:2px 1px 3px 1px;background:linear-gradient(105deg,#151d1bdc,#24221cdd 58%,#111715df),repeating-linear-gradient(0deg,transparent 0 7px,#d6b56f08 7px 8px);box-shadow:inset 0 0 8px #0009,inset 0 1px #d0aa6330,0 3px 0 #0805049c,0 7px 10px #0007}
+.score-row+.score-row{border-top:1px solid #b28a4a12}
+
+@media (max-width:599px){
+  .scene-home .table-engraving{top:30.5dvh;width:min(76vw,320px);height:min(27dvh,230px);opacity:.43;filter:drop-shadow(0 2px #d69a5c72)}
+  .scene-home .world-mug{right:-25px;top:17%;opacity:.42;transform:rotate(-9deg)}
+  .scene-home .loose-card{top:43%;opacity:.82}.scene-home .loose-coins{top:52%;opacity:.66}
+  .tavern-table .scene-game{--table-top:4%}
+  .tavern-table .center{scale:.93;transform-origin:center}
+  .turn-whisper span{min-width:84px;padding:3px 11px 4px;font-size:13px;box-shadow:inset 0 1px #d1a35b33,0 2px 0 #08050391,0 5px 8px #0006}
+  .duel-table .duel-speech{left:73%;top:112px;max-width:145px;padding:7px 10px;font-size:13px;line-height:1.2;text-align:right}
+  .duel-table .duel-speech:after{left:30%}
+}
+
+.reduced-motion .card,.reduced-motion .mode-plaque,.reduced-motion .resume-marker,.reduced-motion .duel-invite,.reduced-motion .seat-marker{transition-duration:.01ms!important}

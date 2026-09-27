@@ -62,3 +62,19 @@ test('compact art direction stays layered, deterministic, and safe-area aware',(
   assert.match(css,/\.seat-props\.mercenary \.seat-trinket/);
   assert.match(css,/\.seat-props\.scholar \.seat-trinket/);
 });
+
+test('finish pass shares one physical depth language without restoring turn narration',()=>{
+  for(const token of ['--physical-shadow-card','--physical-shadow-raised','--physical-shadow-prop','--physical-shadow-plaque']){
+    assert.ok(css.includes(token),`missing physical depth token ${token}`);
+  }
+  assert.match(css,/\.opponent\.active:after,\.duel-opponent\.active:after\{content:none\}/);
+  assert.match(css,/\.hand \.card\.selected\{[^}]*scale\(1\.015\)/);
+  assert.match(app,/class="resume-game-token"/);
+});
+
+test('mode-specific framing refines mobile and portrait tablet compositions',()=>{
+  assert.match(app,/session\.mode==='tavern'\?'tavern-table'/);
+  assert.match(css,/\.tavern-table \.center\{scale:\.93/);
+  assert.match(css,/@media \(min-width:600px\) and \(max-width:899px\) and \(orientation:portrait\)/);
+  assert.match(css,/\.quick-opponent \.physical-fan\{translate:-50% 0/);
+});

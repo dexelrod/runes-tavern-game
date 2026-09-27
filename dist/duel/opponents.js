@@ -3,7 +3,7 @@ export const DUEL_REACTIONS=Object.freeze({drink:0,pleased:1,idle:2,annoyed:3,su
 const opponent=(id,name,archetype,descriptor,row,props,aiStyle,cardPlayStyle,dialogue)=>Object.freeze({
   id,name,archetype,descriptor,row,props,aiStyle,cardPlayStyle,
   sprites:Object.freeze(Object.fromEntries(Object.entries(DUEL_REACTIONS).map(([state,column])=>[state,{row,column}]))),
-  dialoguePools:Object.freeze(dialogue),reactionWeights:Object.freeze({pleased:.78,annoyed:.74,surprised:.56,drink:.28}),idleFrequency:26000+row*2200
+  dialoguePools:Object.freeze(dialogue),reactionWeights:Object.freeze({pleased:.76,annoyed:.72,surprised:.54,drink:.24}),idleFrequency:36000+row*2400
 });
 
 export const DUEL_OPPONENTS=Object.freeze([
