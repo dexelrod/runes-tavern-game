@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { AMBIENCE_TRACKS, AudioSystem, CARD_PLAY_VARIATIONS, MUSIC_TRACK, SOUND_LIBRARY } from '../dist/platform/audio.js';
+import { AMBIENCE_TRACKS, AudioSystem, CARD_PLAY_VARIATIONS, MUSIC_TRACKS, SOUND_LIBRARY } from '../dist/platform/audio.js';
 
 const expectedSounds=[
   'cardPlay','cardPlayVariation1','cardPlayVariation2','cardPlayVariation3','cardPlayVariation4','cardPlayVariation5','cardPlaySoft','cardDraw','drawMultiple','shuffle','deckPutDown',
@@ -13,8 +13,9 @@ const expectedSounds=[
 test('custom sound library exposes every gameplay cue',()=>{
   assert.deepEqual(Object.keys(SOUND_LIBRARY),expectedSounds);
   assert.equal(AMBIENCE_TRACKS.length,4);
+  assert.equal(MUSIC_TRACKS.length,2);
   assert.equal(CARD_PLAY_VARIATIONS.length,6);
-  assert.equal(new Set([...Object.values(SOUND_LIBRARY).map(sound=>sound.src),...AMBIENCE_TRACKS,MUSIC_TRACK]).size,25);
+  assert.equal(new Set([...Object.values(SOUND_LIBRARY).map(sound=>sound.src),...AMBIENCE_TRACKS,...MUSIC_TRACKS]).size,26);
 });
 
 test('card placement rotates physical variations without immediate repeats and preserves soft play',()=>{
@@ -34,12 +35,12 @@ test('card placement rotates physical variations without immediate repeats and p
   }finally{globalThis.Audio=NativeAudio;Math.random=random;}
 });
 
-test('every registered sound is a readable WAV asset',()=>{
-  for(const url of [...Object.values(SOUND_LIBRARY).map(sound=>sound.src),...AMBIENCE_TRACKS,MUSIC_TRACK]){
+test('every registered sound is a readable audio asset',()=>{
+  for(const url of [...Object.values(SOUND_LIBRARY).map(sound=>sound.src),...AMBIENCE_TRACKS,...MUSIC_TRACKS]){
     const bytes=fs.readFileSync(fileURLToPath(url));
-    assert.equal(bytes.subarray(0,4).toString(),'RIFF');
-    assert.equal(bytes.subarray(8,12).toString(),'WAVE');
     assert.ok(bytes.length>44);
+    if(url.endsWith('.wav')){assert.equal(bytes.subarray(0,4).toString(),'RIFF');assert.equal(bytes.subarray(8,12).toString(),'WAVE');}
+    else{assert.ok(url.endsWith('.m4a'));assert.equal(bytes.subarray(4,8).toString(),'ftyp');}
   }
 });
 
@@ -62,7 +63,7 @@ test('audio system applies channel volume and rejects accidental rapid duplicate
 });
 
 test('round soundtrack loops on the music channel and can be stopped independently',()=>{
-  const NativeAudio=globalThis.Audio,raf=globalThis.requestAnimationFrame,caf=globalThis.cancelAnimationFrame;
+  const NativeAudio=globalThis.Audio,raf=globalThis.requestAnimationFrame,caf=globalThis.cancelAnimationFrame,random=Math.random;
   globalThis.Audio=class{
     constructor(src){this.src=src;this.paused=true;this.ended=false;this.currentTime=0;this.volume=1;this.loop=false;}
     play(){this.paused=false;return Promise.resolve();}
@@ -70,10 +71,11 @@ test('round soundtrack loops on the music channel and can be stopped independent
   };
   globalThis.requestAnimationFrame=callback=>{callback(performance.now()+5000);return 1;};
   globalThis.cancelAnimationFrame=()=>{};
+  Math.random=()=>.99;
   try{
     const system=new AudioSystem();system.setSettings({sound:true,musicVolume:.24});
-    system.startMusic();
-    assert.equal(system.musicNode.src,MUSIC_TRACK);
+    system.startMusic({newRound:true});
+    assert.equal(system.musicNode.src,MUSIC_TRACKS[1]);
     assert.equal(system.musicNode.loop,true);
     assert.equal(system.musicNode.paused,false);
     assert.equal(system.musicNode.volume,.14);
@@ -83,5 +85,6 @@ test('round soundtrack loops on the music channel and can be stopped independent
     globalThis.Audio=NativeAudio;
     globalThis.requestAnimationFrame=raf;
     globalThis.cancelAnimationFrame=caf;
+    Math.random=random;
   }
 });

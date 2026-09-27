@@ -37,7 +37,7 @@ function startSession(mode='tavern',saved=null){
   const fresh=()=>mode==='tavern'?createTavernMatch({seed:Date.now()}):mode==='duel'?createDuelSession({seed:Date.now(),opponent:getDuelOpponent(settings.duelOpponent)}):createQuickSession({playerCount:settings.playerCount,seed:Date.now()});
   try{setSession(saved?restoreSession(saved):fresh());}
   catch{clearMatch();setSession(fresh());}
-  view='game';sheet=null;eventBanner=null;audioSystem.setSettings(settings);if(settings.ambience)audioSystem.startAmbience();if(settings.music)audioSystem.startMusic();deckSettling=!saved;render();if(!saved)beginDeckArrival();scheduleGame();
+  view='game';sheet=null;eventBanner=null;audioSystem.setSettings(settings);if(settings.ambience)audioSystem.startAmbience();if(settings.music)audioSystem.startMusic({newRound:true});deckSettling=!saved;render();if(!saved)beginDeckArrival();scheduleGame();
 }
 function commitAction(action){const beforeTurn=state?.turn,beforeTop=state?topCard(state)?.id:null;if(action.type===ACTIONS.DRAW&&action.playerId==='p0')blockAiUntil=Date.now()+500;try{transport.submitAction(action);selected=null;if(action.type===ACTIONS.PLAY)showAllCards=false;}catch(error){const advanced=!!state&&(state.turn!==beforeTurn||topCard(state)?.id!==beforeTop);console.error('Game action or update failed',error);hint=advanced?'':'אי אפשר לשחק את הקלף הזה עכשיו';if(!advanced)feedback('invalid',settings);render();if(advanced)scheduleGame();else setTimeout(()=>{hint='';render();},850);}}
 function submit(action){
@@ -255,7 +255,7 @@ function bind(){
   root.querySelector('[data-tavern]')?.addEventListener('click',()=>{clearMatch();startSession('tavern');});
   root.querySelector('[data-quick]')?.addEventListener('click',()=>{clearMatch();startSession('quick');});
   root.querySelector('[data-resume]')?.addEventListener('click',()=>{const saved=loadMatch();startSession(saved?.mode||'tavern',saved);});
-  root.querySelector('[data-next]')?.addEventListener('click',()=>{feedback('shuffle',settings);deckSettling=true;setSession(startNextRound(session));if(session.mode==='duel')setDuelReaction('drink',duelLine('drink'),true);render();beginDeckArrival();scheduleGame();});
+  root.querySelector('[data-next]')?.addEventListener('click',()=>{feedback('shuffle',settings);deckSettling=true;setSession(startNextRound(session));if(session.mode==='duel')setDuelReaction('drink',duelLine('drink'),true);if(settings.music)audioSystem.startMusic({newRound:true});render();beginDeckArrival();scheduleGame();});
   root.querySelector('[data-rematch]')?.addEventListener('click',()=>{clearMatch();startSession('duel');});
   root.querySelector('[data-choose-opponent]')?.addEventListener('click',()=>{clearMatch();view='duelSelect';session=null;state=null;render();});
   root.querySelectorAll('[data-home]').forEach(b=>b.onclick=goHome);

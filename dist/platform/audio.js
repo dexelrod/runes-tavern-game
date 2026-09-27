@@ -25,7 +25,7 @@ export const SOUND_LIBRARY=Object.freeze({
 
 export const CARD_PLAY_VARIATIONS=Object.freeze(['cardPlay','cardPlayVariation1','cardPlayVariation2','cardPlayVariation3','cardPlayVariation4','cardPlayVariation5']);
 export const AMBIENCE_TRACKS=Object.freeze(['tavern-loop-1.wav','tavern-loop-2.wav','tavern-loop-3.wav','tavern-loop-4.wav'].map(asset));
-export const MUSIC_TRACK=asset('elder-taki-round.wav');
+export const MUSIC_TRACKS=Object.freeze(['elder-taki-round.wav','gambit-by-the-hearth.m4a'].map(asset));
 const CHANNEL_DEFAULTS={sfx:.9,ambience:.18,music:.14};
 
 export class AudioSystem{
@@ -40,6 +40,7 @@ export class AudioSystem{
     this.ambienceFrame=0;
     this.ambienceIndex=Math.floor(Math.random()*AMBIENCE_TRACKS.length);
     this.musicNode=null;
+    this.musicIndex=Math.floor(Math.random()*MUSIC_TRACKS.length);
     this.musicFrame=0;
   }
   setSettings(settings={}){
@@ -60,7 +61,7 @@ export class AudioSystem{
       if(this.pools.has(name))continue;
       const node=new Audio(definition.src);node.preload='auto';this.pools.set(name,[node]);
     }
-    if(!this.musicNode){this.musicNode=new Audio(MUSIC_TRACK);this.musicNode.loop=true;this.musicNode.preload='auto';}
+    if(!this.musicNode){this.musicNode=new Audio(MUSIC_TRACKS[this.musicIndex]);this.musicNode.loop=true;this.musicNode.preload='auto';}
   }
   play(name,{delay=0,volume=1,rate=1}={}){
     if(delay>0){
@@ -116,13 +117,26 @@ export class AudioSystem{
     const node=this.ambienceNode;if(!node)return;
     this.fadeAmbience(0,900,()=>{node.pause();node.currentTime=0;this.ambienceNode=null;});
   }
-  startMusic(){
+  startMusic({newRound=false}={}){
     if(!this.enabled||this.channels.music<=0||typeof Audio==='undefined')return;
-    if(!this.musicNode){this.musicNode=new Audio(MUSIC_TRACK);this.musicNode.loop=true;this.musicNode.preload='auto';}
-    if(!this.musicNode.paused){this.fadeMusic(this.channels.music,600);return;}
-    this.musicNode.volume=0;
-    const promise=this.musicNode.play();if(promise?.catch)promise.catch(()=>{});
-    this.fadeMusic(this.channels.music,1800);
+    const begin=()=>{
+      if(!this.enabled||this.channels.music<=0)return;
+      if(newRound||!this.musicNode){
+        this.musicIndex=Math.floor(Math.random()*MUSIC_TRACKS.length);
+        this.musicNode=new Audio(MUSIC_TRACKS[this.musicIndex]);this.musicNode.loop=true;this.musicNode.preload='auto';
+      }
+      if(!this.musicNode.paused){this.fadeMusic(this.channels.music,600);return;}
+      this.musicNode.volume=0;
+      const promise=this.musicNode.play();if(promise?.catch)promise.catch(()=>{});
+      this.fadeMusic(this.channels.music,1800);
+    };
+    if(newRound&&this.musicNode&&!this.musicNode.paused){
+      const previous=this.musicNode;
+      this.fadeMusic(0,450,()=>{previous.pause();previous.currentTime=0;if(this.musicNode===previous)this.musicNode=null;begin();});
+      return;
+    }
+    if(newRound&&this.musicNode){this.musicNode.pause();this.musicNode.currentTime=0;this.musicNode=null;}
+    begin();
   }
   fadeMusic(target,duration,onDone){
     cancelAnimationFrame(this.musicFrame);
