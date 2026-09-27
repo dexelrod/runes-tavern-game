@@ -26,7 +26,8 @@ export function createTavernMatch({seed=Date.now(),roster=TAVERN_ROSTER}={}){
 }
 
 export function createQuickSession({playerCount=3,seed=Date.now()}={}){
-  return {version:MATCH_VERSION,mode:'quick',phase:'round',round:1,totalRounds:1,suddenDeath:false,seed,scores:{},roster:null,results:[],championId:null,game:createInitialState({playerCount,seed})};
+  const supportedCount=Math.max(2,Math.min(6,playerCount));
+  return {version:MATCH_VERSION,mode:'quick',phase:'round',round:1,totalRounds:1,suddenDeath:false,seed,scores:{},roster:null,results:[],championId:null,game:createInitialState({playerCount:supportedCount,seed})};
 }
 
 export function createDuelSession({seed=Date.now(),opponent}={}){
@@ -61,7 +62,7 @@ export function standings(match){return match.roster.map(player=>({...player,sco
 export function serializeSession(match){return JSON.stringify(match);}
 export function restoreSession(json){
   const raw=typeof json==='string'?JSON.parse(json):structuredClone(json);
-  if(raw?.game&&raw.version===MATCH_VERSION){raw.game=restoreState(serializeState(raw.game));return raw;}
+  if(raw?.game&&raw.version===MATCH_VERSION){if(raw.mode==='quick'&&raw.game.players?.length>6)throw new Error('Unsupported quick-game player count');raw.game=restoreState(serializeState(raw.game));return raw;}
   if(raw?.players)return createQuickSessionFromLegacy(raw);
   throw new Error('Unsupported saved session');
 }
