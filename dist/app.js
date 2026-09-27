@@ -240,6 +240,22 @@ function toggleRow(label,key){return `<div class="toggle-row"><label>${label}</l
 
 function render(){root.innerHTML=view==='home'?homeHTML():view==='duelSelect'?duelSelectHTML():gameHTML();bind();}
 function goHome(){flushPendingAction();persist();clearTimeout(botTimer);clearTimeout(takiTimer);clearTimeout(eventTimer);clearTimeout(roundEndTimer);clearTimeout(duelIdleTimer);clearTimeout(deckAudioTimer);audioSystem.stopAmbience();audioSystem.stopMusic(true);view='home';sheet=null;render();}
+function layoutHand(){
+  const hand=root.querySelector('.hand');if(!hand)return;
+  const cards=[...hand.querySelectorAll(':scope > .card')],count=cards.length;if(!count)return;
+  const cardWidth=cards[0].getBoundingClientRect().width||102;
+  const available=Math.max(cardWidth,hand.clientWidth-24);
+  const step=count<2?0:Math.min(cardWidth+18,(available-cardWidth)/(count-1));
+  const overlap=count<2?0:Math.max(-cardWidth*.82,step-cardWidth);
+  const roomy=available>620,spread=Math.max(.72,(roomy?2.35:2.8)-Math.max(0,count-7)*.2);
+  const lift=Math.max(.7,(roomy?1.55:2)-Math.max(0,count-8)*.09);
+  cards.forEach((card,index)=>{
+    const offset=index-(count-1)/2;
+    card.style.setProperty('--overlap',`${overlap.toFixed(2)}px`);
+    card.style.setProperty('--tilt',`${(offset*spread).toFixed(2)}deg`);
+    card.style.setProperty('--rise',`${(Math.abs(offset)*lift).toFixed(2)}px`);
+  });
+}
 function bind(){
   root.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>{sheet=b.dataset.open;render();});
   root.querySelectorAll('[data-close-sheet]').forEach(b=>b.onclick=()=>{sheet=null;render();});
@@ -265,6 +281,7 @@ function bind(){
   root.querySelector('[data-hide-all]')?.addEventListener('click',()=>{showAllCards=false;render();});
   root.querySelectorAll('[data-color]').forEach(b=>b.onclick=()=>submit({type:ACTIONS.CHOOSE_COLOR,playerId:'p0',color:b.dataset.color}));
   root.querySelectorAll('.hand .card.legal,.all-cards-grid .card.legal').forEach(card=>{let startY=0,moved=false;const play=()=>submit({type:ACTIONS.PLAY,playerId:'p0',cardId:card.dataset.cardId});card.onclick=play;card.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();play();}};card.onpointerdown=e=>{startY=e.clientY;moved=false;card.setPointerCapture(e.pointerId);selected=card.dataset.cardId;card.classList.add('selected');};card.onpointermove=e=>{if(!card.hasPointerCapture(e.pointerId))return;const dy=e.clientY-startY;if(Math.abs(dy)>7)moved=true;if(!showAllCards)card.style.transform=`translateY(${Math.min(0,dy)}px) rotate(0deg)`;};card.onpointerup=e=>{const dy=e.clientY-startY,discard=root.querySelector('[data-discard-anchor]')?.getBoundingClientRect(),overDiscard=discard&&e.clientX>=discard.left-28&&e.clientX<=discard.right+28&&e.clientY>=discard.top-36&&e.clientY<=discard.bottom+36;card.releasePointerCapture(e.pointerId);if(!showAllCards&&(dy<-36||overDiscard)){e.preventDefault();play();}else if(moved){e.preventDefault();render();}};});
+  layoutHand();
 }
 
 if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
@@ -276,4 +293,6 @@ document.addEventListener('visibilitychange',()=>{
   if(view==='game'&&settings.sound){if(settings.ambience)audioSystem.startAmbience();if(settings.music)audioSystem.startMusic();}
 });
 window.addEventListener('pagehide',()=>{flushPendingAction();persist();suspendAudio();});
+let handLayoutFrame=0;
+window.addEventListener('resize',()=>{cancelAnimationFrame(handLayoutFrame);handLayoutFrame=requestAnimationFrame(layoutHand);},{passive:true});
 registerWebMCP();render();

@@ -165,3 +165,103 @@
 /* v32: keep side-player identity and card counts inside the visible table. */
 .seat-left,.seat-far-left{left:max(4px,env(safe-area-inset-left))}
 .seat-right,.seat-far-right{right:max(4px,env(safe-area-inset-right))}
+
+/* v36: one adaptive tavern table for compact, roomy portrait and landscape. */
+.app-shell{max-width:none;container-type:inline-size;background-position:center 42%;background-size:cover;touch-action:manipulation}
+.table-shell{overscroll-behavior:none;touch-action:none}
+.table-shell button,.sheet-wrap button,.all-cards button{touch-action:manipulation}
+.hand{width:min(100%,1100px);margin-inline:auto;padding-bottom:max(16px,env(safe-area-inset-bottom))}
+
+@media (hover:none){
+  .hand .card.legal:hover{transform:translateY(var(--rise)) rotate(var(--tilt));filter:none}
+  .hand .card.legal.selected{transform:translateY(-28px) rotate(0);filter:brightness(1.05)}
+}
+
+/* Roomy portrait: the phone composition gets breathing room without becoming
+   a stretched landscape dashboard. */
+@media (min-width:600px) and (orientation:portrait){
+  .app-shell{background-position:center 38%}
+  .game{grid-template-rows:clamp(92px,11vh,112px) minmax(0,1fr) clamp(255px,30vh,310px);padding-inline:clamp(18px,3.5vw,34px)}
+  .hand-area{height:auto}.hand{height:clamp(225px,27vh,280px);padding-inline:clamp(12px,4vw,38px)}
+  .card,.pile{width:110px;height:154px;min-width:110px}.card-art{inset:26px 11px}
+  .center{gap:clamp(30px,6vw,54px);top:56%}.direction-engraving,.direction-arrows{width:320px;height:320px}
+  .opponent{width:150px}.seat-top{top:-46px}.seat-left,.seat-right{top:30%}.seat-left{left:2vw}.seat-right{right:2vw}
+  .seat-far-left{left:1vw;top:3%}.seat-far-right{right:1vw;top:3%}
+  .opponent-fan>i{width:34px;height:49px;transform:translateX(calc(var(--offset)*7px)) rotate(calc(var(--offset)*3deg))}
+  .seat-marker{height:35px}.seat-marker>span{font-size:13px}.seat-props{scale:1.08}
+  .score-slate{right:clamp(7px,2vw,22px);width:126px}.score-row{font-size:11px}
+  .table-choices{width:min(520px,86vw)}.home-title h1{font-size:clamp(46px,8vw,64px)}
+  .elder-home .primary-modes .mode-plaque{min-height:154px}.elder-home .duel-invite{width:76%;min-height:68px}
+  .duel-select>section{width:min(720px,100%)}
+  .duel-opponent{width:min(520px,82vw);top:-82px}.duel-presence{width:390px;height:290px}.duel-fan{top:224px;width:360px}.duel-props{top:211px;left:36px}
+  .duel-table .center,.duel-table .direction-engraving{top:68%}
+}
+
+/* Landscape uses the width as tabletop space: top/left/right seats surround
+   the piles and the player's fan owns the near edge of the table. */
+@media (min-width:760px) and (min-aspect-ratio:11/10){
+  .app-shell{background-position:center 47%}.app-shell:after{background:radial-gradient(ellipse at 50% 53%,transparent 18%,#10060248 68%,#050201d2 100%)}
+  .game{grid-template-rows:clamp(58px,9.5vh,88px) minmax(0,1fr) clamp(170px,27vh,238px);padding:0 clamp(18px,2.4vw,46px) max(4px,env(safe-area-inset-bottom))}
+  .game-head{padding-top:max(9px,env(safe-area-inset-top))}.rune-menu{left:max(16px,env(safe-area-inset-left))}
+  .round-marker{top:max(12px,env(safe-area-inset-top));font-size:12px;padding-inline:16px}
+  .board{isolation:isolate}.center{top:55%;gap:clamp(28px,3vw,48px)}.direction-engraving,.direction-arrows{top:55%;width:clamp(285px,31vh,350px);height:clamp(285px,31vh,350px)}
+  .card,.pile{width:clamp(102px,12.5vh,112px);height:clamp(143px,17.5vh,157px);min-width:clamp(102px,12.5vh,112px)}
+  .hand-area{height:auto}.hand{height:clamp(145px,23vh,205px);max-width:min(1100px,82vw);padding:0 clamp(16px,3vw,46px) max(14px,env(safe-area-inset-bottom))}.turn-whisper{height:30px}
+  .hand .card.legal:hover,.hand .card.selected{transform:translateY(-34px) rotate(0);filter:brightness(1.07);z-index:70}
+  .opponent{width:clamp(142px,14vw,178px)}
+  .seat-top{top:clamp(-54px,-5vh,-36px);left:50%}.seat-left{left:clamp(22px,5vw,92px);top:38%}.seat-right{right:clamp(22px,5vw,92px);top:38%}
+  .seat-far-left{left:clamp(110px,15vw,250px);top:-1%}.seat-far-right{right:clamp(110px,15vw,250px);top:-1%}
+  .seat-marker{height:36px;grid-template-columns:17px 1fr 31px;padding-inline:6px}.seat-marker>span{font-size:13px}.seat-marker>small{font-size:8px}.seat-marker>b{font-size:15px}
+  .opponent-fan{height:64px}.opponent-fan>i{width:35px;height:50px;transform:translateX(calc(var(--offset)*7px)) rotate(calc(var(--offset)*2.8deg))}
+  .seat-left .opponent-fan,.seat-far-left .opponent-fan{transform:perspective(220px) rotateZ(76deg) rotateY(-7deg)}.seat-right .opponent-fan,.seat-far-right .opponent-fan{transform:perspective(220px) rotateZ(-76deg) rotateY(7deg)}
+  .seat-left .seat-props,.seat-far-left .seat-props{left:94px;top:45px}.seat-right .seat-props,.seat-far-right .seat-props{right:94px;top:45px}.seat-top .seat-props{left:118px;top:39px}
+  .score-slate{position:fixed;right:clamp(18px,3.4vw,66px);top:clamp(100px,21vh,185px);width:clamp(126px,11vw,158px);padding:9px 10px;transform:rotate(1.2deg)}.score-row{font-size:12px;line-height:1.65}.score-row bdi{font-size:13px}
+  .status-stack{top:-56px}.table-caption{top:calc(100% + 18px)}
+  .quick-one-on-one .quick-opponent{top:-58px;width:min(720px,72vw);height:190px}.quick-opponent .physical-fan{top:55px;width:390px}.quick-opponent .physical-fan>i{width:45px;height:65px;transform:translateX(calc(var(--offset)*16px)) rotate(calc(var(--offset)*2.35deg))}.quick-opponent-name{right:8%;top:14px}.quick-opponent .seat-props{left:6%;top:52px;scale:1.1}
+  .quick-one-on-one .hand-area{transform:none}.quick-one-on-one .hand{height:clamp(145px,23vh,205px)}
+  .all-cards-grid{max-width:1080px;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:18px 12px}
+  .result-wrap.table-result{inset:clamp(65px,10vh,94px) 0 clamp(170px,27vh,238px)}
+}
+
+/* Duel is deliberately theatrical and asymmetric on a wide table. */
+@media (min-width:900px) and (min-aspect-ratio:11/10){
+  .duel-table .game{grid-template-rows:clamp(58px,9vh,82px) minmax(0,1fr) clamp(175px,27vh,238px)}
+  .duel-opponent{left:43%;top:clamp(-92px,-10vh,-62px);width:min(720px,62vw);height:330px}
+  .duel-presence{left:48%;width:clamp(410px,35vw,520px);height:clamp(300px,38vh,390px)}
+  .duel-name{left:clamp(18px,3vw,50px);top:72px;max-width:150px;padding:8px 11px}.duel-name>b{font-size:20px}.duel-name small,.duel-name span{font-size:12px}
+  .duel-fan{left:51%;top:clamp(218px,29vh,272px);width:430px;height:88px}.duel-fan>i{width:47px;height:68px;transform:translateX(calc(-50% + var(--offset)*14px)) rotate(calc(var(--offset)*2.7deg))}.duel-fan.measured>i{transform:translateX(calc(-50% + var(--offset)*13px)) rotate(calc(var(--offset)*2.2deg))}
+  .duel-props{left:auto;right:3%;top:clamp(205px,27vh,258px);scale:1.18}.duel-speech{left:70%;top:100px;max-width:210px}
+  .duel-opponent.active:after{top:clamp(205px,27vh,258px)}
+  .duel-table .center,.duel-table .direction-engraving{top:62%;left:54%}.duel-table .status-stack{top:-67px}
+  .duel-table .score-slate{right:clamp(22px,3vw,58px);top:clamp(100px,18vh,150px);width:142px}
+}
+
+/* Wide landscape reveals more tavern and spreads objects across the physical
+   table. Sizes stop growing; only the scene continues to open up. */
+@media (min-width:1180px) and (min-aspect-ratio:13/10){
+  .ambient-scene:before,.ambient-scene:after{content:"";position:absolute;z-index:0;pointer-events:none;opacity:.46;filter:blur(.4px) drop-shadow(0 14px 18px #000b)}
+  .ambient-scene:before{left:-30px;bottom:10%;width:170px;height:235px;border-radius:52% 48% 18% 18%;background:radial-gradient(ellipse at 66% 24%,#c9782638 0 5%,transparent 23%),linear-gradient(90deg,#130a06,#3b2114 52%,#120906);box-shadow:inset -13px 0 #08040266}
+  .ambient-scene:after{right:-42px;top:13%;width:190px;height:250px;border-radius:48% 0 0 48%;background:radial-gradient(circle at 35% 40%,#d49a4052 0 3%,transparent 22%),linear-gradient(110deg,#130a06,#3c2214 48%,#0b0503)}
+  .card,.pile{width:112px;height:157px;min-width:112px}.hand{max-width:1120px}
+  .seat-left{left:clamp(64px,8vw,150px)}.seat-right{right:clamp(64px,8vw,150px)}
+  .score-slate{right:clamp(45px,5vw,100px)}
+  .elder-home .home-scene{padding-inline:clamp(50px,7vw,130px)}
+  .home-title{margin-top:clamp(24px,4.5vh,54px)}.home-title h1{font-size:clamp(48px,4.5vw,68px)}
+  .elder-home .table-choices{width:min(1040px,82vw);grid-template-columns:repeat(3,1fr);gap:clamp(16px,2vw,30px);margin-bottom:clamp(22px,4vh,48px);align-items:stretch}
+  .elder-home .resume-marker{grid-column:1/-1;justify-self:center;width:min(650px,70%)}
+  .elder-home .primary-modes{display:contents}.elder-home .primary-modes .mode-plaque,.elder-home .duel-invite{width:100%;min-height:clamp(150px,20vh,190px);border-radius:9px;display:grid;grid-template-columns:1fr;grid-template-rows:88px auto;place-items:center;padding:16px 14px;text-align:center;background:linear-gradient(145deg,#17201de6,#29170fe2)}
+  .elder-home .duel-invite:before{top:8px;right:12px;background:transparent}.elder-home .duel-invite .duel-cameo{width:78px;height:78px}.elder-home .duel-invite .invite-arrow{position:absolute;left:14px;bottom:12px}
+  .elder-home .mode-copy strong,.elder-home .duel-invite strong{font-size:21px}.elder-home .mode-copy small,.elder-home .duel-invite small{font-size:12px}
+  .elder-home .mode-plaque .single-card{width:58px;height:80px}.elder-home .mode-plaque .coin-stack{transform:scale(1.28)}
+  .elder-home .table-tools{grid-column:1/-1;height:38px}
+  .duel-select>section{width:min(1120px,92vw)}.regulars{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.regular{min-height:142px;grid-template-columns:138px 1fr}.regular-copy>b{font-size:24px}
+}
+
+/* Short landscape and split-view windows keep every action reachable. */
+@media (min-width:760px) and (max-height:590px) and (orientation:landscape){
+  .game{grid-template-rows:54px minmax(0,1fr) 154px}.hand{height:128px}.card,.pile{width:92px;height:129px;min-width:92px}.card-art{transform:scale(.86)}
+  .center{top:57%;gap:24px}.direction-engraving,.direction-arrows{top:57%;width:238px;height:238px}.seat-top{top:-48px}.seat-left,.seat-right{top:30%}
+  .opponent{scale:.86}.seat-top{transform:translateX(-50%);scale:.86}.seat-props{scale:.78}.score-slate{top:76px;scale:.88;transform-origin:top right}
+  .duel-opponent{top:-72px;scale:.82}.duel-table .center,.duel-table .direction-engraving{top:65%}.duel-table .hand{height:130px}
+  .quick-one-on-one .quick-opponent{top:-58px;scale:.82}.quick-one-on-one .hand{height:130px}
+}
