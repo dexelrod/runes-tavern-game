@@ -25,4 +25,12 @@ export const DUEL_OPPONENTS=Object.freeze([
 ]);
 
 export function getDuelOpponent(id){return DUEL_OPPONENTS.find(item=>item.id===id)||DUEL_OPPONENTS[0];}
+const DUEL_EN=Object.freeze({
+  ron:{name:'Ron',descriptor:'The Bard · Playful and unpredictable',dialoguePools:{pleased:['I knew you would appreciate that.','Do not smile yet.','Encore?'],annoyed:['Really?','That was personal.','I need another drink.'],surprised:['Bold choice.','Nicely done.','I did not see that coming.'],drink:['To bad decisions.','Another hand, another story.']}},
+  aila:{name:'Aila',descriptor:'The Hunter · Patient and sharp-eyed',dialoguePools:{pleased:['Predictable.','I was waiting for that.','Clean.'],annoyed:['I will remember that.','Not bad. Annoying, but not bad.','Really?'],surprised:['You almost hid that.','Nicely done.','You changed tracks.'],drink:['Quiet. I am thinking.','This is not over.']}},
+  bran:{name:'Bran',descriptor:'The Mercenary · Direct and competitive',dialoguePools:{pleased:['That is how you play a card.','Mine.','Another one.'],annoyed:['I will return the favor.','There is a limit.','Really?'],surprised:['Nicely done.','Not bad.','That changes things.'],drink:['The mug is too light.','We are not finished.']}},
+  sela:{name:'Sela',descriptor:'The Scholar · Dry and calculating',dialoguePools:{pleased:['As calculated.','The obvious conclusion.','Unsurprising.'],annoyed:['I will revise the hypothesis.','It is legal. I checked.','Really?'],surprised:['An interesting deviation.','Bold choice.','Noted.'],drink:['At least the tea is consistent.','One more data point.']}},
+  kesh:{name:'Kesh',descriptor:'The Traveler · Quiet and unpredictable',dialoguePools:{pleased:['So the sign has fallen.','The road grows shorter.','Nicely done.'],annoyed:['The wind has changed.','I will remember that.','Really?'],surprised:['The sign did not show this.','Bold choice.','Interesting.'],drink:['The night is still young.','The fire knows.']}}
+});
+export function localizeDuelOpponent(opponent,language='he'){return language==='en'?{...opponent,...DUEL_EN[opponent.id]}:opponent;}
 export function duelSpriteStyle(opponent,state='idle'){const sprite=opponent.sprites[state]||opponent.sprites.idle;return `--sprite-x:${sprite.column*25}%;--sprite-y:${sprite.row*25}%`;}

@@ -1,6 +1,7 @@
 import { TYPES, TYPE_LABEL, WILD } from '../game-engine/cards.js';
 
-export function cardLabel(card){ return card.type===TYPES.NUMBER ? String(card.value) : TYPE_LABEL[card.type]; }
+const EN_TYPE_LABEL={number:'',stop:'Stop',plus2:'+2',reverse:'Reverse',plus:'+',taki:'TAKI',changeColor:'Change Color',superTaki:'Super TAKI',king:'King'};
+export function cardLabel(card,language='he'){ return card.type===TYPES.NUMBER ? String(card.value) : (language==='en'?EN_TYPE_LABEL:TYPE_LABEL)[card.type]; }
 export function sigilHTML(className='elder-sigil'){
   return `<svg class="${className}" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 7 43 20 57 32 43 44 32 57 21 44 7 32 21 20zM32 7v50M7 32h50M21 20l22 24M43 20 21 44"/><circle cx="32" cy="32" r="8"/><path d="M32 16c7 0 12 3 16 8M48 32c0 7-3 12-8 16M32 48c-7 0-12-3-16-8M16 32c0-7 3-12 8-16"/></svg>`;
 }
@@ -11,7 +12,7 @@ const crest={
   yellow:`<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="12"/><path d="M32 5v11m0 32v11M5 32h11m32 0h11M13 13l8 8m22 22 8 8m0-38-8 8M21 43l-8 8"/></svg>`
 };
 const icon=(name,body)=>`<svg class="special-icon ${name}" viewBox="0 0 80 80" aria-hidden="true">${body}</svg>`;
-function vectorArt(card,activeColor=null){
+function vectorArt(card,activeColor=null,language='he'){
   if(card.type===TYPES.NUMBER)return `<span class="card-crest">${crest[card.color]||''}</span><span class="number-glyph">${card.value}</span>`;
   if(card.type===TYPES.PLUS2)return `<span class="plus-two"><b>+</b><strong>2</strong></span>`;
   if(card.type===TYPES.STOP)return icon('stop-icon','<path d="M25 65 14 42c-3-7 6-11 10-4l3 5V17c0-8 10-8 10 0v19-21c0-8 10-8 10 0v21-17c0-8 10-8 10 0v22-10c0-8 10-8 10 0v16c0 17-11 25-25 25-8 0-13-2-17-7z"/>');
@@ -23,10 +24,10 @@ function vectorArt(card,activeColor=null){
   if(card.type===TYPES.TAKI)return `<span class="taki-banner"><small>ᛏ</small><strong>TAKI</strong><i>${crest[card.color]||''}</i></span>`;
   if(card.type===TYPES.SUPER_TAKI&&card.inheritedColor)return `<span class="chosen-color super-chosen ${card.inheritedColor}" aria-hidden="true">${crest[card.inheritedColor]||''}<b>ᛏ</b></span>`;
   if(card.type===TYPES.SUPER_TAKI)return `<span class="super-banner" aria-hidden="true"><i></i><i></i><i></i><i></i><b>ᛏ</b></span>`;
-  return `<span class="action-symbol">${cardLabel(card)}</span>`;
+  return `<span class="action-symbol">${cardLabel(card,language)}</span>`;
 }
-export function cardHTML(card,{small=false,hidden=false,legal=true,highlight=true,selected=false,incoming=false,arrivalDelay=0,index=0,total=1,activeColor=null}={}){
-  if(hidden) return `<div class="card card-back ${small?'small':''}" aria-label="קלף הפוך"><span class="back-sigil">${sigilHTML()}</span></div>`;
+export function cardHTML(card,{small=false,hidden=false,legal=true,highlight=true,selected=false,incoming=false,arrivalDelay=0,index=0,total=1,activeColor=null,language='he'}={}){
+  if(hidden) return `<div class="card card-back ${small?'small':''}" aria-label="${language==='en'?'Face-down card':'קלף הפוך'}"><span class="back-sigil">${sigilHTML()}</span></div>`;
   const inherited=card.type===TYPES.SUPER_TAKI&&card.inheritedColor;
   const chosen=(card.type===TYPES.CHANGE_COLOR&&activeColor)?activeColor:null;
   const color=inherited||chosen||(card.color===WILD?'wild':card.color);
@@ -37,7 +38,7 @@ export function cardHTML(card,{small=false,hidden=false,legal=true,highlight=tru
   // first-paint values with spacing derived from the actual container width.
   const overlap=total<2?0:-42;
   const faceMark=card.type===TYPES.NUMBER?String(card.value):card.type===TYPES.PLUS2?'+2':'';
-  const spokenColor={red:'אדום',blue:'כחול',green:'ירוק',yellow:'צהוב'}[color]||'';
-  const spokenLabel=card.type===TYPES.NUMBER?`${card.value} ${spokenColor}`:cardLabel(card);
-  return `<button class="card ${color} type-${card.type} ${inherited?'inherited':''} ${chosen?'chosen':''} ${small?'small':''} ${legal?'legal':'quiet'} ${legal&&highlight?'playable-hint':''} ${selected?'selected':''} ${incoming?'incoming':''}" data-card-id="${card.id}" data-hand-index="${index}" data-hand-total="${total}" style="--tilt:${tilt}deg;--rise:${rise}px;--i:${index};--overlap:${overlap}px;--arrive-delay:${arrivalDelay}ms" aria-label="${spokenLabel}" aria-disabled="${!legal}"><span class="corner top">${faceMark}</span><span class="card-art">${vectorArt(card,activeColor)}</span><span class="card-print">${card.type===TYPES.TAKI?'':cardLabel(card)}</span><span class="card-scratch"></span></button>`;
+  const spokenColor=(language==='en'?{red:'red',blue:'blue',green:'green',yellow:'yellow'}:{red:'אדום',blue:'כחול',green:'ירוק',yellow:'צהוב'})[color]||'';
+  const spokenLabel=card.type===TYPES.NUMBER?`${card.value} ${spokenColor}`:cardLabel(card,language);
+  return `<button class="card ${color} type-${card.type} ${inherited?'inherited':''} ${chosen?'chosen':''} ${small?'small':''} ${legal?'legal':'quiet'} ${legal&&highlight?'playable-hint':''} ${selected?'selected':''} ${incoming?'incoming':''}" data-card-id="${card.id}" data-hand-index="${index}" data-hand-total="${total}" style="--tilt:${tilt}deg;--rise:${rise}px;--i:${index};--overlap:${overlap}px;--arrive-delay:${arrivalDelay}ms" aria-label="${spokenLabel}" aria-disabled="${!legal}"><span class="corner top">${faceMark}</span><span class="card-art">${vectorArt(card,activeColor,language)}</span><span class="card-print">${card.type===TYPES.TAKI?'':cardLabel(card,language)}</span><span class="card-scratch"></span></button>`;
 }

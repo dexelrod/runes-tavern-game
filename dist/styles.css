@@ -697,3 +697,7 @@
   .seat-top .seat-props{left:132px;right:auto;top:43px;scale:1.08}
   .quick-opponent .seat-props{left:2%;right:auto;top:53px;scale:1.08}
 }
+html[lang="en"] .opponent.active:after{content:"Your turn"}
+html[lang="en"] .duel-opponent.active:after{content:"Opponent's turn"}
+html[lang="en"] .elder-home .duel-invite:before{content:"PERSONAL CHALLENGE";right:auto;left:13px}
+.language-row{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:5px 0 12px}.language-row>label{font-weight:700;color:#4e321d}.language-choice{min-width:178px}.language-choice button{padding-inline:12px}
