@@ -108,3 +108,16 @@ test('mode-specific framing refines mobile and portrait tablet compositions',()=
   assert.match(css,/@media \(min-width:600px\) and \(max-width:899px\) and \(orientation:portrait\)/);
   assert.match(css,/\.quick-opponent \.physical-fan\{translate:-50% 0/);
 });
+
+test('refinement pass communicates state through table objects and motion',()=>{
+  assert.match(app,/function colorRuneHTML/);
+  assert.match(app,/active-color-rune/);
+  assert.match(app,/gem-rune/);
+  assert.match(app,/trajectory==='draw'\?drawFrames:playFrames/);
+  assert.match(app,/classList\.add\('receiving-card'\)/);
+  assert.doesNotMatch(app,/class="extra-turn-token"/);
+  assert.match(app,/const scale=count>=13\?\.93:count>=11\?\.96:1/);
+  assert.match(app,/resultScoreHTML\(winner\)/);
+  assert.match(css,/\.result-wrap\.table-result\{inset:0/);
+  assert.match(css,/\.waiting \.hand\{filter:saturate\(\.94\) brightness\(\.96\);transform:none\}/);
+});
