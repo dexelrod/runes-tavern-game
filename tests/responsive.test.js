@@ -38,6 +38,11 @@ test('scene uses independent world, seat and viewport coordinate layers',()=>{
   assert.doesNotMatch(css,/elder-tavern-table\.jpg/);
 });
 
+test('decorative opponent layer cannot intercept draw pile taps',()=>{
+  assert.match(css,/\.seat-layer\{z-index:20;pointer-events:none\}/);
+  assert.match(app,/<button class="pile draw-pile [^`]*data-draw data-draw-anchor/);
+});
+
 test('landscape camera crops the table as furniture instead of framing a board',()=>{
   assert.match(css,/camera-over-furniture composition/);
   assert.match(css,/\.table-body\{\s*border:0;/);
