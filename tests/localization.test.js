@@ -30,3 +30,16 @@ test('the application offers both language choices and updates document directio
   assert.match(source,/data-language="en"/);
   assert.match(source,/document\.documentElement\.dir=direction\(\)/);
 });
+
+test('settings copy and structure are localized without mirroring the controls', async () => {
+  const source=await readFile(new URL('../dist/app.js',import.meta.url),'utf8');
+  const css=await readFile(new URL('../dist/styles.css',import.meta.url),'utf8');
+  assert.match(source,/תגובות יריבים/);
+  assert.match(source,/הדגשת קלפים זמינים/);
+  assert.match(source,/Opponent reactions/);
+  assert.match(source,/data-volume="\$\{volumeKey\}"/);
+  assert.match(source,/role="dialog" aria-modal="true"/);
+  assert.match(source,/event\.key==='Escape'/);
+  assert.match(css,/\.setting-row\{direction:ltr/);
+  assert.match(css,/html\[lang="en"\] \.setting-row label/);
+});

@@ -31,6 +31,7 @@ const CHANNEL_DEFAULTS={sfx:.9,ambience:.18,music:.14};
 export class AudioSystem{
   constructor(){
     this.enabled=true;
+    this.channelEnabled={sfx:true,ambience:true,music:true};
     this.channels={...CHANNEL_DEFAULTS};
     this.pools=new Map();
     this.lastPlayed=new Map();
@@ -44,16 +45,17 @@ export class AudioSystem{
     this.musicFrame=0;
   }
   setSettings(settings={}){
-    this.enabled=settings.sound!==false;
+    this.channelEnabled.sfx=settings.sound!==false;
+    this.channelEnabled.ambience=settings.ambience!==false;
+    this.channelEnabled.music=settings.music!==false;
+    this.enabled=Object.values(this.channelEnabled).some(Boolean);
     this.channels.sfx=Number.isFinite(settings.sfxVolume)?Math.max(0,Math.min(1,settings.sfxVolume)):CHANNEL_DEFAULTS.sfx;
     this.channels.ambience=Number.isFinite(settings.ambienceVolume)?Math.max(0,Math.min(1,settings.ambienceVolume)):CHANNEL_DEFAULTS.ambience;
-    const requestedMusic=Number.isFinite(settings.musicVolume)?Math.max(0,settings.musicVolume):CHANNEL_DEFAULTS.music;
-    this.channels.music=Math.min(CHANNEL_DEFAULTS.music,requestedMusic);
-    if(!this.enabled){this.stopAmbience();this.stopMusic();}
-    else{
-      if(this.ambienceNode&&!this.ambienceNode.paused)this.fadeAmbience(this.channels.ambience,350);
-      if(this.musicNode&&!this.musicNode.paused)this.fadeMusic(this.channels.music,350);
-    }
+    this.channels.music=Number.isFinite(settings.musicVolume)?Math.max(0,Math.min(1,settings.musicVolume)):CHANNEL_DEFAULTS.music;
+    if(!this.channelEnabled.ambience||this.channels.ambience<=0)this.stopAmbience();
+    else if(this.ambienceNode&&!this.ambienceNode.paused)this.fadeAmbience(this.channels.ambience,350);
+    if(!this.channelEnabled.music||this.channels.music<=0)this.stopMusic();
+    else if(this.musicNode&&!this.musicNode.paused)this.fadeMusic(this.channels.music,350);
   }
   prime(){
     if(typeof Audio==='undefined')return;
@@ -69,7 +71,7 @@ export class AudioSystem{
       this.timers.add(timer);return timer;
     }
     const definition=SOUND_LIBRARY[name];
-    if(!definition||!this.enabled||typeof Audio==='undefined')return null;
+    if(!definition||!this.enabled||!this.channelEnabled[definition.channel]||typeof Audio==='undefined')return null;
     const now=performance.now(),last=this.lastPlayed.get(name)||-Infinity;
     if(now-last<(definition.cooldown||0))return null;
     const pool=this.pools.get(name)||[],active=pool.filter(node=>!node.paused&&!node.ended);
@@ -92,7 +94,7 @@ export class AudioSystem{
     return this.play(name,{delay,volume,rate});
   }
   startAmbience(){
-    if(!this.enabled||this.channels.ambience<=0||typeof Audio==='undefined')return;
+    if(!this.enabled||!this.channelEnabled.ambience||this.channels.ambience<=0||typeof Audio==='undefined')return;
     if(this.ambienceNode&&!this.ambienceNode.paused){this.fadeAmbience(this.channels.ambience,700);return;}
     if(!this.ambienceNode){
       this.ambienceNode=new Audio(AMBIENCE_TRACKS[this.ambienceIndex]);
@@ -118,9 +120,9 @@ export class AudioSystem{
     this.fadeAmbience(0,900,()=>{node.pause();node.currentTime=0;this.ambienceNode=null;});
   }
   startMusic({newRound=false}={}){
-    if(!this.enabled||this.channels.music<=0||typeof Audio==='undefined')return;
+    if(!this.enabled||!this.channelEnabled.music||this.channels.music<=0||typeof Audio==='undefined')return;
     const begin=()=>{
-      if(!this.enabled||this.channels.music<=0)return;
+      if(!this.enabled||!this.channelEnabled.music||this.channels.music<=0)return;
       if(newRound||!this.musicNode){
         this.musicIndex=Math.floor(Math.random()*MUSIC_TRACKS.length);
         this.musicNode=new Audio(MUSIC_TRACKS[this.musicIndex]);this.musicNode.loop=true;this.musicNode.preload='auto';

@@ -78,7 +78,7 @@ test('round soundtrack loops on the music channel and can be stopped independent
     assert.equal(system.musicNode.src,MUSIC_TRACKS[1]);
     assert.equal(system.musicNode.loop,true);
     assert.equal(system.musicNode.paused,false);
-    assert.equal(system.musicNode.volume,.14);
+    assert.equal(system.musicNode.volume,.24);
     system.stopMusic();
     assert.equal(system.musicNode.paused,true);
   }finally{
@@ -86,5 +86,33 @@ test('round soundtrack loops on the music channel and can be stopped independent
     globalThis.requestAnimationFrame=raf;
     globalThis.cancelAnimationFrame=caf;
     Math.random=random;
+  }
+});
+
+test('sound, music, and ambience mute independently',()=>{
+  const NativeAudio=globalThis.Audio,raf=globalThis.requestAnimationFrame,caf=globalThis.cancelAnimationFrame;
+  globalThis.Audio=class{
+    constructor(src){this.src=src;this.paused=true;this.ended=false;this.currentTime=0;this.volume=1;this.playbackRate=1;this.loop=false;}
+    play(){this.paused=false;return Promise.resolve();}
+    pause(){this.paused=true;}
+  };
+  globalThis.requestAnimationFrame=callback=>{callback(performance.now()+5000);return 1;};
+  globalThis.cancelAnimationFrame=()=>{};
+  try{
+    const system=new AudioSystem();
+    system.setSettings({sound:false,music:true,ambience:true,musicVolume:.35,ambienceVolume:.28});
+    assert.equal(system.play('cardPlay'),null);
+    system.startMusic();system.startAmbience();
+    assert.equal(system.musicNode.paused,false);
+    assert.equal(system.ambienceNode.paused,false);
+    assert.equal(system.musicNode.volume,.35);
+    assert.equal(system.ambienceNode.volume,.28);
+    system.setSettings({sound:true,music:false,ambience:true});
+    assert.ok(system.play('cardPlay'));
+    assert.equal(system.musicNode.paused,true);
+  }finally{
+    globalThis.Audio=NativeAudio;
+    globalThis.requestAnimationFrame=raf;
+    globalThis.cancelAnimationFrame=caf;
   }
 });
