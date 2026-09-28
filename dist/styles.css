@@ -170,6 +170,7 @@
 .app-shell{max-width:none;container-type:inline-size;background-position:center 42%;background-size:cover;touch-action:manipulation}
 .table-shell{overscroll-behavior:none;touch-action:none}
 .table-shell button,.sheet-wrap button,.all-cards button{touch-action:manipulation}
+.hand .card{touch-action:none}
 .hand{width:min(100%,1100px);margin-inline:auto;padding-bottom:max(16px,env(safe-area-inset-bottom))}
 
 @media (hover:none){

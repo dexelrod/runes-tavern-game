@@ -21,11 +21,25 @@ test('hand spacing is measured from the live container and recalculated after re
   assert.doesNotMatch(card,/Math\.min\(432/);
 });
 
+test('the live hand always renders every card and compresses them to fit',()=>{
+  assert.match(app,/shown=human\.hand,top=topCard\(state\)/);
+  assert.doesNotMatch(app,/human\.hand\.slice\(0,10\)/);
+  assert.doesNotMatch(app,/data-show-all/);
+  assert.match(app,/const overlap=count<2\?0:step-cardWidth/);
+});
+
 test('card travel resolves source and destination anchors from the live DOM',()=>{
   assert.match(app,/source\.getBoundingClientRect\(\),to=destination\.getBoundingClientRect\(\)/);
   assert.match(app,/data-draw-anchor/);
   assert.match(app,/data-discard-anchor/);
   assert.match(app,/data-hand-anchor/);
+  assert.match(app,/root\.querySelector\(`\.hand \[data-card-id="\$\{action\.cardId\}"\]`\)/);
+});
+
+test('mobile cards support a velocity-aware upward flick',()=>{
+  assert.match(app,/upwardFlick=dy<-22&&velocity>\.28/);
+  assert.match(app,/card\.onpointercancel=/);
+  assert.match(css,/\.hand \.card\{touch-action:none\}/);
 });
 
 test('scene uses independent world, seat and viewport coordinate layers',()=>{
