@@ -3,15 +3,15 @@ export const WILD = 'wild';
 export const TYPES = Object.freeze({ NUMBER:'number', STOP:'stop', PLUS2:'plus2', REVERSE:'reverse', PLUS:'plus', TAKI:'taki', CHANGE_COLOR:'changeColor', SUPER_TAKI:'superTaki', KING:'king' });
 
 export const TYPE_LABEL = {
-  number:'', stop:'עצור', plus2:'+2', reverse:'שנה כיוון', plus:'+', taki:'TAKI', changeColor:'צבע', superTaki:'סופר TAKI', king:'מלך'
+  number:'', stop:'מגן', plus2:'קללה +2', reverse:'מכת נגד', plus:'צעד זריז', taki:'קשת', changeColor:'רונה', superTaki:'קשת רונית', king:'מלך'
 };
 
 export function makeCard(type, color = WILD, value = null, id = '') {
-  if(type===TYPES.NUMBER&&value===2)throw new RangeError('Ordinary 2 cards are not part of Elder Taki');
+  if(type===TYPES.NUMBER&&value===2)throw new RangeError('Ordinary 2 cards are not part of RUNES');
   return { id, type, color, value };
 }
 
-// One inspectable 56-card Elder Taki set. The regular 2 is intentionally omitted.
+// One inspectable 56-card RUNES set. The regular 2 is intentionally omitted.
 export function createDeckSet(setIndex = 0) {
   const cards = [];
   for (const color of COLORS) {
