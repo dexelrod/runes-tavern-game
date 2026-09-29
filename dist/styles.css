@@ -1012,3 +1012,27 @@ html[lang="en"] .setting-row label{direction:ltr;text-align:left}
   .tavern-table .seat-top .seat-props{left:126px;right:auto;top:43px;transform:rotate(2deg)}
   .duel-opponent .duel-props.seat-props{left:auto;right:24px;top:179px;scale:.9;transform:rotate(3deg)}
 }
+
+/* v51: Tavern props read as seat-owned signatures, not scattered table dressing. */
+.tavern-table .seat-props{width:122px;height:94px;scale:1.18;transform-origin:50% 35%}
+.tavern-table .seat-props .prop-1{width:78px;height:88px;filter:drop-shadow(0 7px 5px #000c) saturate(1.06) contrast(1.03)}
+.tavern-table .seat-props .prop-2{width:54px;height:43px;filter:drop-shadow(0 5px 4px #000b);opacity:.94}
+.tavern-table .seat-props.story-rustic .prop-1{transform:rotate(-7deg)}
+.tavern-table .seat-props.story-rustic .prop-2{right:-2px;bottom:1px;transform:rotate(13deg)}
+.tavern-table .seat-props.story-casual .prop-1{transform:rotate(-5deg)}
+.tavern-table .seat-props.story-casual .prop-2{right:8px;bottom:-2px;transform:rotate(9deg)}
+.tavern-table .seat-props.story-gambler .prop-1{transform:rotate(5deg)}
+.tavern-table .seat-props.story-gambler .prop-2{right:-5px;bottom:2px;width:58px;transform:rotate(-11deg)}
+@media(min-width:600px){
+  .tavern-table .seat-left .seat-props,.tavern-table .seat-far-left .seat-props{left:111px;right:auto;top:48px;transform:rotate(-7deg)}
+  .tavern-table .seat-right .seat-props,.tavern-table .seat-far-right .seat-props{right:111px;left:auto;top:51px;transform:rotate(6deg)}
+  .tavern-table .seat-top .seat-props{left:135px;right:auto;top:46px;transform:rotate(5deg)}
+}
+@media(max-width:599px){
+  .tavern-table .seat-props{width:86px;height:70px;scale:.96}
+  .tavern-table .seat-props .prop-1{width:58px;height:66px}
+  .tavern-table .seat-props .prop-2{display:none}
+  .tavern-table .seat-left .seat-props,.tavern-table .seat-far-left .seat-props{left:25px;right:auto;top:-70px;transform:rotate(-7deg)}
+  .tavern-table .seat-right .seat-props,.tavern-table .seat-far-right .seat-props{right:25px;left:auto;top:-70px;transform:rotate(8deg)}
+  .tavern-table .seat-top .seat-props{left:-58px;right:auto;top:58px;transform:rotate(6deg)}
+}

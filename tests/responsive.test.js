@@ -133,7 +133,7 @@ test('seat props use a deterministic curated story with one to three objects',()
   for(const object of ['woodenTankard','pewterGoblet','scatteredCoins','dice','snack','pouch','parchment','rune','darkBottle','cork'])assert.ok(app.includes(`'${object}'`));
   assert.match(app,/data-prop-count="\$\{items\.length\}"/);
   assert.match(app,/items\.map\(seatPropItemHTML\)/);
-  assert.match(app,/session\?\.mode==='duel'\?fullItems\.slice\(0,2\):fullItems/);
+  assert.match(app,/\['duel','tavern'\]\.includes\(session\?\.mode\)\?fullItems\.slice\(0,2\):fullItems/);
   assert.match(app,/session\?\.seed/);
   assert.doesNotMatch(app,/Math\.random\(\).*seatProp/);
   assert.match(css,/Curated seat stories: supplied PNG assets only/);
@@ -141,6 +141,14 @@ test('seat props use a deterministic curated story with one to three objects',()
   assert.match(css,/\.tavern-table \.seat-props \.prop-2,\.tavern-table \.seat-props \.prop-3\{display:none\}/);
   assert.match(css,/\.duel-opponent \.duel-props \.prop-2,\.duel-opponent \.duel-props \.prop-3\{display:none\}/);
   assert.match(app,/propsHTML\(opponent,`duel-props duel-\$\{opponent\.id\}`\)/);
+});
+
+test('Tavern props emphasize one signature and one subordinate seat-owned object',()=>{
+  assert.match(css,/v51: Tavern props read as seat-owned signatures/);
+  assert.match(css,/\.tavern-table \.seat-props\{width:122px;height:94px;scale:1\.18/);
+  assert.match(css,/\.tavern-table \.seat-props \.prop-1\{width:78px;height:88px/);
+  assert.match(css,/\.tavern-table \.seat-props \.prop-2\{width:54px;height:43px/);
+  assert.match(css,/\.tavern-table \.seat-props \.prop-2\{display:none\}/);
 });
 
 test('mobile polish keeps the table calm while improving seat identity and scanability',()=>{
