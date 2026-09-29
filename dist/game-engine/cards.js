@@ -30,6 +30,9 @@ export function cardMatches(a, b) {
   if (!a || !b) return false;
   if (a.color !== WILD && b.color !== WILD && a.color === b.color) return true;
   if (a.type === TYPES.NUMBER && b.type === TYPES.NUMBER) return a.value === b.value;
+  const aIsCrossbow = a.type === TYPES.TAKI || a.type === TYPES.SUPER_TAKI;
+  const bIsCrossbow = b.type === TYPES.TAKI || b.type === TYPES.SUPER_TAKI;
+  if (aIsCrossbow && bIsCrossbow) return true;
   return a.type === b.type;
 }
 
