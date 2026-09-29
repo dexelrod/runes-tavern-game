@@ -138,3 +138,16 @@ test('seat props use a deterministic curated story with one to three objects',()
   assert.match(css,/Curated seat stories: 1–3 restrained objects/);
   assert.match(app,/propsHTML\(opponent,`duel-props duel-\$\{opponent\.id\}`\)/);
 });
+
+test('mobile polish keeps the table calm while improving seat identity and scanability',()=>{
+  assert.match(app,/archetype-\$\{archetype\}/);
+  assert.match(app,/data-archetype="\$\{archetype\}"/);
+  assert.match(css,/v48: mobile polish without reopening the established table composition/);
+  assert.match(css,/\.direction-engraving\{opacity:\.27;filter:saturate\(\.5\) blur\(\.18px\)\}/);
+  assert.match(css,/\.turn-whisper span\{min-width:92px;padding:4px 13px 5px;font-size:13px/);
+  for(const archetype of ['hunter','bard','mercenary','scholar','mysterious'])assert.match(css,new RegExp(`archetype-${archetype} \\.opponent-fan`));
+  assert.match(css,/\.table-shell:not\(\.duel-table\) \.score-slate\{[^}]*width:98px/);
+  assert.match(css,/\.deck-count:after\{content:"";[^}]*height:10px/);
+  assert.match(css,/\.elder-home \.duel-invite\{width:94%;min-height:62px/);
+  assert.match(css,/\.elder-home \.table-tools button\{min-width:82px;min-height:44px/);
+});
