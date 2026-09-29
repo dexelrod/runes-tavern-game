@@ -15,7 +15,10 @@ export function cardLabel(card,language='he'){ return card.type===TYPES.NUMBER ?
 export function sigilHTML(className='runes-sigil'){
   return `<img class="${className}" src="./assets/brand/runes-seal.svg" alt="" aria-hidden="true">`;
 }
-const asset=(name,className='card-asset')=>`<img class="${className}" src="./assets/cards/${name}" alt="" aria-hidden="true">`;
+const NATIVE_COLOR_ASSETS=new Set(['rune.svg','runed-crossbow.svg']);
+const asset=(name,className='card-asset')=>NATIVE_COLOR_ASSETS.has(name)
+  ? `<img class="${className} native-card-asset" src="./assets/cards/${name}" alt="" aria-hidden="true">`
+  : `<span class="${className} masked-card-asset" style="--asset:url('./assets/cards/${name}')" aria-hidden="true"></span>`;
 function vectorArt(card,activeColor=null){
   if(card.type===TYPES.NUMBER)return asset(`number-${card.value}.svg`,'card-asset number-asset');
   const name=ART[card.type];

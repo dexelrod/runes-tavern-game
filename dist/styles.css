@@ -1038,8 +1038,8 @@ html[lang="en"] .setting-row label{direction:ltr;text-align:left}
 }
 
 /* RUNES rebrand: supplied marks and engraved card artwork. */
-.primary-runes-logo{display:block;width:min(330px,76vw);max-height:164px;object-fit:contain;margin:auto;filter:invert(76%) sepia(39%) saturate(760%) hue-rotate(354deg) brightness(93%) contrast(90%) drop-shadow(0 5px 5px #000b) drop-shadow(0 0 13px #c99b4d66)}
-.home-title{width:100%;display:grid;place-items:center}.home-title h1,.home-title .title-sigil{display:none}
+.primary-runes-logo{position:relative;z-index:1;display:block;width:min(292px,70vw);height:auto;max-height:none;margin:auto;filter:drop-shadow(0 5px 5px #000b) drop-shadow(0 0 10px #c99b4d4d)}
+.home-title{position:relative;width:100%;display:grid;place-items:center}.home-title:before{content:"";position:absolute;width:min(360px,86vw);height:210px;border-radius:50%;background:radial-gradient(ellipse,#e5c88755 0,#b9873f24 44%,transparent 72%);filter:blur(3px);pointer-events:none}.home-title h1,.home-title .title-sigil{display:none}
 .runes-sigil,.table-sigil,.result-sigil,.active-color-rune{display:block;max-width:100%;max-height:100%;object-fit:contain}
 .back-sigil{padding:6px;background:radial-gradient(circle,#7a2a36 0 38%,transparent 40%),repeating-linear-gradient(135deg,transparent 0 9px,#ddb85b18 9px 10px)}
 .back-sigil .runes-sigil{width:100%;height:100%;filter:sepia(.35) saturate(.75) brightness(1.2);opacity:.92}
@@ -1047,7 +1047,9 @@ html[lang="en"] .setting-row label{direction:ltr;text-align:left}
 .table-sigil{width:78px;height:78px;opacity:.48;filter:sepia(.65) saturate(.65) brightness(1.05)}
 .result-sigil{width:64px;height:64px;margin:auto;filter:sepia(.45) brightness(1.15)}
 .card-art{inset:19px 8px 23px}
-.card-asset{display:block;width:88%;height:88%;object-fit:contain;mix-blend-mode:multiply;filter:drop-shadow(0 2px 0 #fff6)}
+.card-asset{display:block;width:88%;height:88%}
+.native-card-asset{object-fit:contain;mix-blend-mode:normal;filter:drop-shadow(0 2px 0 #fff6)}
+.masked-card-asset{background:var(--card);-webkit-mask:var(--asset) center/contain no-repeat;mask:var(--asset) center/contain no-repeat;filter:drop-shadow(0 2px 0 #fff6)}
 .number-asset{width:67%;height:86%}
 .special-asset-wrap{position:relative;width:100%;height:100%;display:grid;place-items:center}
 .special-asset-wrap>.card-asset{width:92%;height:92%}
@@ -1069,4 +1071,4 @@ html[lang="en"] .setting-row label{direction:ltr;text-align:left}
 .card.green{background-image:linear-gradient(#36583c1c,#36583c1c),repeating-linear-gradient(0deg,#6f55220a 0 1px,transparent 1px 4px),linear-gradient(135deg,#f0dfb8,#f6e8c6 48%,#dfc795)}
 .card.yellow{background-image:linear-gradient(#b0832f1c,#b0832f1c),repeating-linear-gradient(0deg,#6f55220a 0 1px,transparent 1px 4px),linear-gradient(135deg,#f0dfb8,#f6e8c6 48%,#dfc795)}
 .asset-rule{display:grid!important;place-items:center}.asset-rule img{width:72%;height:72%;object-fit:contain}
-@media(max-width:410px){.primary-runes-logo{width:min(292px,78vw);max-height:138px}.card-art{inset:17px 7px 21px}.card-print{font-size:7px}}
+@media(max-width:410px){.primary-runes-logo{width:min(258px,70vw);height:auto;max-height:none}.home-title:before{height:184px}.card-art{inset:17px 7px 21px}.card-print{font-size:7px}}
