@@ -25,7 +25,7 @@ export const SOUND_LIBRARY=Object.freeze({
 
 export const CARD_PLAY_VARIATIONS=Object.freeze(['cardPlay','cardPlayVariation1','cardPlayVariation2','cardPlayVariation3','cardPlayVariation4','cardPlayVariation5']);
 export const AMBIENCE_TRACKS=Object.freeze(['tavern-loop-1.wav','tavern-loop-2.wav','tavern-loop-3.wav','tavern-loop-4.wav'].map(asset));
-export const MUSIC_TRACKS=Object.freeze(['elder-taki-round.wav','gambit-by-the-hearth.m4a'].map(asset));
+export const MUSIC_TRACKS=Object.freeze(['runes-round.wav','gambit-by-the-hearth.m4a'].map(asset));
 const CHANNEL_DEFAULTS={sfx:.9,ambience:.18,music:.14};
 
 export class AudioSystem{
