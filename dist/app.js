@@ -234,7 +234,7 @@ function homeHTML(){
   const saved=loadMatch();let savedSession=null;try{savedSession=saved?restoreSession(saved):null;if(savedSession?.mode==='quick'&&savedSession.game?.players?.length>6)savedSession=null;}catch{}
   const resumable=savedSession&&savedSession.phase!=='matchFinished';
   const savedOpponent=savedSession?.mode==='duel'?displayOpponent(getDuelOpponent(savedSession.opponentId||settings.duelOpponent)):null;
-  const logo=`<img class="primary-runes-logo" src="./assets/brand/runes-wordmark.svg" alt="${isEnglish()?'RUNES':'RUNES — רונות'}">`;
+  const logo=`<img class="primary-runes-logo" src="./assets/brand/runes-white.svg" alt="${isEnglish()?'RUNES':'RUNES — רונות'}">`;
   if(isEnglish()){
     const continueTitle=savedSession?.mode==='duel'?'Continue Duel':savedSession?.mode==='tavern'?'Continue Tavern Game':'Continue Quick Play';
     const continueMeta=!resumable?'':savedSession.mode==='duel'?`Against ${savedOpponent.name} · Round <bdi>${savedSession.round}</bdi> of <bdi>${savedSession.totalRounds}</bdi>`:savedSession.mode==='tavern'?`Round <bdi>${savedSession.round}</bdi> of <bdi>${savedSession.totalRounds}</bdi>`:`One hand · <bdi>${savedSession.roster?.length||savedSession.game?.players?.length||settings.playerCount}</bdi> players`;

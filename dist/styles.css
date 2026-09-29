@@ -1200,7 +1200,7 @@ html[lang="en"] .setting-row label{direction:ltr;text-align:left}
 /* The menu is a prepared table: mark, saved hand, three choices, tools. */
 .home-title{margin-top:clamp(18px,4.5vh,44px)}
 .home-title:before{width:min(390px,84vw);height:170px;border-radius:18%;background:radial-gradient(ellipse,#d7b36d27 0,transparent 69%);filter:blur(2px)}
-.primary-runes-logo{width:min(310px,66vw);filter:sepia(.2) saturate(.78) brightness(1.48) contrast(.92) drop-shadow(0 4px 1px #000b) drop-shadow(0 0 8px #cf9d4935)}
+.primary-runes-logo{width:min(310px,66vw);opacity:.97;filter:drop-shadow(0 4px 1px #000c) drop-shadow(0 0 8px #d6aa5726)}
 .scene-home .abandoned-cards{display:none}
 .table-choices{width:min(430px,100%);gap:11px;margin-bottom:clamp(4px,2vh,20px)}
 .mode-plaque,.resume-marker,.duel-invite{border:1px solid var(--runes-line);border-radius:5px;background:linear-gradient(145deg,#171d19ed,#292119e9);box-shadow:var(--runes-shadow-plaque)}
