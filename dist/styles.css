@@ -1070,3 +1070,208 @@ html[lang="en"] .setting-row label{direction:ltr;text-align:left}
 .card.yellow{background-image:linear-gradient(#b0832f1c,#b0832f1c),repeating-linear-gradient(0deg,#6f55220a 0 1px,transparent 1px 4px),linear-gradient(135deg,#f0dfb8,#f6e8c6 48%,#dfc795)}
 .asset-rule{display:grid!important;place-items:center}.asset-rule img{width:72%;height:72%;object-fit:contain}
 @media(max-width:410px){.primary-runes-logo{width:min(258px,70vw);height:auto;max-height:none}.home-title:before{height:184px}.card-art{inset:17px 7px 21px}.card-print{font-size:7px}}
+
+/* v55: one physical RUNES system — printed deck, tavern-made plaques, and
+   table-owned state. These tokens intentionally govern every raised object. */
+:root{
+  --runes-charcoal:#171a17;
+  --runes-charcoal-2:#24231d;
+  --runes-brass:#a77b3f;
+  --runes-brass-hi:#d2ad68;
+  --runes-parchment:#ead8ad;
+  --runes-parchment-hi:#f3e4bd;
+  --runes-burgundy:#621f31;
+  --runes-line:#795a34;
+  --runes-radius:4px;
+  --runes-shadow-table:0 8px 13px #050201a3;
+  --runes-shadow-plaque:inset 0 1px #d8b66a2e,inset 0 0 0 2px #080b096e,0 3px 0 #090503,0 8px 14px #0009;
+  --runes-shadow-card:0 3px 0 #2a170e8c,0 9px 14px #0009;
+  --runes-display:Georgia,"Noto Sans Hebrew",serif;
+  --runes-ui:Arial,"Noto Sans Hebrew",system-ui,sans-serif;
+}
+
+/* Lighting belongs to the room: no central beam or synthetic screen haze. */
+.scene-lighting .room-haze{background:linear-gradient(180deg,#12090424 0,transparent 33%,#05020142 100%);opacity:.72}
+.scene-lighting .table-light{left:12%;right:12%;top:29%;height:49%;background:radial-gradient(ellipse at 55% 35%,#d28b3b20,transparent 70%);filter:blur(16px)}
+.tavern-environment{filter:saturate(.77) sepia(.05) brightness(.6) contrast(1.04)}
+
+/* Shared restrained HUD family. */
+:is(.rune-menu,.round-marker,.score-slate,.seat-marker,.turn-whisper span,.table-event,.taki-panel,.penalty-token){
+  border-color:var(--runes-line);
+  border-radius:var(--runes-radius);
+  background-color:var(--runes-charcoal);
+  color:#ead4a4;
+  box-shadow:var(--runes-shadow-plaque);
+  text-shadow:0 1px 1px #000;
+}
+.game-head,.board,.hand-area,.hand{min-width:0}
+.game-head,.board,.hand-area{width:100%}
+.rune-menu{width:44px;height:42px;border-width:1px;background:linear-gradient(165deg,#252a25e8,#121612ed);padding-inline:11px}
+.rune-menu i{height:2px;background:#c8a15e;box-shadow:none}
+.round-marker{padding:6px 15px;border:1px solid var(--runes-line);font-size:12px;letter-spacing:.025em;background:linear-gradient(175deg,#292821e8,#151713ed)}
+.score-slate{padding:8px 9px;border:1px solid var(--runes-line);border-radius:3px;background:linear-gradient(110deg,#171c19ec,#25251fee 60%,#111512ee);box-shadow:var(--runes-shadow-plaque);transform:rotate(.45deg)}
+.score-row{font-size:11px;line-height:1.65}.score-row bdi{color:#f0ce84;font-weight:750;font-variant-numeric:tabular-nums}
+
+/* One professionally printed deck. Paper grain replaces notebook lines; the
+   double stamped frame is deliberately a touch imperfect. */
+.card{
+  border:1px solid #694c2e;
+  border-radius:6px;
+  background-color:#ead9af;
+  background-image:
+    radial-gradient(circle at 17% 11%,#fff8 0 .6px,transparent .9px),
+    radial-gradient(circle at 74% 68%,#6b3c1714 0 .65px,transparent 1px),
+    linear-gradient(112deg,transparent 0 34%,#6b3e1610 48%,transparent 62%),
+    linear-gradient(135deg,var(--runes-parchment-hi),var(--runes-parchment) 54%,#d4b87d);
+  background-size:7px 7px,9px 9px,100% 100%,100% 100%;
+  box-shadow:var(--runes-shadow-card);
+}
+.card.red{background-image:linear-gradient(#7f263514,#7f263514),radial-gradient(circle at 17% 11%,#fff8 0 .6px,transparent .9px),radial-gradient(circle at 74% 68%,#6b3c1714 0 .65px,transparent 1px),linear-gradient(135deg,#f2e2bc,#ead7aa 53%,#d4b77b)}
+.card.blue{background-image:linear-gradient(#465f7616,#465f7616),radial-gradient(circle at 17% 11%,#fff8 0 .6px,transparent .9px),radial-gradient(circle at 74% 68%,#6b3c1714 0 .65px,transparent 1px),linear-gradient(135deg,#f2e2bc,#ead7aa 53%,#d4b77b)}
+.card.green{background-image:linear-gradient(#36583c17,#36583c17),radial-gradient(circle at 17% 11%,#fff8 0 .6px,transparent .9px),radial-gradient(circle at 74% 68%,#6b3c1714 0 .65px,transparent 1px),linear-gradient(135deg,#f2e2bc,#ead7aa 53%,#d4b77b)}
+.card.yellow{background-image:linear-gradient(#b0832f18,#b0832f18),radial-gradient(circle at 17% 11%,#fff8 0 .6px,transparent .9px),radial-gradient(circle at 74% 68%,#6b3c1714 0 .65px,transparent 1px),linear-gradient(135deg,#f2e2bc,#ead7aa 53%,#d4b77b)}
+.card:before{inset:6px;border:2px solid currentColor;border-radius:3px;opacity:.7;transform:rotate(-.12deg)}
+.card:after{inset:10px;border:1px solid color-mix(in srgb,var(--card) 38%,#7b5b31);opacity:.58;clip-path:polygon(0 7%,7% 0,93% 0,100% 7%,100% 93%,93% 100%,7% 100%,0 93%)}
+.corner{font:800 15px/1 var(--runes-display);letter-spacing:-.04em;text-shadow:0 1px #fff0cf,1px 1px #5e3a1f24}
+.corner.top{left:9px;top:9px}.corner.bottom{display:block;right:9px;bottom:9px;transform:rotate(180deg)}
+.card-art{inset:22px 11px 25px;filter:contrast(1.02)}
+.number-asset{width:70%;height:79%;object-fit:contain;transform:translateY(1px)}
+.card-asset{filter:drop-shadow(1px 2px 0 #fff4)}
+.masked-card-asset{filter:drop-shadow(1px 2px 0 #fff4)}
+.card-print{right:11px;left:11px;bottom:7px;padding:1px 3px;color:var(--card);font:700 8px/1.05 var(--runes-ui);letter-spacing:.035em;text-transform:uppercase;background:none;opacity:.92}
+.card-scratch{width:34px;right:-4px;top:35px;background:#563a2028}
+.card.card-back,.draw-pile:before,.draw-pile:after,.opponent-fan>i,.duel-fan>i{
+  background-color:var(--runes-burgundy);
+  background-image:linear-gradient(45deg,transparent 44%,#d1a55322 45% 48%,transparent 49%),linear-gradient(-45deg,transparent 44%,#d1a55316 45% 48%,transparent 49%),linear-gradient(#7a2940,#531827);
+  background-size:14px 14px,14px 14px,100% 100%;
+  border-color:#ae8144;
+}
+.card.card-back{box-shadow:inset 0 0 0 4px #371019,inset 0 0 0 6px #c2914a88,var(--runes-shadow-card)}
+.back-sigil{inset:17px 11px;padding:8px;border:1px solid #c29652a8;border-radius:50%;background:#5b1b2bea;box-shadow:inset 0 0 0 3px #2f0e16,0 0 0 2px #6d4928}
+.back-sigil .runes-sigil{width:82%;height:82%;opacity:.88;filter:sepia(.45) saturate(.72) brightness(1.2)}
+.opponent-fan .runes-sigil,.duel-fan .runes-sigil{width:68%;height:68%;opacity:.82}
+
+/* Central play cluster: labels, remaining-card tab, and a carved active rune. */
+.center{gap:clamp(30px,4.2vw,54px);top:55%}
+.pile-name{position:absolute;z-index:16;left:50%;top:-25px;translate:-50% 0;min-width:64px;padding:4px 10px;border:1px solid #715432;border-radius:3px;background:linear-gradient(#26251fef,#151713ef);box-shadow:var(--runes-shadow-table);color:#d8be89;font:700 10px/1 var(--runes-ui);letter-spacing:.07em;text-transform:uppercase;text-align:center;white-space:nowrap;text-shadow:0 1px #000}
+.discard .pile-name{transform:rotate(calc(var(--pile-turn) * -1))}
+.deck-count{right:-16px;bottom:-13px;width:auto;min-width:46px;height:34px;display:grid;grid-template-columns:auto auto;gap:4px;align-items:center;padding:3px 7px;border:1px solid #684a29;border-radius:3px;background:linear-gradient(100deg,#cfb078,#a9824d);color:#2b1a0e;font:800 13px/1 var(--runes-ui);text-shadow:0 1px #ecd39b;box-shadow:inset 0 0 0 2px #efd39b4f,0 3px 0 #513319,0 6px 8px #0008;transform:rotate(-2deg)}
+.deck-count:before,.deck-count:after{content:none}.deck-count small{font-size:8px;font-weight:750;text-transform:uppercase;opacity:.72}.deck-count bdi{margin:0;transform:none;font-variant-numeric:tabular-nums}
+.active-stone{left:50%;bottom:-31px;width:38px;height:38px;padding:7px;border:2px solid #8b673a;border-radius:42% 48% 45% 52%;background:radial-gradient(circle at 35% 28%,#524739,#20170f 69%);box-shadow:inset 0 0 0 3px #120b0799,0 3px 0 #0a0503,0 8px 9px #0009;transform:translateX(-50%) rotate(-3deg)}
+.active-stone:is(.red,.blue,.green,.yellow){background:radial-gradient(circle at 35% 28%,color-mix(in srgb,currentColor 72%,#fff),currentColor 44%,#1d130d)}
+.active-color-rune{filter:drop-shadow(0 1px #0008)}
+
+/* Seats are compact physical groupings; dialogue has a protected lane. */
+.opponent:before{inset:-14px -18px;background:radial-gradient(ellipse,var(--active) 0,transparent 70%)}
+.opponent.active:after,.duel-opponent.active:after{content:none!important}
+.seat-marker{height:35px;padding:2px 6px;border:1px solid var(--runes-line);border-radius:3px;background:linear-gradient(100deg,#191d1aee,#2b241ced);box-shadow:var(--runes-shadow-plaque)}
+.seat-marker>span{font-size:13px;font-family:var(--runes-display);font-weight:700}.seat-marker>small{font-size:8px;color:#b8a17d;letter-spacing:.025em}.seat-marker>b{font-size:14px}
+.seat-marker>b i{border-color:#9a703c;background:var(--runes-burgundy)}
+.opponent.active .seat-marker{border-color:#c89c55;box-shadow:inset 0 1px #d8b66a35,inset 0 0 0 2px #080b096e,0 3px 0 #090503,0 8px 14px #0009,0 0 16px color-mix(in srgb,var(--active) 38%,transparent);transform:translateY(-2px)}
+.speech{top:32px;max-width:min(190px,42vw);padding:8px 11px;border:1px solid #765837;border-radius:6px;background:#e7d3a7;color:#342419;font-size:13px;line-height:1.3;box-shadow:0 3px 0 #59391e,0 8px 14px #0009}
+.seat-left .speech,.seat-far-left .speech{left:106%;top:23px}.seat-right .speech,.seat-far-right .speech{left:-6%;top:23px}.seat-top .speech{top:122px}
+.seat-props .seat-object{filter:drop-shadow(0 3px 0 #1d0e07a8) drop-shadow(0 7px 5px #000b) saturate(.9) sepia(.06)}
+
+/* Duel opponent sits behind the far rim instead of floating over it. */
+.duel-presence{filter:sepia(.07) saturate(.86) contrast(1.03) drop-shadow(0 12px 12px #000a)}
+.duel-presence:after{content:"";position:absolute;inset:5% 10% 11%;z-index:3;pointer-events:none;background:linear-gradient(90deg,#d9872e18,transparent 30% 72%,#d9872e14);mix-blend-mode:screen;mask-image:radial-gradient(ellipse,#000 36%,transparent 73%)}
+.duel-name{border:1px solid var(--runes-line);border-inline-start:3px solid var(--runes-brass);border-radius:3px;background:linear-gradient(100deg,#171c19ec,#29241dec);box-shadow:var(--runes-shadow-plaque);text-align:start}
+.duel-name>b{font-family:var(--runes-display)}
+.duel-depth-rim{filter:saturate(.88);box-shadow:0 9px 15px #000c,inset 0 2px #d0955652}
+.duel-fan{filter:drop-shadow(0 7px 5px #0008)}
+.duel-table .center{top:60%}.duel-table .direction-engraving{top:60%}
+.duel-table .duel-speech{left:72%;top:92px;max-width:180px}
+
+/* Patron selection is a row of distinct seat plaques, not a contact list. */
+.duel-select:before{background:radial-gradient(ellipse at 50% 54%,transparent 0 30%,#09030292 72%),linear-gradient(#10070455,#080301d6 78%)}
+.duel-select>section{width:min(980px,100%);padding-inline:clamp(14px,4vw,46px)}
+.duel-select header{min-height:108px}.duel-select header h1{font:700 clamp(27px,4vw,38px)/1.05 var(--runes-display);color:#ecd6a6}.duel-select header small{font-size:13px;color:#c6aa77}
+.regulars{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.regular{min-height:150px;grid-template-columns:132px minmax(0,1fr);padding:0;border:1px solid #795a34;border-radius:5px;background:linear-gradient(108deg,#151b18f2,#2b2018f1);box-shadow:var(--runes-shadow-plaque);text-align:start;overflow:hidden}
+.regular:before{content:"";position:absolute;inset:5px;border:1px solid #c0934d24;border-radius:2px;pointer-events:none}.regular:after{content:"◆";position:absolute;inset-inline-end:13px;top:11px;color:#a77b3f80;font-size:12px}
+.regular.archetype-hunter:after{content:"⌁"}.regular.archetype-bard:after{content:"♪"}.regular.archetype-mercenary:after{content:"◆"}.regular.archetype-scholar:after{content:"✦"}.regular.archetype-mysterious:after{content:"◇"}
+.regular.chosen{border-color:#c99d57;box-shadow:var(--runes-shadow-plaque),0 0 0 1px #d5ac6455,0 0 20px #ba7d3128}
+.regular-portrait{position:relative;align-self:stretch;background:radial-gradient(ellipse at 50% 72%,#a06b3e31,transparent 66%),linear-gradient(90deg,#09050438,transparent);border-inline-end:1px solid #8b683d66;filter:saturate(.86) sepia(.06)}
+.regular-portrait:after{content:"";position:absolute;inset:0;box-shadow:inset 0 -18px 18px #0d0806a6}
+.regular-portrait .duel-sprite{transform:scale(1.05);transform-origin:center 46%}
+.regular-copy{align-self:stretch;align-content:center;gap:5px;padding:18px 17px 42px}.regular-copy>b{font:700 23px/1 var(--runes-display);color:#efd9a8}.regular-copy small{font-size:14px;line-height:1.35;color:#cbb58c}.regular-copy em{font-size:12px;color:#9e8b6d}
+.seat-invite{left:auto;right:auto;inset-inline-start:150px;bottom:12px;padding:6px 12px;border:1px solid #8e6a3c;border-radius:3px;background:#1b211de8;color:#e0c58d;font-size:12px;font-weight:700;opacity:1;box-shadow:inset 0 1px #d9b86c24,0 3px 7px #0007}
+
+/* The menu is a prepared table: mark, saved hand, three choices, tools. */
+.home-title{margin-top:clamp(18px,4.5vh,44px)}
+.home-title:before{width:min(390px,84vw);height:170px;border-radius:18%;background:radial-gradient(ellipse,#d7b36d27 0,transparent 69%);filter:blur(2px)}
+.primary-runes-logo{width:min(310px,66vw);filter:sepia(.2) saturate(.78) brightness(1.48) contrast(.92) drop-shadow(0 4px 1px #000b) drop-shadow(0 0 8px #cf9d4935)}
+.scene-home .abandoned-cards{display:none}
+.table-choices{width:min(430px,100%);gap:11px;margin-bottom:clamp(4px,2vh,20px)}
+.mode-plaque,.resume-marker,.duel-invite{border:1px solid var(--runes-line);border-radius:5px;background:linear-gradient(145deg,#171d19ed,#292119e9);box-shadow:var(--runes-shadow-plaque)}
+.mode-plaque:before,.resume-marker:before{inset:5px;border-color:#c397502e;border-radius:2px}
+.mode-copy strong,.resume-marker strong,.duel-invite strong{font-family:var(--runes-display);font-weight:700;color:#eed8a8}
+.primary-modes .mode-plaque{min-height:132px}.mode-copy strong{font-size:19px}.mode-copy small,.duel-invite small{font-size:12px;color:#c2aa80}
+.duel-invite{min-height:68px;border-radius:5px;grid-template-columns:58px minmax(0,1fr) 22px;text-align:start}
+.duel-invite:before{content:none!important}.duel-invite .duel-cameo{border-radius:4px;border-color:#936c3c;box-shadow:inset 0 0 0 2px #140b07,0 4px 8px #0009}
+.coin-stack{filter:saturate(.72) sepia(.16)}
+.table-tools button{border-radius:3px;color:#c3ad83}.table-tools button:hover{background:#17130f80}
+
+@media (min-width:900px) and (min-aspect-ratio:11/10){
+  .table-shell .game{grid-template-rows:clamp(64px,10vh,90px) minmax(0,1fr) clamp(165px,24vh,215px)}
+  .center{top:57%;gap:clamp(38px,4vw,62px)}.direction-engraving,.direction-arrows{top:57%}
+  .table-shell:not(.duel-table) .score-slate{top:clamp(92px,16vh,132px)}
+  .tavern-table .seat-left,.tavern-table .seat-right{top:34%}.tavern-table .seat-far-left,.tavern-table .seat-far-right{top:1%}
+  .duel-table .center,.duel-table .direction-engraving{left:53%;top:62%}
+  .duel-opponent{left:44%;top:clamp(-84px,-9vh,-62px);width:min(680px,58vw)}
+  .duel-presence{width:clamp(390px,33vw,485px);height:clamp(285px,36vh,365px)}
+  .duel-depth-rim{top:clamp(212px,27vh,255px)}
+  .duel-fan{top:clamp(208px,27vh,252px)}
+  .duel-opponent .duel-props.seat-props{top:clamp(200px,26vh,245px);scale:.95}
+  .duel-table .duel-name{left:clamp(26px,4vw,58px);top:76px;max-width:155px}
+  .duel-table .duel-speech{left:73%;top:94px}
+  .elder-home .table-choices{width:min(980px,82vw);grid-template-columns:repeat(3,1fr);gap:clamp(14px,2vw,24px);margin-bottom:clamp(50px,7vh,72px)}
+  .elder-home .primary-modes{display:contents}.elder-home .primary-modes .mode-plaque,.elder-home .duel-invite{min-height:clamp(142px,19vh,174px);border-radius:5px;grid-template-rows:82px auto}
+  .elder-home .duel-invite{display:grid;grid-template-columns:1fr;place-items:center;padding:14px;text-align:center}.elder-home .duel-invite .duel-cameo{width:74px;height:74px}.elder-home .duel-invite .invite-arrow{display:none}
+  .elder-home .resume-marker{grid-column:1/-1;width:min(640px,68%);justify-self:center}
+  .elder-home .table-tools{grid-column:1/-1}
+}
+
+@media (max-width:899px){
+  .regulars{grid-template-columns:1fr}.duel-select>section{width:min(580px,100%)}
+}
+
+@media (max-width:599px){
+  .tavern-environment{filter:saturate(.72) sepia(.05) brightness(.45) contrast(1.04)}
+  .table-shell .game{grid-template-rows:82px minmax(0,1fr) clamp(194px,29vh,228px)}
+  .center{top:57%;gap:24px;scale:.92}.direction-engraving{top:57%;scale:.92}
+  .pile-name{top:-22px;min-width:56px;padding:3px 8px;font-size:9px}
+  .deck-count{right:-10px;bottom:-14px;min-width:41px;height:31px;padding-inline:6px}.deck-count small{display:none}
+  .active-stone{bottom:-28px;width:34px;height:34px;padding:6px}
+  .card:before{border-width:2px}.corner{font-size:14px}.corner.bottom{right:8px;bottom:8px}
+  .seat-marker{height:33px}.seat-marker>span{font-size:12px}.seat-marker>small{font-size:7px}
+  .opponent.active .seat-marker{transform:translateY(-1px)}
+  .speech{max-width:142px;padding:7px 9px;font-size:12px}.seat-top .speech{top:116px}
+  .tavern-table .seat-left .speech,.tavern-table .seat-far-left .speech{left:94%;top:9px}.tavern-table .seat-right .speech,.tavern-table .seat-far-right .speech{left:6%;top:9px}
+  .duel-table .center,.duel-table .direction-engraving{top:68%}
+  .duel-table .duel-name{left:9px;top:47px;max-width:108px;padding:6px 8px}.duel-name>b{font-size:16px}.duel-name small{font-size:10px}
+  .duel-table .duel-speech{left:69%;top:101px;max-width:140px}
+  .duel-select header{min-height:92px}.duel-select header h1{font-size:28px}
+  .regular{min-height:126px;grid-template-columns:108px minmax(0,1fr)}.regular-copy{padding:14px 12px 39px}.regular-copy>b{font-size:20px}.regular-copy small{font-size:13px}.seat-invite{inset-inline-start:120px;bottom:10px;padding:5px 10px}
+  .home-title{margin-top:clamp(20px,5vh,42px)}.primary-runes-logo{width:min(272px,68vw)}
+  .home-title:before{height:142px}.table-choices{gap:9px}.primary-modes .mode-plaque{min-height:118px}.duel-invite{min-height:62px}
+  .table-shell:not(.duel-table) .score-slate{width:100px}.score-row{font-size:10px}
+}
+
+@media (min-width:600px) and (max-width:899px) and (orientation:portrait){
+  .table-shell .game{grid-template-rows:96px minmax(0,1fr) clamp(285px,31vh,320px)}
+  .center{top:56%;gap:42px}.direction-engraving,.direction-arrows{top:56%}
+  .tavern-table .seat-left,.tavern-table .seat-right{top:34%}
+  .duel-table .center,.duel-table .direction-engraving{top:65%}
+  .regulars{gap:12px}.regular{min-height:136px}
+}
+
+@media (min-width:760px) and (max-height:590px) and (orientation:landscape){
+  .table-shell .game{grid-template-rows:56px minmax(0,1fr) 150px}.center{top:58%;scale:.84}.direction-engraving{top:58%;scale:.84}
+  .pile-name{top:-21px}.duel-opponent{scale:.78;transform-origin:50% 0}.duel-table .center,.duel-table .direction-engraving{top:66%}
+  .home-title{margin-top:8px}.elder-home .table-choices{margin-bottom:4px}.primary-modes .mode-plaque{min-height:98px}.duel-invite{min-height:52px}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .duel-presence,.regular-portrait,.seat-props .seat-object{filter:saturate(.86) sepia(.06)}
+}
