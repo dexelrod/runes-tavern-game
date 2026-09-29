@@ -76,7 +76,7 @@ test('compact art direction stays layered, deterministic, and safe-area aware',(
   assert.match(css,/height:100dvh/);
   assert.match(css,/min-height:100svh/);
   assert.match(css,/env\(safe-area-inset-bottom\)/);
-  assert.match(app,/class="seat-object object-\$\{item\}"/);
+  assert.match(app,/class="seat-object prop-\$\{index\+1\} object-\$\{item\}"/);
   assert.match(app,/const seatPropStories=Object\.freeze/);
   assert.match(css,/\.seat-props \.seat-object/);
 });
@@ -90,14 +90,13 @@ test('finish pass shares one physical depth language without restoring turn narr
   assert.match(app,/cardBackStackHTML\('resume-game-token'\)/);
 });
 
-test('environmental refinement uses real cards, seat-local prop stories, and an opaque menu mug',()=>{
+test('environmental refinement uses real cards and removes the old generic mug and coins',()=>{
   assert.match(app,/cardBackStackHTML\('mode-token menu-card-stack quick-card-stack'\)/);
   assert.match(app,/cardBackStackHTML\('abandoned-cards'\)/);
   assert.match(css,/\.card\.card-back\{background:var\(--oxblood\)/);
-  assert.match(css,/\.scene-home \.world-mug\{[^}]*opacity:1/);
-  assert.match(css,/\.scene-home \.world-coins\{display:none!important\}/);
-  assert.match(css,/\.seat-props\.bard \.beer-prop,\.seat-props\.scholar \.beer-prop\{display:none\}/);
-  assert.match(css,/\.seat-left \.seat-props\{left:-47px/);
+  assert.doesNotMatch(app,/stylized_beer_mug|world-mug|world-coins|coin-prop/);
+  assert.doesNotMatch(app,/<model-viewer/);
+  assert.match(app,/\.\/assets\/props\//);
   assert.match(css,/radial-gradient\(circle at 8px 50%/);
 });
 
@@ -131,11 +130,16 @@ test('direction engraving stays full-size, quiet at rest, and surges only for Re
 
 test('seat props use a deterministic curated story with one to three objects',()=>{
   for(const theme of ['casual','practical','gambler','tidy','mystical','rustic'])assert.ok(app.includes(`theme:'${theme}'`));
-  for(const object of ['tankard','goblet','coins','dice','snack','pouch','parchment','rune','bottle','cork'])assert.ok(app.includes(`'${object}'`));
-  assert.match(app,/data-prop-count="\$\{story\.items\.length\}"/);
-  assert.match(app,/story\.items\.map\(seatPropItemHTML\)/);
+  for(const object of ['woodenTankard','pewterGoblet','scatteredCoins','dice','snack','pouch','parchment','rune','darkBottle','cork'])assert.ok(app.includes(`'${object}'`));
+  assert.match(app,/data-prop-count="\$\{items\.length\}"/);
+  assert.match(app,/items\.map\(seatPropItemHTML\)/);
+  assert.match(app,/session\?\.mode==='duel'\?fullItems\.slice\(0,2\):fullItems/);
+  assert.match(app,/session\?\.seed/);
   assert.doesNotMatch(app,/Math\.random\(\).*seatProp/);
-  assert.match(css,/Curated seat stories: 1–3 restrained objects/);
+  assert.match(css,/Curated seat stories: supplied PNG assets only/);
+  assert.match(css,/\.seat-props \.prop-3\{display:none\}/);
+  assert.match(css,/\.tavern-table \.seat-props \.prop-2,\.tavern-table \.seat-props \.prop-3\{display:none\}/);
+  assert.match(css,/\.duel-opponent \.duel-props \.prop-2,\.duel-opponent \.duel-props \.prop-3\{display:none\}/);
   assert.match(app,/propsHTML\(opponent,`duel-props duel-\$\{opponent\.id\}`\)/);
 });
 
