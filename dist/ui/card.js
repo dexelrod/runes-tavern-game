@@ -16,15 +16,15 @@ export function sigilHTML(className='runes-sigil'){
   return `<img class="${className}" src="./assets/brand/runes-seal.svg" alt="" aria-hidden="true">`;
 }
 const NATIVE_COLOR_ASSETS=new Set(['rune.svg','runed-crossbow.svg']);
-const asset=(name,className='card-asset')=>NATIVE_COLOR_ASSETS.has(name)
+const asset=(name,className='card-asset',monochrome=false)=>NATIVE_COLOR_ASSETS.has(name)&&!monochrome
   ? `<img class="${className} native-card-asset" src="./assets/cards/${name}" alt="" aria-hidden="true">`
   : `<span class="${className} masked-card-asset" style="--asset:url('./assets/cards/${name}')" aria-hidden="true"></span>`;
 function vectorArt(card,activeColor=null){
   if(card.type===TYPES.NUMBER)return asset(`number-${card.value}.svg`,'card-asset number-asset');
   const name=ART[card.type];
   if(!name)return'';
-  if(card.type===TYPES.SUPER_TAKI&&card.inheritedColor)return `<span class="special-asset-wrap">${asset(name)}<i class="chosen-pip ${card.inheritedColor}"></i></span>`;
-  if(card.type===TYPES.CHANGE_COLOR&&activeColor)return `<span class="special-asset-wrap chosen-rune ${activeColor}">${asset(name)}<i class="chosen-pip ${activeColor}"></i></span>`;
+  if(card.type===TYPES.SUPER_TAKI&&card.inheritedColor)return `<span class="special-asset-wrap">${asset(name,'card-asset',true)}</span>`;
+  if(card.type===TYPES.CHANGE_COLOR&&activeColor)return `<span class="special-asset-wrap">${asset(name,'card-asset',true)}</span>`;
   return asset(name);
 }
 export function cardHTML(card,{small=false,hidden=false,legal=true,highlight=true,selected=false,incoming=false,arrivalDelay=0,index=0,total=1,activeColor=null,language='he'}={}){

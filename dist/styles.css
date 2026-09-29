@@ -1053,8 +1053,6 @@ html[lang="en"] .setting-row label{direction:ltr;text-align:left}
 .number-asset{width:67%;height:86%}
 .special-asset-wrap{position:relative;width:100%;height:100%;display:grid;place-items:center}
 .special-asset-wrap>.card-asset{width:92%;height:92%}
-.chosen-pip{position:absolute;right:1px;bottom:1px;width:15px;height:15px;border-radius:50%;border:2px solid #f0dfb8;box-shadow:0 2px 5px #0009}
-.chosen-pip.red{background:var(--red)}.chosen-pip.blue{background:var(--blue)}.chosen-pip.green{background:var(--green)}.chosen-pip.yellow{background:var(--yellow)}
 .card.type-taki .card-asset,.card.type-superTaki .card-asset{width:96%;height:96%}
 .card.type-changeColor .card-asset{width:70%;height:94%}
 .card.type-reverse .card-asset{width:100%;height:82%}
