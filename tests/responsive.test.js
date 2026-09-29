@@ -76,10 +76,9 @@ test('compact art direction stays layered, deterministic, and safe-area aware',(
   assert.match(css,/height:100dvh/);
   assert.match(css,/min-height:100svh/);
   assert.match(css,/env\(safe-area-inset-bottom\)/);
-  assert.match(app,/class="seat-trinket"/);
-  assert.match(css,/\.seat-props\.bard \.seat-trinket/);
-  assert.match(css,/\.seat-props\.mercenary \.seat-trinket/);
-  assert.match(css,/\.seat-props\.scholar \.seat-trinket/);
+  assert.match(app,/class="seat-object object-\$\{item\}"/);
+  assert.match(app,/const seatPropStories=Object\.freeze/);
+  assert.match(css,/\.seat-props \.seat-object/);
 });
 
 test('finish pass shares one physical depth language without restoring turn narration',()=>{
@@ -120,4 +119,22 @@ test('refinement pass communicates state through table objects and motion',()=>{
   assert.match(app,/resultScoreHTML\(winner\)/);
   assert.match(css,/\.result-wrap\.table-result\{inset:0/);
   assert.match(css,/\.waiting \.hand\{filter:saturate\(\.94\) brightness\(\.96\);transform:none\}/);
+});
+
+test('direction engraving stays full-size, quiet at rest, and surges only for Reverse',()=>{
+  assert.match(css,/v47: quiet direction engraving at rest/);
+  assert.match(css,/\.direction-engraving\{[\s\S]*?opacity:\.34;[\s\S]*?filter:saturate\(\.58\) blur\(\.12px\)/);
+  assert.match(css,/\.direction-engraving\.lit\{[\s\S]*?opacity:\.96;[\s\S]*?drop-shadow/);
+  assert.match(css,/@keyframes direction-surge/);
+  assert.doesNotMatch(css,/v47:[\s\S]*?\.direction-engraving\{[^}]*width:/);
+});
+
+test('seat props use a deterministic curated story with one to three objects',()=>{
+  for(const theme of ['casual','practical','gambler','tidy','mystical','rustic'])assert.ok(app.includes(`theme:'${theme}'`));
+  for(const object of ['tankard','goblet','coins','dice','snack','pouch','parchment','rune','bottle','cork'])assert.ok(app.includes(`'${object}'`));
+  assert.match(app,/data-prop-count="\$\{story\.items\.length\}"/);
+  assert.match(app,/story\.items\.map\(seatPropItemHTML\)/);
+  assert.doesNotMatch(app,/Math\.random\(\).*seatProp/);
+  assert.match(css,/Curated seat stories: 1–3 restrained objects/);
+  assert.match(app,/propsHTML\(opponent,`duel-props duel-\$\{opponent\.id\}`\)/);
 });

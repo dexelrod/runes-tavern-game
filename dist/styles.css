@@ -872,3 +872,65 @@ html[lang="en"] .setting-row label{direction:ltr;text-align:left}
   .round-tally{width:min(330px,94%);padding:15px 17px}.round-tally h2{font-size:26px}
   .hand{padding-bottom:max(16px,env(safe-area-inset-bottom))}
 }
+
+/* v47: quiet direction engraving at rest, decisive only at the Reverse beat. */
+.direction-engraving{
+  opacity:.34;
+  border-color:#b8894924;
+  filter:saturate(.58) blur(.12px);
+  transition:opacity .38s ease,filter .38s ease;
+}
+.direction-arrows{opacity:.52;filter:drop-shadow(0 1px 1px #120a0670)}
+.direction-arrows path{opacity:.5;stroke-width:6.25;transition:opacity .32s ease,stroke-width .32s ease}
+.direction-engraving .table-sigil{opacity:.55}
+.direction-engraving .house-node:not(.on){opacity:.28}
+.direction-engraving.lit{
+  opacity:.96;
+  filter:saturate(1.08) drop-shadow(0 0 12px #bfeeff73);
+}
+.direction-engraving.lit .direction-arrows{opacity:1;animation:direction-surge .82s cubic-bezier(.16,.84,.3,1)}
+.direction-engraving.lit .direction-arrows path{opacity:1;stroke:#c8efff;stroke-width:8}
+@keyframes direction-surge{0%{opacity:.42;transform:scale(.96) rotate(-6deg)}26%,68%{opacity:1;filter:drop-shadow(0 0 18px #bdeeff);transform:scale(1.075) rotate(4deg)}100%{opacity:.52;transform:scale(1)}}
+
+/* Curated seat stories: 1–3 restrained objects, deterministic by archetype. */
+.seat-props .seat-object{position:absolute;display:block;pointer-events:none}
+.seat-props.story-practical .object-tankard{left:2px;top:1px;transform:rotate(-4deg)}
+.seat-props.story-practical .object-pouch{right:3px;bottom:6px;width:31px;height:22px;border:1px solid #6c4828;border-radius:48% 48% 56% 44%;background:linear-gradient(145deg,#88603b,#3d281b);box-shadow:0 5px 5px #0009,inset 0 1px #d0a66a33;transform:rotate(8deg)}
+.seat-props.story-practical .object-pouch:before{content:"";position:absolute;left:5px;right:5px;top:3px;border-top:2px solid #bd8b53}
+
+.seat-props.story-gambler .object-tankard{left:-3px;top:0;transform:rotate(3deg)}
+.seat-props.story-gambler .object-coins{right:-2px;bottom:2px;transform:rotate(10deg)}
+.seat-props.story-gambler .object-dice{right:6px;top:9px;width:31px;height:23px}
+.object-dice b{position:absolute;width:15px;height:15px;border:1px solid #857965;border-radius:3px;background:radial-gradient(circle at 33% 33%,#211913 0 1px,transparent 1.7px),radial-gradient(circle at 68% 68%,#211913 0 1px,transparent 1.7px),linear-gradient(145deg,#c4b99d,#736a58);box-shadow:0 3px 4px #000a}
+.object-dice b:first-child{left:0;bottom:0;transform:rotate(-13deg)}.object-dice b:last-child{right:0;top:0;transform:rotate(9deg)}
+
+.seat-props.story-casual .object-goblet{left:7px;top:4px;width:30px;height:44px;border:1px solid #a67643;border-radius:45% 45% 39% 39%;background:linear-gradient(90deg,#431816,#7a3028 50%,#3c1514);box-shadow:0 6px 5px #0009,inset 3px 0 #c7855844;transform:rotate(-5deg)}
+.object-goblet:before{content:"";position:absolute;left:12px;top:39px;width:5px;height:17px;background:#815c35}.object-goblet:after{content:"";position:absolute;left:5px;top:54px;width:20px;height:5px;border-radius:50%;background:#8d653b;box-shadow:0 3px 3px #0008}
+.seat-props.story-casual .object-snack{right:3px;bottom:8px;width:37px;height:18px;border-radius:58% 42% 51% 49%;background:linear-gradient(145deg,#b48242,#6e3f1d);box-shadow:0 4px 4px #0009;transform:rotate(13deg)}
+.seat-props.story-casual .object-cork{right:10px;top:13px;width:16px;height:8px;border-radius:4px;background:#9b6d3b;box-shadow:inset 0 1px #d0a86c,0 2px 3px #0008;transform:rotate(-24deg)}
+
+.seat-props.story-tidy .object-parchment{left:5px;top:14px;width:49px;height:34px;border:1px solid #72552e;border-radius:2px;background:linear-gradient(110deg,#b99b68,#dbc895);box-shadow:0 5px 5px #0008;transform:rotate(-7deg)}
+.object-parchment:before,.object-parchment:after{content:"";position:absolute;left:8px;right:7px;border-top:1px solid #6f512d70}.object-parchment:before{top:11px}.object-parchment:after{top:20px}
+.seat-props.story-tidy .object-rune{right:8px;bottom:9px;width:21px;height:21px;border:2px solid #8d744a;border-radius:50%;background:#29302d;box-shadow:0 4px 4px #0009,inset 0 0 6px #b6d7bc33;transform:rotate(12deg)}
+.object-rune b{position:absolute;inset:5px;border:1px solid #c2a567;transform:rotate(45deg)}
+
+.seat-props.story-mystical .object-bottle{left:7px;top:3px;width:25px;height:49px;border:1px solid #6b654d;border-radius:7px 7px 11px 11px;background:linear-gradient(90deg,#172724,#456155 55%,#182a27);box-shadow:0 6px 5px #0009,inset 4px 0 #b8d0b026;transform:rotate(-5deg)}
+.object-bottle:before{content:"";position:absolute;left:7px;top:-8px;width:9px;height:10px;border:1px solid #6b654d;background:#263c35}.object-bottle:after{content:"";position:absolute;left:5px;right:5px;bottom:9px;height:7px;border-radius:50%;background:#79577a99}
+.seat-props.story-mystical .object-rune{right:5px;top:12px;width:23px;height:23px;border:2px solid #7e688e;border-radius:50%;background:#25212b;box-shadow:0 0 8px #aa83bd44,0 4px 4px #0009}
+.seat-props.story-mystical .object-pouch{right:7px;bottom:5px;width:32px;height:20px;border:1px solid #5d4030;border-radius:48% 48% 56% 44%;background:#4e3027;box-shadow:0 4px 4px #0009;transform:rotate(-9deg)}
+
+.seat-props.story-rustic .object-tankard{left:1px;top:0;transform:rotate(-2deg)}
+.seat-props.story-rustic .object-snack{right:2px;bottom:7px;width:35px;height:19px;border-radius:62% 38% 57% 43%;background:linear-gradient(145deg,#9b6b37,#5b361d);box-shadow:0 4px 4px #0009;transform:rotate(-12deg)}
+
+.duel-props.seat-props{width:112px;height:92px;filter:none}
+.duel-opponent .duel-props.seat-props{left:22px;right:auto;top:176px;scale:1;transform:none}
+.duel-props.seat-props:after{bottom:0}
+.duel-opponent.rattled .duel-props .object-tankard{animation:mug-rattle .4s ease-out}
+.opponent.winner-seat .seat-props .object-tankard,.duel-opponent.winner-seat .duel-props .object-tankard{animation:toast-lift .48s ease-out 1}
+@media(max-height:760px){.duel-opponent .duel-props.seat-props{left:20px;top:150px;scale:.86;transform:rotate(-4deg)}}
+@media(max-width:599px){
+  .direction-engraving{opacity:.31}
+  .direction-engraving.lit{opacity:.94}
+  .seat-props{scale:.98}
+  .duel-opponent .duel-props.seat-props{left:18px;top:150px;scale:.82;transform:rotate(-4deg)}
+}
