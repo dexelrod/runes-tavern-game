@@ -151,3 +151,12 @@ test('mobile polish keeps the table calm while improving seat identity and scana
   assert.match(css,/\.elder-home \.duel-invite\{width:94%;min-height:62px/);
   assert.match(css,/\.elder-home \.table-tools button\{min-width:82px;min-height:44px/);
 });
+
+test('opponent turn motion is a slow micro-tilt and central play state wins overlaps',()=>{
+  assert.match(css,/\.gameplay-anchors\{z-index:24\}/);
+  assert.match(css,/animation:opponent-presence-sway 3\.8s ease-in-out infinite alternate/);
+  assert.match(css,/@keyframes opponent-presence-sway\{from\{rotate:-\.65deg\}to\{rotate:\.65deg\}\}/);
+  assert.doesNotMatch(css,/@keyframes opponent-presence-sway[^}]*transform:/);
+  assert.match(css,/\.tavern-table \.seat-right \.opponent-fan,[^{]*\{translate:16px 0\}/);
+  assert.match(css,/\.taki-panel\{position:relative;z-index:36\}/);
+});

@@ -991,3 +991,20 @@ html[lang="en"] .setting-row label{direction:ltr;text-align:left}
 @media(max-width:599px) and (max-height:430px){
   .table-shell:not(.duel-table) .score-slate{top:max(8px,calc(env(safe-area-inset-top) + 5px));width:94px;padding-block:5px}
 }
+
+/* v49: opponent presence stays human and restrained; the table play area wins overlaps. */
+.gameplay-anchors{z-index:24}
+.opponent.active .opponent-fan,.quick-opponent.active .physical-fan,.duel-opponent.active .duel-fan{
+  animation:opponent-presence-sway 3.8s ease-in-out infinite alternate;
+  transform-origin:50% 72%;
+  will-change:rotate;
+}
+@keyframes opponent-presence-sway{from{rotate:-.65deg}to{rotate:.65deg}}
+
+@media(max-width:599px){
+  .tavern-table .seat-right .opponent-fan,.tavern-table .seat-far-right .opponent-fan{translate:16px 0}
+  .tavern-table .seat-left .opponent-fan,.tavern-table .seat-far-left .opponent-fan{translate:-4px 0}
+  .taki-panel{position:relative;z-index:36}
+}
+
+.reduced-motion .opponent.active .opponent-fan,.reduced-motion .quick-opponent.active .physical-fan,.reduced-motion .duel-opponent.active .duel-fan{animation:none!important}
