@@ -54,6 +54,14 @@
 
 /* v20: Tavern Duel — one table, two players, five rounds */
 .duel-sprite{display:block;width:100%;height:100%;background-image:url('./assets/duel-opponents.png');background-repeat:no-repeat;background-size:500% 500%;background-position:var(--sprite-x) var(--sprite-y)}
+.duel-sprite.bramm-art{display:block;max-width:100%;max-height:100%;object-fit:contain;object-position:50% 100%;background:none!important;clip-path:none!important;-webkit-clip-path:none!important;-webkit-mask-image:none!important;mask-image:none!important;transform:none;transform-origin:center bottom;animation:bramm-expression-in .2s ease-out both}
+.duel-opponent.opponent-bramm{top:-20px}
+.opponent-bramm .duel-presence{z-index:4;width:min(520px,96vw);height:330px;top:0;overflow:visible}
+.opponent-bramm .duel-presence .bramm-art{padding:0 18px;box-sizing:border-box}
+.opponent-bramm .contact-shadow{left:24%;right:24%;bottom:7px}
+.regular.opponent-bramm .regular-portrait,.duel-cameo:has(.bramm-art){display:grid;place-items:center}
+.regular.opponent-bramm .bramm-art,.duel-cameo .bramm-art{width:100%;height:100%;padding:3px;box-sizing:border-box;object-position:center center}
+@keyframes bramm-expression-in{from{opacity:.25;scale:.992}to{opacity:1;scale:1}}
 .duel-mode{grid-column:1/-1;display:grid;grid-template-columns:96px 1fr;align-items:center;min-height:112px;padding:6px 30px 6px 12px;text-align:right;border:1px solid #a27b4755;border-radius:70px 9px 9px 70px;background:linear-gradient(100deg,#17211ed9,#3a2015b8);box-shadow:inset 0 0 22px #0007,0 8px 18px #0007}.duel-cameo{position:relative;width:92px;height:92px;overflow:hidden;border-radius:50%;border:2px solid #b68a4a;background:#1a100b;box-shadow:0 0 0 4px #26150c,0 8px 14px #000b}.duel-cameo .duel-sprite{transform:scale(1.38);transform-origin:center 42%}.duel-mode b{font-size:18px}.duel-mode small{font-size:12px}.elder-home .table-choices:has(.duel-mode){gap:8px 12px}.elder-home .table-choices:has(.duel-mode) .tavern-mode{grid-column:auto;min-height:92px}.elder-home .table-choices:has(.duel-mode) .quick-mode{min-height:92px}
 .duel-select{overflow:auto;background-position:center top}.duel-select:before{content:"";position:fixed;inset:0;background:linear-gradient(#10070488,#080301dc 72%);pointer-events:none}.duel-select>section{position:relative;z-index:2;width:min(560px,100%);min-height:100%;margin:auto;padding:max(24px,env(safe-area-inset-top)) 14px max(24px,env(safe-area-inset-bottom))}.duel-select header{position:relative;min-height:88px;display:grid;place-items:center;text-align:center;color:#ead7ad}.duel-select header h1{margin:4px 0 0;font:400 27px Georgia,"Noto Sans Hebrew",serif}.duel-select header small{color:#bc9d67}.rune-menu.back{position:absolute;left:0;top:5px;font-size:34px;line-height:1;color:#d5b875;padding:0 0 4px}.regulars{display:grid;gap:10px}.regular{position:relative;min-height:126px;display:grid;grid-template-columns:118px 1fr;align-items:center;overflow:hidden;padding:0 0 0 12px;border:1px solid #7f603d;border-radius:8px;background:linear-gradient(105deg,#121b18f2,#2d1c14f0);color:#ead6a8;text-align:right;box-shadow:0 8px 18px #0009}.regular:active{transform:translateY(2px)}.regular.chosen{border-color:#d1a657;box-shadow:0 0 0 1px #d1a65755,0 8px 18px #0009}.regular-portrait{align-self:stretch;overflow:hidden;background:radial-gradient(ellipse at 50% 70%,#9b653738,transparent 70%)}.regular-portrait .duel-sprite{transform:scale(1.13);transform-origin:center 50%}.regular-copy{display:grid;gap:5px;padding:12px 12px}.regular-copy>b{font:600 21px Georgia,"Noto Sans Hebrew",serif}.regular-copy small{font-size:14px;color:#c9b286}.regular-copy em{font-style:normal;font-size:12px;color:#9f8a68}.seat-invite{position:absolute;left:11px;bottom:9px;color:#d7b86f;font-size:11px;opacity:.82}
 .duel-table .game{grid-template-rows:78px minmax(0,1fr) 235px}.duel-table .board{isolation:isolate}.duel-table .opponents{z-index:8}.duel-opponent{position:absolute;z-index:7;left:50%;top:-77px;width:min(390px,100vw);height:268px;transform:translateX(-50%);color:#ead7ad;pointer-events:none}.duel-presence{position:absolute;z-index:2;left:50%;top:0;width:330px;height:245px;transform:translateX(-50%);filter:drop-shadow(0 12px 10px #0009)}.duel-presence .duel-sprite{position:relative;z-index:2}.contact-shadow{position:absolute;z-index:1;left:12%;right:12%;bottom:12px;height:35px;border-radius:50%;background:#0009;filter:blur(10px)}.duel-name{position:absolute;z-index:10;right:16px;top:32px;display:grid;min-width:92px;padding:6px 9px;border-right:2px solid #c69a50;background:linear-gradient(90deg,transparent,#17110bdc);text-align:right;text-shadow:0 2px 3px #000}.duel-name>b{font:600 17px Georgia,"Noto Sans Hebrew",serif}.duel-name small{font-size:11px;color:#bea779}.duel-name span{font-size:10px;color:#d9bd82;margin-top:3px}.duel-fan{position:absolute;z-index:8;left:50%;top:187px;width:280px;height:72px;transform:translateX(-50%) perspective(260px) rotateX(12deg) rotate(180deg);transform-style:preserve-3d}.duel-fan>i{position:absolute;left:50%;width:43px;height:62px;border:1px solid #c4974f;border-radius:4px;background:var(--oxblood) repeating-linear-gradient(45deg,transparent 0 7px,#d0a34d40 7px 8px);box-shadow:inset 0 0 0 4px #421310,0 4px 7px #000b;transform:translateX(calc(-50% + var(--offset)*10px)) rotate(calc(var(--offset)*3.2deg));transform-origin:50% 115%;display:grid;place-items:center}.duel-fan svg{width:22px;color:#c8a25c}.duel-fan.flick>i{transition:transform .18s cubic-bezier(.2,.9,.2,1)}.duel-fan.thunk>i{box-shadow:inset 0 0 0 4px #421310,0 7px 6px #000d}.duel-fan.measured>i{transform:translateX(calc(-50% + var(--offset)*9px)) rotate(calc(var(--offset)*2.5deg))}.duel-props{position:absolute;z-index:9;left:22px;top:176px;width:78px;height:82px}.duel-mug{width:74px;height:80px;filter:drop-shadow(0 8px 6px #000b)}.personal-token{position:absolute;right:-4px;bottom:7px;width:28px;height:13px;border:1px solid #9c7441;border-radius:45%;background:linear-gradient(130deg,#745737,#291c12);box-shadow:0 4px 5px #0009}.duel-props.aila .personal-token{border-radius:80% 10%;background:#534a2f}.duel-props.bran .personal-token{background:#62615c;border-color:#938b78}.duel-props.sela .personal-token{width:24px;height:31px;border-radius:2px;background:#3d2a1a}.duel-props.kesh .personal-token{border-radius:50%;background:#554262}.duel-opponent.rattled .duel-mug{animation:mug-rattle .4s ease-out}.duel-speech{z-index:30;top:60px;left:70%;max-width:170px;white-space:normal;text-align:center;font-size:15px;line-height:1.3}.duel-speech:after{top:auto;bottom:-5px;border:0;border-right:1px solid #765837;border-bottom:1px solid #765837}.duel-opponent.active:after{content:"התור של היריב";position:absolute;z-index:20;top:169px;left:50%;transform:translateX(-50%);padding:4px 12px;border:1px solid #d0a352;border-radius:14px;background:#21140de8;color:#ffe0a0;font-size:12px;font-weight:700;box-shadow:0 0 17px var(--active)}
@@ -61,6 +69,7 @@
 @media(max-height:760px){.duel-select>section{padding-top:max(12px,env(safe-area-inset-top))}.duel-select header{min-height:70px}.regular{min-height:104px;grid-template-columns:100px 1fr}.duel-table .game{grid-template-rows:72px minmax(0,1fr) 205px}.duel-opponent{top:-72px;height:232px}.duel-presence{width:285px;height:211px}.duel-fan{top:159px;scale:.9}.duel-props{top:150px;scale:.86}.duel-opponent.active:after{top:147px}.duel-table .center,.duel-table .direction-engraving{top:72%}.duel-table .status-stack{top:-82px}}
 @media(max-width:370px){.duel-mode{grid-template-columns:78px 1fr;padding-right:18px}.duel-cameo{width:75px;height:75px}.regular{grid-template-columns:92px 1fr}.regular-copy{padding-right:9px}.regular-copy>b{font-size:19px}.regular-copy small{font-size:12px}.duel-name{right:8px}.duel-speech{left:65%;max-width:145px}.duel-table .score-slate{width:104px}}
 @media(prefers-reduced-motion:reduce){.duel-opponent.rattled .duel-mug{animation:none}.duel-sprite{transition:none}}
+@media(prefers-reduced-motion:reduce){.duel-sprite.bramm-art{animation:bramm-expression-fade .12s linear both}@keyframes bramm-expression-fade{from{opacity:.35}to{opacity:1}}}
 
 /* v21: physical card travel keeps play readable without interrupting the table */
 .action-spotlight,.card-flight{display:none!important}.table-caption{position:absolute;z-index:70;left:50%;top:calc(100% + 22px);transform:translateX(-50%);width:max-content;max-width:290px;padding:5px 12px;border:1px solid #9d7848;border-radius:15px;background:#151b18e8;color:#e8d09d;font-size:12px;font-weight:700;text-align:center;box-shadow:0 5px 13px #0009;pointer-events:none;animation:caption-breathe .9s ease both}@keyframes caption-breathe{0%{opacity:0;transform:translate(-50%,5px)}15%,80%{opacity:1;transform:translate(-50%,0)}100%{opacity:0}}
@@ -1274,4 +1283,56 @@ html[lang="en"] .setting-row label{direction:ltr;text-align:left}
 
 @media(prefers-reduced-motion:reduce){
   .duel-presence,.regular-portrait,.seat-props .seat-object{filter:saturate(.86) sepia(.06)}
+}
+
+/* Bramm is one seated, centered opponent composition: portrait, hand, identity, and speech. */
+.result-actions .parchment-button{color:#2d1a0d;text-shadow:0 1px #fff4d5;font-weight:800}
+.result-actions .parchment-button:hover,.result-actions .parchment-button:focus-visible{color:#160c06;background:linear-gradient(#f7e7bd,#d9b77b);outline:2px solid #f0cd83;outline-offset:2px}
+.duel-opponent.opponent-bramm{left:50%;top:clamp(-78px,-8vh,-54px);width:min(720px,100vw);height:360px;scale:1;transform:translateX(-50%);transform-origin:50% 0;overflow:visible}
+.opponent-bramm .duel-presence{left:50%;top:0;width:clamp(390px,40vw,535px);height:clamp(292px,39vh,382px);transform:translateX(-50%);overflow:visible;z-index:4}
+.opponent-bramm .duel-presence .duel-sprite.bramm-art{position:relative;width:100%;height:100%;max-width:none;max-height:none;padding:0 22px;box-sizing:border-box;object-fit:contain;object-position:50% 100%;clip-path:none!important;-webkit-clip-path:none!important;-webkit-mask-image:none!important;mask-image:none!important}
+.opponent-bramm .duel-presence:after{display:none}
+.opponent-bramm .duel-depth-rim{z-index:3;top:clamp(252px,34vh,328px)}
+.opponent-bramm .duel-fan{z-index:7;left:50%;top:clamp(242px,32vh,310px);width:360px}
+.opponent-bramm .duel-props{display:none}
+.bramm-identity{position:absolute;z-index:12;left:20px;top:70px;width:154px;padding:9px 11px;border:1px solid #8b693d;border-inline-start:3px solid #c99a4d;border-radius:4px;background:linear-gradient(110deg,#111815f2,#2b241df2);color:#ead5a5;box-shadow:inset 0 1px #dfb7652e,0 3px 0 #090504,0 10px 20px #000a;text-align:start;text-shadow:0 2px 2px #000}
+.bramm-identity>b{display:block;font:700 22px/1.05 var(--runes-display)}
+.bramm-identity>small{display:block;margin-top:3px;color:#bda67b;font-size:11px}
+.bramm-identity>div{display:grid;gap:3px;margin-top:8px;padding-top:7px;border-top:1px solid #9f7c493d}
+.bramm-identity>div span{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#d3bd91}
+.bramm-identity strong{font:800 17px/1 var(--runes-ui);color:#f2d58f}
+.bramm-speech{position:absolute;z-index:13;right:14px;top:82px;width:max-content;max-width:205px;padding:9px 12px;border:1px solid #7a5a35;border-radius:7px;background:linear-gradient(105deg,#ead7ac,#d8b983);color:#302015;font:700 14px/1.35 var(--runes-ui);text-align:center;box-shadow:0 3px 0 #4c301a,0 9px 18px #000a}
+.bramm-speech:after{content:"";position:absolute;left:-7px;bottom:13px;width:12px;height:12px;background:#ddbF8c;border-left:1px solid #7a5a35;border-bottom:1px solid #7a5a35;transform:rotate(45deg)}
+
+@media (min-width:900px) and (min-aspect-ratio:11/10){
+  .duel-opponent.opponent-bramm{left:50%;width:min(760px,72vw)}
+  .opponent-bramm .duel-presence{left:50%;width:clamp(430px,37vw,545px)}
+  .opponent-bramm .duel-fan{left:50%;top:clamp(205px,27vh,245px)}
+  .opponent-bramm .duel-depth-rim{top:clamp(215px,28vh,255px)}
+}
+
+@media (max-width:599px){
+  .duel-opponent.opponent-bramm{top:-57px;width:100vw;height:288px;transform:translateX(-50%)}
+  .opponent-bramm .duel-presence{width:min(370px,96vw);height:270px}
+  .opponent-bramm .duel-presence .duel-sprite.bramm-art{padding:0 13px}
+  .opponent-bramm .duel-depth-rim{top:218px}
+  .opponent-bramm .duel-fan{top:207px;width:270px;scale:.9}
+  .bramm-identity{left:7px;top:41px;width:112px;padding:6px 8px}
+  .bramm-identity>b{font-size:17px}.bramm-identity>small{font-size:9px}.bramm-identity>div{margin-top:5px;padding-top:5px}.bramm-identity>div span{font-size:9px}.bramm-identity strong{font-size:14px}
+  .bramm-speech{right:7px;top:79px;max-width:138px;padding:7px 9px;font-size:11px}
+}
+
+@media (min-width:600px) and (max-width:899px) and (orientation:portrait){
+  .duel-opponent.opponent-bramm{top:-67px;width:min(680px,100vw)}
+  .opponent-bramm .duel-presence{width:min(500px,69vw);height:350px}
+  .opponent-bramm .duel-fan{top:278px}
+  .opponent-bramm .duel-depth-rim{top:287px}
+}
+
+@media (min-width:760px) and (max-height:590px) and (orientation:landscape){
+  .duel-opponent.opponent-bramm{top:-54px;scale:1;width:min(610px,78vw);transform:translateX(-50%)}
+  .opponent-bramm .duel-presence{width:390px;height:270px}
+  .opponent-bramm .duel-fan{top:218px}
+  .opponent-bramm .duel-depth-rim{top:224px}
+  .bramm-identity{top:46px;left:9px}.bramm-speech{top:62px;right:5px}
 }

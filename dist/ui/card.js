@@ -1,6 +1,6 @@
 import { TYPES, TYPE_LABEL, WILD } from '../game-engine/cards.js';
 
-const EN_TYPE_LABEL={number:'',stop:'Shield',plus2:'Curse +2',reverse:'Riposte',plus:'Quickstep',taki:'Crossbow',changeColor:'Rune',superTaki:'Runed Crossbow',king:'King'};
+const EN_TYPE_LABEL={number:'',stop:'Shield',plus2:'Curse +2',reverse:'Turnabout',plus:'Quickstep',taki:'Crossbow',changeColor:'Rune',superTaki:'Runed Crossbow',king:'King'};
 const ART={
   [TYPES.STOP]:'shield.svg',
   [TYPES.PLUS2]:'curse-plus-2.svg',

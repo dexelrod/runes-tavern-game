@@ -1,0 +1,73 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import test from 'node:test';
+import { fileURLToPath } from 'node:url';
+import { BRAMM_EXPRESSIONS, BRAMM_REACTIONS, BRAMM_VOICE_LIBRARY, brammExpressionURL, createBrammController } from '../dist/duel/bramm.js';
+
+test('Bramm pack registers every supplied voice and expression asset',()=>{
+  assert.equal(Object.keys(BRAMM_VOICE_LIBRARY).length,29);
+  assert.equal(BRAMM_EXPRESSIONS.length,36);
+  for(const definition of Object.values(BRAMM_VOICE_LIBRARY)){const bytes=fs.readFileSync(fileURLToPath(definition.src));assert.ok(bytes.length>128);}
+  for(const expression of BRAMM_EXPRESSIONS){const bytes=fs.readFileSync(fileURLToPath(brammExpressionURL(expression)));assert.equal(bytes.subarray(1,4).toString(),'PNG');}
+});
+
+test('Lucky becomes Still lucky after another strong player move',()=>{
+  const bramm=createBrammController({random:()=>0,now:()=>10000});
+  assert.equal(bramm.react('player_good_move',{},true).voice,'bramm_player_good_move_01');
+  assert.equal(bramm.react('player_good_move',{},true).voice,'bramm_player_good_move_02');
+  assert.equal(bramm.snapshot().state,'irritated');
+});
+
+test('mocking a player draw unlocks the contextual Don’t callback',()=>{
+  const bramm=createBrammController({random:()=>0,now:()=>10000});
+  assert.equal(bramm.react('player_draw',{},true).voice,'bramm_player_draw_01');
+  assert.equal(bramm.react('bramm_draw',{},true).voice,'bramm_bramm_draw_01');
+  assert.equal(bramm.snapshot().flags.bramm_has_been_forced_to_draw_after_mock,true);
+});
+
+test('one-card panic persists and recovery returns through relief',()=>{
+  const bramm=createBrammController({random:()=>0,now:()=>10000});
+  assert.equal(bramm.react('player_one_card',{},true).voice,'bramm_player_one_card_01');
+  assert.equal(bramm.snapshot().state,'panic');
+  assert.equal(bramm.react('one_card_persist',{},true).voice,'bramm_player_one_card_02');
+  assert.equal(bramm.oneCardRecovered().expression,'21_sudden_relief');
+  assert.equal(bramm.snapshot().flags.bramm_survived_one_card_scare,true);
+});
+
+test('result selection uses one context-appropriate critical line',()=>{
+  const bramm=createBrammController({random:()=>0,now:()=>10000});
+  bramm.react('player_one_card',{},true);bramm.oneCardRecovered();
+  const win=bramm.react('win',{survivedOneCard:true},true);
+  assert.equal(win.voice,'bramm_win_05');assert.equal(win.priority,'CRITICAL');
+  const loss=createBrammController({random:()=>0,now:()=>10000}).react('loss',{},true);
+  assert.equal(loss.voice,'bramm_loss_01');assert.equal(loss.nextState,'defeated');
+});
+
+test('reaction metadata stays data-driven and complete',()=>{
+  for(const reaction of BRAMM_REACTIONS){for(const key of ['id','trigger','priority','voice','expression','duration'])assert.ok(reaction[key]);}
+  assert.equal(new Set(BRAMM_REACTIONS.map(item=>item.voice)).size,29);
+});
+
+test('short-term character memory survives a saved-match restore',()=>{
+  const first=createBrammController({random:()=>0,now:()=>10000});first.react('player_draw',{},true);first.react('player_one_card',{},true);
+  const restored=createBrammController({random:()=>0,now:()=>20000,initial:first.snapshot()});
+  assert.equal(restored.snapshot().state,'panic');
+  assert.equal(restored.snapshot().flags.bramm_has_mocked_player_draw,true);
+  assert.equal(restored.react('bramm_draw',{},true).voice,'bramm_bramm_draw_01');
+});
+
+test('ordinary voice waits for meaningful silence while visual reactions stay available',()=>{
+  let time=0;const bramm=createBrammController({random:()=>0,now:()=>time});
+  assert.equal(bramm.observe('player_draw').expression,'12_mock_generous');
+  assert.equal(bramm.react('player_draw'),null);
+  time=9000;bramm.observe('player_draw');
+  assert.equal(bramm.react('player_draw').voice,'bramm_player_draw_01');
+});
+
+test('recent queue prevents an immediate repeated line and round budget resets explicitly',()=>{
+  const bramm=createBrammController({random:()=>0,now:()=>20000});
+  assert.equal(bramm.react('player_draw',{},true).voice,'bramm_player_draw_01');
+  assert.equal(bramm.react('player_draw',{},true),null);
+  bramm.beginRound();
+  assert.equal(bramm.snapshot().counters.nonCriticalThisRound,0);
+});

@@ -4,115 +4,22 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { AMBIENCE_TRACKS, AudioSystem, CARD_PLAY_VARIATIONS, MUSIC_TRACKS, SOUND_LIBRARY } from '../dist/platform/audio.js';
 
-const expectedSounds=[
-  'cardPlay','cardPlayVariation1','cardPlayVariation2','cardPlayVariation3','cardPlayVariation4','cardPlayVariation5','cardPlaySoft','cardDraw','drawMultiple','shuffle','deckPutDown',
-  'takiOpen','takiClose','colorChange','stopSkip','reverse','plusCard',
-  'lastCard','winHand','loseHand'
-];
+const expectedSounds=['cardPlay','cardPlayVariation1','cardPlayVariation2','cardPlayVariation3','cardPlayVariation4','cardPlayVariation5','cardPlaySoft','cardDraw','drawMultiple','shuffle','deckPutDown','takiOpen','takiClose','colorChange','stopSkip','reverse','plusCard','lastCard','winHand','loseHand'];
 
-test('custom sound library exposes every gameplay cue',()=>{
-  assert.deepEqual(Object.keys(SOUND_LIBRARY),expectedSounds);
-  assert.equal(AMBIENCE_TRACKS.length,4);
-  assert.equal(MUSIC_TRACKS.length,2);
-  assert.equal(CARD_PLAY_VARIATIONS.length,6);
-  assert.equal(new Set([...Object.values(SOUND_LIBRARY).map(sound=>sound.src),...AMBIENCE_TRACKS,...MUSIC_TRACKS]).size,26);
-});
+class Param{constructor(value=1){this.value=value;}cancelScheduledValues(){}setTargetAtTime(value){this.value=value;}setValueAtTime(value){this.value=value;}linearRampToValueAtTime(value){this.value=value;}}
+class Gain{constructor(){this.gain=new Param();}connect(){} }
+class Source{constructor(){this.loop=false;this.playbackRate={value:1};this.started=false;this.stopped=false;this.onended=null;}connect(){}start(){this.started=true;}stop(){this.stopped=true;this.onended?.();}}
+class Context{constructor(){this.destination={};this.currentTime=0;this.state='running';this.sources=[];}createGain(){return new Gain();}createBufferSource(){const source=new Source();this.sources.push(source);return source;}createBuffer(numberOfChannels,length,sampleRate){const data=Array.from({length:numberOfChannels},()=>new Float32Array(length));return{numberOfChannels,length,sampleRate,duration:length/sampleRate,getChannelData:channel=>data[channel],copyToChannel:(source,channel,offset)=>data[channel].set(source,offset)};}decodeAudioData(){const length=480;return Promise.resolve({duration:.01,length,numberOfChannels:2,sampleRate:48000,getChannelData:()=>new Float32Array(length)});}resume(){return Promise.resolve();}}
+const withWebAudio=async callback=>{const Native=globalThis.AudioContext,nativeFetch=globalThis.fetch;globalThis.AudioContext=Context;globalThis.fetch=async()=>({ok:true,arrayBuffer:async()=>new ArrayBuffer(8)});try{return await callback();}finally{globalThis.AudioContext=Native;globalThis.fetch=nativeFetch;}};
 
-test('card placement rotates physical variations without immediate repeats and preserves soft play',()=>{
-  const NativeAudio=globalThis.Audio,random=Math.random;
-  globalThis.Audio=class{
-    constructor(src){this.src=src;this.paused=true;this.ended=false;this.currentTime=0;this.volume=1;this.playbackRate=1;}
-    play(){this.paused=false;return Promise.resolve();}
-    pause(){this.paused=true;}
-  };
-  Math.random=()=>0;
-  try{
-    const system=new AudioSystem();
-    const first=system.playCardPlacement(),second=system.playCardPlacement(),soft=system.playCardPlacement({soft:true});
-    assert.ok(first&&second&&soft);
-    assert.notEqual(first.src,second.src);
-    assert.equal(soft.src,SOUND_LIBRARY.cardPlaySoft.src);
-  }finally{globalThis.Audio=NativeAudio;Math.random=random;}
-});
+test('custom sound library exposes every gameplay cue and four soundtrack entries',()=>{assert.deepEqual(Object.keys(SOUND_LIBRARY),expectedSounds);assert.equal(AMBIENCE_TRACKS.length,4);assert.equal(MUSIC_TRACKS.length,4);assert.equal(CARD_PLAY_VARIATIONS.length,6);const musicFiles=MUSIC_TRACKS.flat();assert.equal(musicFiles.length,10);assert.equal(new Set([...Object.values(SOUND_LIBRARY).map(sound=>sound.src),...AMBIENCE_TRACKS,...musicFiles]).size,34);});
 
-test('every registered sound is a readable audio asset',()=>{
-  for(const url of [...Object.values(SOUND_LIBRARY).map(sound=>sound.src),...AMBIENCE_TRACKS,...MUSIC_TRACKS]){
-    const bytes=fs.readFileSync(fileURLToPath(url));
-    assert.ok(bytes.length>44);
-    if(url.endsWith('.wav')){assert.equal(bytes.subarray(0,4).toString(),'RIFF');assert.equal(bytes.subarray(8,12).toString(),'WAVE');}
-    else{assert.ok(url.endsWith('.m4a'));assert.equal(bytes.subarray(4,8).toString(),'ftyp');}
-  }
-});
+test('every registered sound is a readable audio asset',()=>{for(const url of [...Object.values(SOUND_LIBRARY).map(sound=>sound.src),...AMBIENCE_TRACKS,...MUSIC_TRACKS.flat()]){const bytes=fs.readFileSync(fileURLToPath(url));assert.ok(bytes.length>44);if(url.endsWith('.wav')){assert.equal(bytes.subarray(0,4).toString(),'RIFF');assert.equal(bytes.subarray(8,12).toString(),'WAVE');}else{assert.ok(url.endsWith('.m4a'));assert.equal(bytes.subarray(4,8).toString(),'ftyp');}}});
 
-test('audio system applies channel volume and rejects accidental rapid duplicates',()=>{
-  const NativeAudio=globalThis.Audio;
-  globalThis.Audio=class{
-    constructor(src){this.src=src;this.paused=true;this.ended=false;this.currentTime=0;this.volume=1;this.playbackRate=1;}
-    play(){this.paused=false;return Promise.resolve();}
-    pause(){this.paused=true;}
-  };
-  try{
-    const system=new AudioSystem();system.setSettings({sound:true,sfxVolume:.5,ambienceVolume:.1,musicVolume:.4});
-    const first=system.play('cardDraw');
-    assert.ok(first);
-    assert.ok(first.volume<=.35&&first.volume>=.32);
-    assert.equal(system.play('cardDraw'),null);
-    system.setSettings({sound:false});
-    assert.equal(system.play('cardPlay'),null);
-  }finally{globalThis.Audio=NativeAudio;}
-});
+test('all channels use Web Audio without constructing HTMLAudioElement',async()=>withWebAudio(async()=>{const system=new AudioSystem();system.prime();await system.playSfxBuffer('cardPlay',SOUND_LIBRARY.cardPlay,{volume:1,rate:1},new Set());await system.startMusic();await system.startAmbience();assert.ok(system.context instanceof Context);assert.equal(system.musicNode.source.started,true);assert.equal(system.musicNode.loop,true);assert.equal(system.ambienceNode.source.started,true);assert.equal(system.context.sources.length>=3,true);}));
 
-test('round soundtrack loops on the music channel and can be stopped independently',()=>{
-  const NativeAudio=globalThis.Audio,raf=globalThis.requestAnimationFrame,caf=globalThis.cancelAnimationFrame,random=Math.random;
-  globalThis.Audio=class{
-    constructor(src){this.src=src;this.paused=true;this.ended=false;this.currentTime=0;this.volume=1;this.loop=false;}
-    play(){this.paused=false;return Promise.resolve();}
-    pause(){this.paused=true;}
-  };
-  globalThis.requestAnimationFrame=callback=>{callback(performance.now()+5000);return 1;};
-  globalThis.cancelAnimationFrame=()=>{};
-  Math.random=()=>.99;
-  try{
-    const system=new AudioSystem();system.setSettings({sound:true,musicVolume:.24});
-    system.startMusic({newRound:true});
-    assert.equal(system.musicNode.src,MUSIC_TRACKS[1]);
-    assert.equal(system.musicNode.loop,true);
-    assert.equal(system.musicNode.paused,false);
-    assert.equal(system.musicNode.volume,.24);
-    system.stopMusic();
-    assert.equal(system.musicNode.paused,true);
-  }finally{
-    globalThis.Audio=NativeAudio;
-    globalThis.requestAnimationFrame=raf;
-    globalThis.cancelAnimationFrame=caf;
-    Math.random=random;
-  }
-});
+test('card placement rotates variations and rapid duplicates are rejected',async()=>withWebAudio(async()=>{const random=Math.random;Math.random=()=>0;try{const system=new AudioSystem(),first=system.playCardPlacement(),firstName=system.lastCardPlayVariation,second=system.playCardPlacement(),secondName=system.lastCardPlayVariation,soft=system.playCardPlacement({soft:true});assert.ok(first&&second&&soft);assert.notEqual(firstName,secondName);const draw=system.play('cardDraw');assert.ok(draw);assert.equal(system.play('cardDraw'),null);system.setSettings({sound:false});assert.equal(system.play('cardPlay'),null);}finally{Math.random=random;}}));
 
-test('sound, music, and ambience mute independently',()=>{
-  const NativeAudio=globalThis.Audio,raf=globalThis.requestAnimationFrame,caf=globalThis.cancelAnimationFrame;
-  globalThis.Audio=class{
-    constructor(src){this.src=src;this.paused=true;this.ended=false;this.currentTime=0;this.volume=1;this.playbackRate=1;this.loop=false;}
-    play(){this.paused=false;return Promise.resolve();}
-    pause(){this.paused=true;}
-  };
-  globalThis.requestAnimationFrame=callback=>{callback(performance.now()+5000);return 1;};
-  globalThis.cancelAnimationFrame=()=>{};
-  try{
-    const system=new AudioSystem();
-    system.setSettings({sound:false,music:true,ambience:true,musicVolume:.35,ambienceVolume:.28});
-    assert.equal(system.play('cardPlay'),null);
-    system.startMusic();system.startAmbience();
-    assert.equal(system.musicNode.paused,false);
-    assert.equal(system.ambienceNode.paused,false);
-    assert.equal(system.musicNode.volume,.35);
-    assert.equal(system.ambienceNode.volume,.28);
-    system.setSettings({sound:true,music:false,ambience:true});
-    assert.ok(system.play('cardPlay'));
-    assert.equal(system.musicNode.paused,true);
-  }finally{
-    globalThis.Audio=NativeAudio;
-    globalThis.requestAnimationFrame=raf;
-    globalThis.cancelAnimationFrame=caf;
-  }
-});
+test('music, ambience, sfx, and voice have independent gain channels',async()=>withWebAudio(async()=>{const system=new AudioSystem();system.setSettings({sound:true,music:true,ambience:true,sfxVolume:.5,musicVolume:.24,ambienceVolume:.1,voiceVolume:.7});system.prime();assert.equal(system.channelGains.sfx.gain.value,.5);assert.equal(system.channelGains.music.gain.value,.24);assert.equal(system.channelGains.ambience.gain.value,.1);assert.equal(system.channelGains.voice.gain.value,.7);await system.startMusic();system.setSettings({sound:true,music:false,ambience:true});assert.equal(system.channelGains.music.gain.value,0);assert.ok(system.play('cardPlay'));}));
+
+test('new rounds rotate across the four-track roster and join chunked soundtracks into one Web Audio buffer',async()=>withWebAudio(async()=>{const random=Math.random;Math.random=()=>0;try{const system=new AudioSystem();system.musicIndex=0;await system.startMusic();const first=system.musicNode.track;await system.startMusic({newRound:true});assert.notEqual(system.musicNode.track,first);const chunked=new AudioSystem();chunked.musicIndex=2;await chunked.startMusic();assert.equal(Array.isArray(chunked.musicNode.track),true);assert.equal(chunked.musicNode.track.length,4);assert.equal(chunked.musicNode.buffer.duration,.04);system.stopAll();chunked.stopAll();assert.equal(system.musicNode,null);assert.equal(system.ambienceNode,null);}finally{Math.random=random;}}));

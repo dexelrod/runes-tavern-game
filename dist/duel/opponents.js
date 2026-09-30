@@ -21,7 +21,8 @@ export const DUEL_OPPONENTS=Object.freeze([
   }),
   opponent('kesh','קֶשׁ','mysterious','הנוסע · שקט ובלתי צפוי',4,{drink:'ספל חרס',snack:'קמע',token:'אבן חרוטה'},'balanced','quiet',{
     pleased:['כך נפל הסימן.','הדרך מתקצרת.','יפה.'],annoyed:['הרוח השתנתה.','אני אזכור את זה.','באמת?'],surprised:['הסימן לא הראה זאת.','בחירה אמיצה.','מעניין.'],drink:['הלילה עוד צעיר.','האש יודעת.']
-  })
+  }),
+  Object.freeze({id:'bramm',name:'בראם',archetype:'mercenary',descriptor:'הבלתי־מנוצח · רברבן, תחרותי וקולני',row:2,props:{drink:'ספל כבד',snack:'לחם',token:'אסימון ברזל'},aiStyle:'aggressive',cardPlayStyle:'thunk',artMode:'expressions',sprites:{},dialoguePools:Object.freeze({pleased:[],annoyed:[],surprised:[],drink:[]}),reactionWeights:Object.freeze({pleased:0,annoyed:0,surprised:0,drink:0}),idleFrequency:44000})
 ]);
 
 export function getDuelOpponent(id){return DUEL_OPPONENTS.find(item=>item.id===id)||DUEL_OPPONENTS[0];}
@@ -30,7 +31,8 @@ const DUEL_EN=Object.freeze({
   aila:{name:'Aila',descriptor:'The Hunter · Patient and sharp-eyed',dialoguePools:{pleased:['Predictable.','I was waiting for that.','Clean.'],annoyed:['I will remember that.','Not bad. Annoying, but not bad.','Really?'],surprised:['You almost hid that.','Nicely done.','You changed tracks.'],drink:['Quiet. I am thinking.','This is not over.']}},
   bran:{name:'Bran',descriptor:'The Mercenary · Direct and competitive',dialoguePools:{pleased:['That is how you play a card.','Mine.','Another one.'],annoyed:['I will return the favor.','There is a limit.','Really?'],surprised:['Nicely done.','Not bad.','That changes things.'],drink:['The mug is too light.','We are not finished.']}},
   sela:{name:'Sela',descriptor:'The Scholar · Dry and calculating',dialoguePools:{pleased:['As calculated.','The obvious conclusion.','Unsurprising.'],annoyed:['I will revise the hypothesis.','It is legal. I checked.','Really?'],surprised:['An interesting deviation.','Bold choice.','Noted.'],drink:['At least the tea is consistent.','One more data point.']}},
-  kesh:{name:'Kesh',descriptor:'The Traveler · Quiet and unpredictable',dialoguePools:{pleased:['So the sign has fallen.','The road grows shorter.','Nicely done.'],annoyed:['The wind has changed.','I will remember that.','Really?'],surprised:['The sign did not show this.','Bold choice.','Interesting.'],drink:['The night is still young.','The fire knows.']}}
+  kesh:{name:'Kesh',descriptor:'The Traveler · Quiet and unpredictable',dialoguePools:{pleased:['So the sign has fallen.','The road grows shorter.','Nicely done.'],annoyed:['The wind has changed.','I will remember that.','Really?'],surprised:['The sign did not show this.','Bold choice.','Interesting.'],drink:['The night is still young.','The fire knows.']}},
+  bramm:{name:'Bramm',descriptor:'The Unbeaten · Boastful, competitive, and loud',dialoguePools:{pleased:[],annoyed:[],surprised:[],drink:[]}}
 });
 export function localizeDuelOpponent(opponent,language='he'){return language==='en'?{...opponent,...DUEL_EN[opponent.id]}:opponent;}
-export function duelSpriteStyle(opponent,state='idle'){const sprite=opponent.sprites[state]||opponent.sprites.idle;return `--sprite-x:${sprite.column*25}%;--sprite-y:${sprite.row*25}%`;}
+export function duelSpriteStyle(opponent,state='idle'){const sprite=opponent.sprites[state]||opponent.sprites.idle;if(!sprite)return'';return `--sprite-x:${sprite.column*25}%;--sprite-y:${sprite.row*25}%`;}

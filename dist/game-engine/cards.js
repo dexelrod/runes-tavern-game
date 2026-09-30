@@ -3,7 +3,7 @@ export const WILD = 'wild';
 export const TYPES = Object.freeze({ NUMBER:'number', STOP:'stop', PLUS2:'plus2', REVERSE:'reverse', PLUS:'plus', TAKI:'taki', CHANGE_COLOR:'changeColor', SUPER_TAKI:'superTaki', KING:'king' });
 
 export const TYPE_LABEL = {
-  number:'', stop:'מגן', plus2:'קללה +2', reverse:'מכת נגד', plus:'צעד זריז', taki:'קשת', changeColor:'רונה', superTaki:'קשת רונית', king:'מלך'
+  number:'', stop:'מגן', plus2:'קללה +2', reverse:'שינוי כיוון', plus:'צעד זריז', taki:'קשת', changeColor:'רונה', superTaki:'קשת רונית', king:'מלך'
 };
 
 export function makeCard(type, color = WILD, value = null, id = '') {
