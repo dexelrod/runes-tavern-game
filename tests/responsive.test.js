@@ -70,12 +70,21 @@ test('duel character is composited behind a physical far rim',()=>{
   assert.match(css,/\.duel-presence \.duel-sprite\{[\s\S]*mask-image:radial-gradient/);
 });
 
-test('Bramm keeps one fixed two-layer image stage across game renders',()=>{
+test('Bramm keeps one fixed single-image stage across game renders',()=>{
   assert.match(app,/data-bramm-stage-placeholder/);
   assert.match(app,/placeholder\.replaceWith\(brammStage\)/);
   assert.match(app,/function syncBrammStage\(stage\)/);
-  assert.match(css,/\.bramm-art-stage \.bramm-art-previous/);
   assert.match(css,/\.bramm-art-stage \.bramm-art-current/);
+  assert.doesNotMatch(app,/bramm-art-previous/);
+  assert.doesNotMatch(css,/bramm-swap-in/);
+  assert.match(css,/\.opponent-bramm \.bramm-art-stage\{[^}]*overflow:hidden;[^}]*clip-path:inset\(0 0 17% 0\)/);
+  assert.match(css,/\.opponent-bramm \.duel-depth-rim\{z-index:6/);
+});
+
+test('draw and discard piles rely on their physical forms without redundant labels',()=>{
+  assert.doesNotMatch(app,/<span class="pile-name">/);
+  assert.doesNotMatch(app,/<span class="deck-count"><small>/);
+  assert.match(app,/<span class="deck-count"><bdi>\$\{state\.drawPile\.length\}<\/bdi><\/span>/);
 });
 
 test('compact art direction stays layered, deterministic, and safe-area aware',()=>{
