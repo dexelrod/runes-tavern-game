@@ -16,12 +16,12 @@ export function createInitialState({ playerCount = 3, humanPlayers = 1, seed = D
   // The opening card is always a number. Command cards stay in the draw pile.
   const openingIndex = deck.findLastIndex(card => card.type === TYPES.NUMBER);
   const [opening] = deck.splice(openingIndex, 1);
-  return { version:5, seed, phase:'playing', players:dealt, drawPile:deck, discardPile:[opening], effectiveTopIndex:0, currentPlayerIndex:0, direction:1, activeColor:opening.color, activePenalty:null, taki:null, freePlay:false, mustPlayAgain:false, awaitingColor:null, candidateWinnerId:null, winnerId:null, turn:1, log:[{type:'start', cardId:opening.id}] };
+  return { version:6, seed, phase:'playing', players:dealt, drawPile:deck, discardPile:[opening], effectiveTopIndex:0, currentPlayerIndex:0, direction:1, activeColor:opening.color, activePenalty:null, taki:null, freePlay:false, mustPlayAgain:false, awaitingColor:null, winnerId:null, turn:1, log:[{type:'start', cardId:opening.id}] };
 }
 
 export function serializeState(state) { return JSON.stringify(state); }
 export function restoreState(json) {
-  const state = JSON.parse(json); if (![1,2,3,4,5].includes(state.version)) throw new Error('Unsupported saved game');
+  const state = JSON.parse(json); if (![1,2,3,4,5,6].includes(state.version)) throw new Error('Unsupported saved game');
   if(state.version<4)state.taki=null;
   const oldEffective=state.discardPile?.[state.effectiveTopIndex]?.id;
   const withoutOrdinaryTwo=card=>!(card?.type===TYPES.NUMBER&&card.value===2);
@@ -31,7 +31,12 @@ export function restoreState(json) {
   if(!state.discardPile.length){const replacement=state.drawPile.pop();if(replacement)state.discardPile.push(replacement);}
   const migratedEffective=state.discardPile.findIndex(card=>card.id===oldEffective);
   state.effectiveTopIndex=migratedEffective>=0?migratedEffective:Math.max(0,state.discardPile.length-1);
-  state.version=5;return state;
+  if(state.candidateWinnerId){
+    const candidate=playerById(state,state.candidateWinnerId);
+    if(state.phase==='playing'&&candidate?.hand.length===0){state.phase='finished';state.winnerId=candidate.id;state.log.push({type:'win',playerId:candidate.id});}
+    delete state.candidateWinnerId;
+  }
+  state.version=6;return state;
 }
 
 function recycle(state) {
@@ -41,6 +46,7 @@ function recycle(state) {
   const recycled = state.discardPile.filter((_, i) => !keepIndexes.has(i));
   state.discardPile = state.discardPile.filter((_, i) => keepIndexes.has(i));
   state.effectiveTopIndex = Math.max(0,state.discardPile.findIndex(c => c.id === effectiveId));
+  for(const card of recycled)delete card.inheritedColor;
   state.drawPile = shuffled(recycled, state.seed + state.turn + state.log.length);
   state.log.push({type:'shuffle',amount:state.drawPile.length});
 }
@@ -76,7 +82,6 @@ export function getLegalCards(state, playerId = currentPlayer(state).id) { retur
 function maybeWin(state, player, cardType) {
   if (player.hand.length) return false;
   if (cardType === TYPES.PLUS) return false;
-  if (cardType === TYPES.PLUS2) { state.candidateWinnerId = player.id; return false; }
   state.phase='finished'; state.winnerId=player.id; state.log.push({type:'win', playerId:player.id}); return true;
 }
 function advance(state, steps=1) { state.currentPlayerIndex = nextIndex(state, state.currentPlayerIndex, steps); state.turn++; state.freePlay=false; state.mustPlayAgain=false; }
@@ -86,7 +91,7 @@ function resolveFinalEffect(state, player, card, {fromTaki=false}={}) {
   if (card.color !== WILD) state.activeColor = card.color;
   if (card.type === TYPES.STOP) { const skipped=state.players[nextIndex(state)].id; advance(state,2); state.log.push({type:'stop',skipped}); maybeWin(state,player,card.type); return; }
   if (card.type === TYPES.REVERSE) { if (state.players.length > 2) { state.direction *= -1; state.log.push({type:'reverse',direction:state.direction}); } advance(state); maybeWin(state,player,card.type); return; }
-  if (card.type === TYPES.PLUS2) { state.activePenalty={kind:'plus2',amount:(state.activePenalty?.amount||0)+2}; state.log.push({type:'plus2',playerId:player.id,amount:state.activePenalty.amount}); maybeWin(state,player,card.type); advance(state); return; }
+  if (card.type === TYPES.PLUS2) { state.activePenalty={kind:'plus2',amount:(state.activePenalty?.amount||0)+2}; state.log.push({type:'plus2',playerId:player.id,amount:state.activePenalty.amount}); if(maybeWin(state,player,card.type)){state.activePenalty=null;return;} advance(state); return; }
   if (card.type === TYPES.PLUS) { state.mustPlayAgain=true; state.log.push({type:'playAgain',playerId:player.id}); return; }
   if (card.type === TYPES.TAKI) { state.taki={open:true,color:card.color,ownerId:player.id,openedTurn:state.turn,lastCardId:null,lastCardType:null}; state.activeColor=card.color; state.log.push({type:'takiOpened',playerId:player.id,color:card.color}); autoCloseTakiIfNeeded(state,player); return; }
   if (card.type === TYPES.SUPER_TAKI) {
@@ -107,7 +112,7 @@ function closeTaki(state, player) {
   const color=state.taki.color;
   state.taki=null;
   state.log.push({type:'takiClosed',playerId:player.id,color});
-  if (!lastId) {
+  if (!lastId || last.type===TYPES.TAKI || last.type===TYPES.SUPER_TAKI) {
     state.effectiveTopIndex=state.discardPile.length-1;
     state.activeColor=color;
     if (!maybeWin(state,player,last.type)) advance(state);
@@ -142,7 +147,7 @@ function playCard(state, action) {
 function drawAction(state, action) {
   if (state.phase!=='playing'||state.awaitingColor||currentPlayer(state).id!==action.playerId) throw new Error('Cannot draw');
   const p=currentPlayer(state);
-  if (state.activePenalty?.kind==='plus2') { const amount=state.activePenalty.amount; drawCards(state,p.id,amount); state.activePenalty=null; state.log.push({type:'drawPenalty',playerId:p.id,amount}); if (state.candidateWinnerId && playerById(state,state.candidateWinnerId).hand.length===0) { state.phase='finished'; state.winnerId=state.candidateWinnerId; return; } }
+  if (state.activePenalty?.kind==='plus2') { const amount=state.activePenalty.amount; drawCards(state,p.id,amount); state.activePenalty=null; state.log.push({type:'drawPenalty',playerId:p.id,amount}); }
   else { drawCards(state,p.id,1); state.log.push({type:'draw',playerId:p.id,amount:1}); }
   advance(state);
 }

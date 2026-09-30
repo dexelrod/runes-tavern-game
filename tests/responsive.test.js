@@ -16,9 +16,24 @@ test('presentation defines compact-safe roomy portrait, landscape, wide, and sho
 test('hand spacing is measured from the live container and recalculated after resize',()=>{
   assert.match(app,/function layoutHand\(\)/);
   assert.match(app,/hand\.clientWidth/);
-  assert.match(app,/getBoundingClientRect\(\)\.width/);
+  assert.match(app,/cards\[0\]\.offsetWidth/);
+  assert.doesNotMatch(app,/card\.scrollIntoView/);
   assert.match(app,/window\.addEventListener\('resize'/);
   assert.doesNotMatch(card,/Math\.min\(432/);
+});
+
+test('QA interaction safeguards keep the table fixed and game state visible',()=>{
+  assert.match(app,/const isPaused=\(\)=>view==='game'&&\(sheet==='pause'\|\|document\.hidden\)/);
+  assert.match(app,/if\(isPaused\(\)\|\|!state/);
+  assert.match(app,/document\.addEventListener\('visibilitychange'/);
+  assert.match(app,/function actionStripHTML\(\)/);
+  assert.match(app,/No match — draw a card/);
+  assert.match(app,/Free play — any card/);
+  assert.match(app,/has one card left/);
+  assert.doesNotMatch(app,/card\.scrollIntoView/);
+  assert.match(css,/\.card\.quiet[^}]*opacity:1!important/);
+  assert.match(css,/\.hand-overflow\.visible\{opacity:1\}/);
+  assert.match(css,/@media \(max-height:500px\) and \(orientation:landscape\)/);
 });
 
 test('the live hand always renders every card and compresses them to fit',()=>{

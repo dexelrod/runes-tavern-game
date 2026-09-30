@@ -117,11 +117,13 @@ export const BRAMM_VOICE_LIBRARY=Object.freeze(Object.fromEntries(BRAMM_REACTION
 })])));
 export function resolveBrammReaction(reaction,locale='en'){
   if(!reaction)return null;const resolvedLocale=normalizeBrammLocale(locale);
-  return {...reaction,locale:resolvedLocale,caption:reaction.captions?.[resolvedLocale]??reaction.caption};
+  const missingLocalizedVoice=resolvedLocale==='he'&&reaction.voice==='bramm_win_05';
+  return {...reaction,voice:missingLocalizedVoice?null:reaction.voice,locale:resolvedLocale,caption:reaction.captions?.[resolvedLocale]??reaction.caption};
 }
 export function resolveBrammVoice(name,locale='en'){
   const definition=BRAMM_VOICE_LIBRARY[name];if(!definition)return null;
   const resolvedLocale=normalizeBrammLocale(locale);
+  if(resolvedLocale==='he'&&name==='bramm_win_05')return null;
   return {name,locale:resolvedLocale,src:definition.sources[resolvedLocale],caption:definition.captions[resolvedLocale],priority:definition.priority};
 }
 const byId=Object.freeze(Object.fromEntries(BRAMM_REACTIONS.map(item=>[item.id,item])));

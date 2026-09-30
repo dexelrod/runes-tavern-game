@@ -2,10 +2,10 @@ import { createInitialState, restoreState, serializeState } from './engine.js';
 
 export const MATCH_VERSION=1;
 export const TAVERN_ROSTER=Object.freeze([
-  {id:'p0',name:'אתם',kind:'human',archetype:'wanderer',house:'sun'},
-  {id:'p1',name:'איילה',kind:'ai',archetype:'hunter',house:'stag'},
-  {id:'p2',name:'רון',kind:'ai',archetype:'bard',house:'raven'},
-  {id:'p3',name:'בראן',kind:'ai',archetype:'mercenary',house:'dragon'}
+  {id:'p0',name:'אתם',nameKey:'you',kind:'human',archetype:'wanderer',house:'sun'},
+  {id:'p1',name:'איילה',nameKey:'aila',kind:'ai',archetype:'hunter',house:'stag'},
+  {id:'p2',name:'רון',nameKey:'ron',kind:'ai',archetype:'bard',house:'raven'},
+  {id:'p3',name:'בראן',nameKey:'bran',kind:'ai',archetype:'mercenary',house:'dragon'}
 ]);
 export const NPC_EASTER_EGGS=Object.freeze(['לוסיאן','איניגו','לידיה','וירן','סורן','ויילין']);
 
@@ -13,7 +13,7 @@ function tavernGuests(roster,seed){
   return roster.map((player,index)=>{
     if(player.kind!=='ai')return {...player};
     const roll=Math.imul(((seed>>>0)+index*0x9e3779b9)>>>0,0x85ebca6b)>>>0;
-    return roll%31===0?{...player,name:NPC_EASTER_EGGS[Math.floor(roll/31)%NPC_EASTER_EGGS.length]}:{...player};
+    return roll%31===0?{...player,name:NPC_EASTER_EGGS[Math.floor(roll/31)%NPC_EASTER_EGGS.length],nameKey:null}:{...player};
   });
 }
 
@@ -32,7 +32,7 @@ export function createQuickSession({playerCount=3,seed=Date.now()}={}){
 
 export function createDuelSession({seed=Date.now(),opponent}={}){
   if(!opponent?.id)throw new Error('Duel opponent is required');
-  const players=[{id:'p0',name:'אתם',kind:'human',archetype:'wanderer',house:'sun'},{id:'p1',name:opponent.name,kind:'ai',archetype:opponent.archetype,house:opponent.id,duelOpponentId:opponent.id}];
+  const players=[{id:'p0',name:'אתם',nameKey:'you',kind:'human',archetype:'wanderer',house:'sun'},{id:'p1',name:opponent.name,nameKey:opponent.id,kind:'ai',archetype:opponent.archetype,house:opponent.id,duelOpponentId:opponent.id}];
   return {version:MATCH_VERSION,mode:'duel',phase:'round',round:1,totalRounds:5,suddenDeath:false,seed,opponentId:opponent.id,scores:scoreMap(players),roster:freshRoster(players),results:[],championId:null,game:createInitialState({playerCount:2,players,seed})};
 }
 
@@ -62,7 +62,7 @@ export function standings(match){return match.roster.map(player=>({...player,sco
 export function serializeSession(match){return JSON.stringify(match);}
 export function restoreSession(json){
   const raw=typeof json==='string'?JSON.parse(json):structuredClone(json);
-  if(raw?.game&&raw.version===MATCH_VERSION){if(raw.mode==='quick'&&raw.game.players?.length>6)throw new Error('Unsupported quick-game player count');raw.game=restoreState(serializeState(raw.game));return raw;}
+  if(raw?.game&&raw.version===MATCH_VERSION){if(raw.mode==='quick'&&raw.game.players?.length>6)throw new Error('Unsupported quick-game player count');raw.game=restoreState(serializeState(raw.game));const keys={אתם:'you',איילה:'aila',רון:'ron',בראן:'bran','סֶלָה':'sela','קֶשׁ':'kesh',בראם:'bramm'};for(const group of [raw.roster||[],raw.game.players||[]])for(const player of group)player.nameKey||=player.duelOpponentId||keys[player.name];return raw;}
   if(raw?.players)return createQuickSessionFromLegacy(raw);
   throw new Error('Unsupported saved session');
 }

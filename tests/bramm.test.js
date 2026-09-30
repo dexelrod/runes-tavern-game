@@ -10,7 +10,7 @@ test('Bramm pack registers every supplied voice and expression asset',()=>{
   for(const definition of Object.values(BRAMM_VOICE_LIBRARY)){const bytes=fs.readFileSync(fileURLToPath(definition.src));assert.ok(bytes.length>128);}
   for(const reaction of BRAMM_REACTIONS){
     assert.ok(reaction.captions.en);assert.ok(reaction.captions.he);assert.doesNotMatch(reaction.captions.he,/\[[^\]]+\]/);
-    const localized=resolveBrammVoice(reaction.voice,'he');assert.match(localized.src,/_he\.mp3$/);assert.equal(localized.caption,reaction.captions.he);
+    const localized=resolveBrammVoice(reaction.voice,'he');if(reaction.voice==='bramm_win_05'){assert.equal(localized,null);continue;}assert.match(localized.src,/_he\.mp3$/);assert.equal(localized.caption,reaction.captions.he);
     if(reaction.voice!=='bramm_win_05'){const bytes=fs.readFileSync(fileURLToPath(localized.src));assert.ok(bytes.length>128);}
   }
   for(const expression of BRAMM_EXPRESSIONS){const bytes=fs.readFileSync(fileURLToPath(brammExpressionURL(expression)));assert.equal(bytes.subarray(1,4).toString(),'PNG');}

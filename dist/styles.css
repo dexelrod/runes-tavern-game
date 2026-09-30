@@ -365,6 +365,36 @@
   .quick-one-on-one .quick-opponent{top:-58px;scale:.82}.quick-one-on-one .hand{height:130px}
 }
 
+/* v63: QA correctness and interaction safeguards. */
+.app-shell,.scene-world{overflow:hidden;overflow:clip}
+.scene-world,.scene-world>*,.table-body,.tavern-environment{contain:paint}
+.card.quiet,.hand[data-layout="browse"] .card.quiet,.hand.taki-active .card.quiet{opacity:1;filter:saturate(.52) brightness(.72)}
+.hand[data-layout="browse"]{justify-content:flex-start;overflow-x:auto;overflow-y:hidden;overscroll-behavior:contain;scroll-snap-type:x proximity;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.hand[data-layout="browse"]::-webkit-scrollbar{display:none}
+.hand[data-layout="browse"] .card{transform:translateY(0) rotate(0);scroll-snap-align:start}
+.hand-overflow{position:absolute;z-index:110;top:50%;width:34px;height:70px;translate:0 -25%;pointer-events:none;opacity:0;transition:opacity .15s;background:linear-gradient(90deg,#130906e8,transparent)}
+.hand-overflow:after{content:"›";position:absolute;top:21px;color:#f0cb7f;font:800 25px/1 var(--runes-display);text-shadow:0 2px 4px #000}
+.hand-overflow.visible{opacity:1}
+.hand-overflow-start{left:0;transform:scaleX(-1)}.hand-overflow-end{right:0}
+.hand-overflow-start:after,.hand-overflow-end:after{right:5px}
+.action-strip{position:absolute;z-index:38;left:50%;top:calc(50% + 92px);translate:-50% 0;width:max-content;max-width:min(88vw,520px);padding:6px 12px;border:1px solid #9c7545;border-radius:4px;background:linear-gradient(100deg,#17110de8,#2b2118eb);color:#f0d59b;font:700 13px/1.25 var(--runes-ui);text-align:center;text-shadow:0 1px 2px #000;box-shadow:inset 0 1px #e8c57924,0 4px 9px #0008}
+.opponent.last-card:after,.quick-opponent.last-card:after,.duel-opponent.last-card:after{content:"1";position:absolute;z-index:30;right:8px;top:44px;display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#b94a3e,#701e1b 68%);border:2px solid #3c100e;color:#f5d8a3;font:900 15px/1 var(--runes-display);box-shadow:inset 0 1px #f8aa7b55,0 0 13px #c03d2d99,0 3px 6px #0009}
+.opponent.last-card .seat-marker,.quick-opponent.last-card .quick-opponent-name,.duel-opponent.last-card .duel-name,.duel-opponent.last-card .bramm-identity{box-shadow:0 0 0 1px #c75843,0 0 14px #b7332788,var(--runes-shadow-plaque)}
+
+@media (max-width:599px) and (orientation:portrait){
+  .action-strip{top:calc(61% + 68px);max-width:88vw;padding:5px 9px;font-size:11px}
+  .hand-overflow{top:54%;height:64px}
+}
+
+@media (max-height:500px) and (orientation:landscape){
+  .elder-home .home-scene{overflow:hidden;flex-direction:row;justify-content:center;gap:clamp(18px,5vw,52px);padding:max(8px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left))}
+  .elder-home .home-title{width:28vw;margin:0;flex:0 0 auto}.elder-home .primary-runes-logo{width:min(190px,27vw)}
+  .elder-home .table-choices{flex:0 1 430px;margin:0;width:min(430px,62vw);gap:5px;align-content:center}
+  .elder-home .resume-marker{min-height:46px;padding:5px 12px}.elder-home .resume-marker small{font-size:10px}
+  .elder-home .primary-modes{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}.elder-home .primary-modes .mode-plaque{min-height:70px;padding-block:5px}
+  .elder-home .mode-token{scale:.72}.elder-home .duel-invite{min-height:48px}.elder-home .table-tools{gap:22px}.elder-home .table-tools button{min-height:35px;padding-block:2px}.elder-home .table-tools i{display:none}
+}
+
 /* v37: the tavern is a layered world. Environment, furniture, surface,
    engraving, light, props, seats, play anchors and viewport UI now own
    separate coordinate spaces. The old portrait composite is reference-only. */
@@ -1414,3 +1444,6 @@ html[lang="en"] .setting-row label{direction:ltr;text-align:left}
   :root{--portrait-card-w:76px}
   .elder-home .primary-modes{grid-template-columns:1fr}.elder-home .primary-modes .mode-plaque{min-height:82px;grid-template-columns:58px 1fr;grid-template-rows:1fr}.elder-home .table-choices{margin-top:56px}
 }
+
+/* Keep every card physically opaque; dimming must never reveal the card below. */
+.card.quiet,.hand[data-layout="browse"] .card.quiet,.hand.taki-active .card.quiet{opacity:1!important;filter:saturate(.52) brightness(.72)}
