@@ -98,6 +98,11 @@ test('finish pass shares one physical depth language without restoring turn narr
   assert.match(app,/cardBackStackHTML\('resume-game-token'\)/);
 });
 
+test('resume play indicator uses an optically centered drawn triangle',()=>{
+  assert.match(css,/\.resume-marker \.resume-seal\{[^}]*position:relative;[^}]*font-size:0/);
+  assert.match(css,/\.resume-marker \.resume-seal:after\{[^}]*left:50%;top:50%;[^}]*translate\(-42%,-50%\)/);
+});
+
 test('environmental refinement uses real cards and removes the old generic mug and coins',()=>{
   assert.match(app,/cardBackStackHTML\('mode-token menu-card-stack quick-card-stack'\)/);
   assert.match(app,/cardBackStackHTML\('abandoned-cards'\)/);
