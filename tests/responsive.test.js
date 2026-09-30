@@ -25,7 +25,7 @@ test('the live hand always renders every card and compresses them to fit',()=>{
   assert.match(app,/shown=human\.hand,top=topCard\(state\)/);
   assert.doesNotMatch(app,/human\.hand\.slice\(0,10\)/);
   assert.doesNotMatch(app,/data-show-all/);
-  assert.match(app,/const overlap=count<2\?0:step-cardWidth/);
+  assert.match(app,/calculateHandLayout\(\{count,cardWidth,available,portrait\}\)/);
 });
 
 test('card travel resolves source and destination anchors from the live DOM',()=>{
@@ -114,7 +114,7 @@ test('refinement pass communicates state through table objects and motion',()=>{
   assert.match(app,/trajectory==='draw'\?drawFrames:playFrames/);
   assert.match(app,/classList\.add\('receiving-card'\)/);
   assert.doesNotMatch(app,/class="extra-turn-token"/);
-  assert.match(app,/const scale=count>=13\?\.93:count>=11\?\.96:1/);
+  assert.match(app,/\{browse,overlap,spread,lift,scale\}=calculateHandLayout/);
   assert.match(app,/resultScoreHTML\(winner\)/);
   assert.match(css,/\.result-wrap\.table-result\{inset:0/);
   assert.match(css,/\.waiting \.hand\{filter:saturate\(\.94\) brightness\(\.96\);transform:none\}/);

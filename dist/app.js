@@ -6,8 +6,9 @@ import { clearMatch, feedback, loadMatch, loadSettings, saveMatch, saveSettings 
 import { audioSystem } from './platform/audio.js';
 import { chooseBotAction, chooseColor } from './game-ai/bot.js';
 import { cardHTML, cardLabel, sigilHTML } from './ui/card.js';
+import { calculateHandLayout } from './ui/hand-layout.js';
 import { DUEL_OPPONENTS, duelSpriteStyle, getDuelOpponent, localizeDuelOpponent } from './duel/opponents.js';
-import { BRAMM_EXPRESSIONS, BRAMM_REACTIONS, brammExpressionURL, createBrammController } from './duel/bramm.js';
+import { BRAMM_EXPRESSIONS, BRAMM_REACTIONS, brammExpressionURL, createBrammController, preloadBrammExpressions } from './duel/bramm.js';
 
 const root=document.querySelector('#app');
 const colorHex={red:'#7f2635',blue:'#465f76',green:'#36583c',yellow:'#b0832f'};
@@ -25,7 +26,7 @@ function colorRuneHTML(color,className='color-rune'){
 function displayName(player){if(!player)return'';if(player.id==='p0')return isEnglish()?'You':player.name;return isEnglish()?(playerNames[player.name]||player.name):player.name;}
 function displayOpponent(opponent){return localizeDuelOpponent(opponent,settings.language);}
 function cardOptions(options={}){return {...options,language:settings.language};}
-let botTimer=null,eventTimer=null,takiTimer=null,quipTimer=null,roundEndTimer=null,duelReactionTimer=null,duelIdleTimer=null,deckAudioTimer=null,brammSlowTimer=null,eventBanner=null,quip=null,duelReaction='idle',lastDuelReactionAt=0,lastLogLength=0,lastCounts={},lastHands={},lastQuipAt=0,takiRun=0,lastRenderedTopId=null,lastActivePlayerId=null,turnCueUntil=0,drawFlights=[],flightId=0,sessionEpoch=0,roundResultVisible=false,incomingCardDelays=new Map(),propRattled=new Set(),screenReaderLine='',captionLine='',brammCaptionLine='',blockAiUntil=0,motionLocked=false,pendingAction=null,deckSettling=false,brammController=null,brammExpression='01_default_smug',brammExpressionTimer=null,brammSequenceTimers=[];
+let botTimer=null,eventTimer=null,takiTimer=null,quipTimer=null,roundEndTimer=null,duelReactionTimer=null,duelIdleTimer=null,deckAudioTimer=null,brammSlowTimer=null,eventBanner=null,quip=null,duelReaction='idle',lastDuelReactionAt=0,lastLogLength=0,lastCounts={},lastHands={},lastQuipAt=0,takiRun=0,lastRenderedTopId=null,lastActivePlayerId=null,turnCueUntil=0,drawFlights=[],flightId=0,sessionEpoch=0,roundResultVisible=false,incomingCardDelays=new Map(),propRattled=new Set(),screenReaderLine='',captionLine='',brammCaptionLine='',blockAiUntil=0,motionLocked=false,pendingAction=null,deckSettling=false,brammController=null,brammExpression='01_default_smug',brammPreviousExpression='01_default_smug',brammExpressionTimer=null,brammSwapTimer=null,brammSequenceTimers=[];
 const dialogueHe={
   hunter:{skip:['אה, לא. תורך.','לאן אתה חושב שאתה הולך?','שב.'],penalty:['ארבעה?!','זה מסלים מהר.','אני רואה שבחרנו באלימות.'],reverse:['חוזר אליך.','הסתובבו השולחנות.'],last:['כולם עליו.','עוד לא ניצחת.'],king:['הכתר החליט.','טוב. זה משנה דברים.']},
   bard:{skip:['בחייך.','זה היה מיותר לחלוטין.'],penalty:['אה. נפלא.','בשלב הזה פשוט תן לי את הקופה.'],reverse:['תרתי משמע.','שינוי בתוכניות.'],last:['זה נהיה מעניין.','אל תחייך עדיין.'],king:['קשה להתווכח עם כתר.','בחירה אמיצה.']},
@@ -44,17 +45,17 @@ const tavernBanterEn=['Nicely done.','Not bad.','Really?','Of course.','I knew i
 function persist(){if(session){if(isBrammDuel()&&brammController)session.brammPersonality=brammController.snapshot();saveMatch(session);}}
 function currentDuelOpponent(){return displayOpponent(getDuelOpponent(session?.opponentId||settings.duelOpponent));}
 const isBrammDuel=()=>session?.mode==='duel'&&session.opponentId==='bramm';
-function clearBrammTimers(){clearTimeout(brammExpressionTimer);clearTimeout(brammSlowTimer);for(const timer of brammSequenceTimers)clearTimeout(timer);brammSequenceTimers=[];brammCaptionLine='';}
-function setBrammExpression(expression,duration=0){if(!BRAMM_EXPRESSIONS.includes(expression))expression=brammController?.defaultExpression()||'01_default_smug';brammExpression=expression;clearTimeout(brammExpressionTimer);render();if(duration>0){const epoch=sessionEpoch;brammExpressionTimer=setTimeout(()=>{if(epoch!==sessionEpoch||!brammController)return;brammExpression=brammController.defaultExpression();brammCaptionLine='';render();},settings.reducedMotion?Math.min(duration,900):duration);}}
+function clearBrammTimers(){clearTimeout(brammExpressionTimer);clearTimeout(brammSwapTimer);clearTimeout(brammSlowTimer);for(const timer of brammSequenceTimers)clearTimeout(timer);brammSequenceTimers=[];brammCaptionLine='';}
+function setBrammExpression(expression,duration=0){if(!BRAMM_EXPRESSIONS.includes(expression))expression=brammController?.defaultExpression()||'01_default_smug';brammPreviousExpression=brammExpression;brammExpression=expression;clearTimeout(brammExpressionTimer);clearTimeout(brammSwapTimer);render();brammSwapTimer=setTimeout(()=>{brammPreviousExpression=brammExpression;},settings.reducedMotion?0:150);if(duration>0){const epoch=sessionEpoch;brammExpressionTimer=setTimeout(()=>{if(epoch!==sessionEpoch||!brammController)return;brammPreviousExpression=brammExpression;brammExpression=brammController.defaultExpression();brammCaptionLine='';render();},settings.reducedMotion?Math.min(duration,900):duration);}}
 function performBrammReaction(reaction,{voiceDelay=0}={}){
   if(!reaction||!isBrammDuel())return null;
   setBrammExpression(reaction.expression);brammCaptionLine=reaction.caption||'';render();
-  const epoch=sessionEpoch,finish=()=>{if(epoch!==sessionEpoch)return;const timer=setTimeout(()=>{if(epoch!==sessionEpoch)return;if(!['panic','defeated'].includes(brammController?.snapshot().state))brammExpression=brammController?.defaultExpression()||'01_default_smug';brammCaptionLine='';render();},settings.reducedMotion?180:650);brammSequenceTimers.push(timer);},play=()=>{if(epoch!==sessionEpoch||!isBrammDuel())return;audioSystem.setSettings(settings);if(reaction.voice){void audioSystem.playVoice(reaction.voice,{priority:reaction.priority,locked:reaction.category==='result',onEnded:finish}).then(node=>{if(!node){const timer=setTimeout(finish,reaction.duration||2400);brammSequenceTimers.push(timer);}});}else{const timer=setTimeout(finish,reaction.duration||1800);brammSequenceTimers.push(timer);}render();};
+  const epoch=sessionEpoch,finish=()=>{if(epoch!==sessionEpoch)return;const timer=setTimeout(()=>{if(epoch!==sessionEpoch)return;if(!['panic','defeated'].includes(brammController?.snapshot().state)){brammPreviousExpression=brammExpression;brammExpression=brammController?.defaultExpression()||'01_default_smug';}brammCaptionLine='';render();},settings.reducedMotion?180:650);brammSequenceTimers.push(timer);},play=()=>{if(epoch!==sessionEpoch||!isBrammDuel())return;audioSystem.setSettings(settings);if(reaction.voice){void audioSystem.playVoice(reaction.voice,{priority:reaction.priority,locked:reaction.category==='result',onEnded:finish}).then(node=>{if(!node){const timer=setTimeout(finish,reaction.duration||2400);brammSequenceTimers.push(timer);}});}else{const timer=setTimeout(finish,reaction.duration||1800);brammSequenceTimers.push(timer);}render();};
   if(voiceDelay){const timer=setTimeout(play,settings.reducedMotion?80:voiceDelay);brammSequenceTimers.push(timer);}else play();
   return reaction;
 }
 function runBramm(trigger,context={},force=false){if(!isBrammDuel()||!brammController)return null;const visual=brammController.observe(trigger);if(visual)setBrammExpression(visual.expression,visual.duration);const reaction=brammController.react(trigger,context,force);if(!reaction)return visual;settings.brammRecentVoices=brammController.snapshot().recentVoices;saveSettings(settings);if(trigger==='loss'){setBrammExpression('29_defeated_disbelief',Math.max(1800,reaction.duration));const epoch=sessionEpoch,timer=setTimeout(()=>{if(epoch===sessionEpoch)performBrammReaction(reaction);},settings.reducedMotion?120:620);brammSequenceTimers.push(timer);return reaction;}const delay=trigger==='player_one_card'?420:trigger==='win'&&reaction.id==='win_04'?260:0;return performBrammReaction(reaction,{voiceDelay:delay});}
-function brammArtHTML(opponent,{context='table'}={}){if(opponent?.id!=='bramm')return `<i class="duel-sprite" style="${duelSpriteStyle(opponent,context==='table'?duelReaction:'idle')}"></i>`;const expression=context==='table'?brammExpression:'01_default_smug';return `<img class="duel-sprite bramm-art bramm-${context}" src="${brammExpressionURL(expression)}" alt="" draggable="false" onerror="this.onerror=null;this.src='${brammExpressionURL('01_default_smug')}'">`;}
+function brammArtHTML(opponent,{context='table'}={}){if(opponent?.id!=='bramm')return `<i class="duel-sprite" style="${duelSpriteStyle(opponent,context==='table'?duelReaction:'idle')}"></i>`;const expression=context==='table'?brammExpression:'01_default_smug',previous=context==='table'?brammPreviousExpression:expression,changing=previous!==expression;return `<span class="bramm-art-stage bramm-${context} ${changing?'is-changing':''}"><img class="duel-sprite bramm-art bramm-art-previous" src="${brammExpressionURL(previous)}" alt="" draggable="false"><img class="duel-sprite bramm-art bramm-art-current" src="${brammExpressionURL(expression)}" alt="" draggable="false" onerror="this.onerror=null;this.src='${brammExpressionURL('01_default_smug')}'"></span>`;}
 function scheduleDuelIdle(){clearTimeout(duelIdleTimer);if(session?.mode!=='duel'||session.phase!=='round')return;const opponent=currentDuelOpponent(),epoch=sessionEpoch;duelIdleTimer=setTimeout(()=>{if(epoch!==sessionEpoch||session?.mode!=='duel'||session.phase!=='round'||eventBanner)return scheduleDuelIdle();if(isBrammDuel())runBramm('idle_taunt');else setDuelReaction('drink',opponent.dialoguePools.drink.at(Math.floor(Math.random()*opponent.dialoguePools.drink.length)),true);scheduleDuelIdle();},opponent.idleFrequency+Math.random()*9000);}
 function setDuelReaction(kind,text=null,force=false){if(session?.mode!=='duel'||isBrammDuel())return;const opponent=currentDuelOpponent(),weight=opponent.reactionWeights[kind]??1;if(!force&&(Date.now()-lastDuelReactionAt<4200||Math.random()>weight))return;lastDuelReactionAt=Date.now();duelReaction=kind;clearTimeout(duelReactionTimer);if(text)showQuip('p1',text,force);render();const epoch=sessionEpoch;duelReactionTimer=setTimeout(()=>{if(epoch!==sessionEpoch)return;duelReaction='idle';render();scheduleDuelIdle();},settings.reducedMotion?350:1100+Math.random()*1200);}
 function duelLine(kind){const pool=currentDuelOpponent().dialoguePools[kind]||[];return pool[Math.floor(Math.random()*pool.length)];}
@@ -62,7 +63,7 @@ function recordDuelResult(){if(session?.mode!=='duel'||session.phase!=='matchFin
 function setSession(next){
   sessionEpoch++;clearTimeout(eventTimer);clearTimeout(quipTimer);clearTimeout(roundEndTimer);clearTimeout(duelReactionTimer);clearTimeout(duelIdleTimer);clearBrammTimers();audioSystem.stopVoice();
   quip=null;duelReaction='idle';captionLine='';roundResultVisible=next.phase!=='round';session=next;state=session.game;
-  if(isBrammDuel()){brammController ||= createBrammController({initial:{...(next.brammPersonality||{}),recentVoices:next.brammPersonality?.recentVoices||settings.brammRecentVoices||[]}});brammExpression=brammController.defaultExpression();}else{brammController=null;brammExpression='01_default_smug';}
+  if(isBrammDuel()){brammController ||= createBrammController({initial:{...(next.brammPersonality||{}),recentVoices:next.brammPersonality?.recentVoices||settings.brammRecentVoices||[]}});brammExpression=brammController.defaultExpression();brammPreviousExpression=brammExpression;}else{brammController=null;brammExpression='01_default_smug';brammPreviousExpression=brammExpression;}
   transport?.disconnect();transport=new LocalGameTransport(state);lastLogLength=state.log.length;lastCounts=Object.fromEntries(state.players.map(p=>[p.id,p.hand.length]));lastHands=Object.fromEntries(state.players.map(p=>[p.id,p.hand.map(card=>card.id)]));lastRenderedTopId=null;lastActivePlayerId=null;turnCueUntil=0;drawFlights=[];incomingCardDelays.clear();propRattled.clear();eventBanner=null;
   transport.subscribeToState((nextState,action)=>{
     state=nextState;session.game=nextState;
@@ -84,11 +85,12 @@ function beginDeckArrival(){
   audioSystem.setSettings(settings);audioSystem.play('shuffle');clearTimeout(deckAudioTimer);
   deckAudioTimer=setTimeout(()=>{audioSystem.play('deckPutDown');deckSettling=false;root.querySelector('[data-draw-anchor]')?.classList.remove('deck-settling');},1050);
 }
-function startSession(mode='tavern',saved=null){
+async function startSession(mode='tavern',saved=null){
   brammController=null;clearBrammTimers();
   const fresh=()=>mode==='tavern'?createTavernMatch({seed:Date.now()}):mode==='duel'?createDuelSession({seed:Date.now(),opponent:getDuelOpponent(settings.duelOpponent)}):createQuickSession({playerCount:settings.playerCount,seed:Date.now()});
-  try{setSession(saved?restoreSession(saved):fresh());}
-  catch{clearMatch();setSession(fresh());}
+  let next;try{next=saved?restoreSession(saved):fresh();}catch{clearMatch();next=fresh();}
+  if(next.mode==='duel'&&next.opponentId==='bramm')await preloadBrammExpressions();
+  setSession(next);
   view='game';sheet=null;eventBanner=null;audioSystem.setSettings(settings);if(settings.ambience)audioSystem.startAmbience();if(settings.music)audioSystem.startMusic({newRound:true});deckSettling=!saved;render();if(!saved)beginDeckArrival();if(isBrammDuel()){void audioSystem.preloadVoice();const firstEncounter=(settings.duelRecords?.bramm?.played||0)===0;if(!saved&&firstEncounter){const epoch=sessionEpoch;const timer=setTimeout(()=>{if(epoch===sessionEpoch)runBramm('intro',{},true);},settings.reducedMotion?350:1250);brammSequenceTimers.push(timer);}}scheduleGame();
 }
 function commitAction(action){const beforeTurn=state?.turn,beforeTop=state?topCard(state)?.id:null;if(action.type===ACTIONS.DRAW&&action.playerId==='p0')blockAiUntil=Date.now()+500;try{transport.submitAction(action);selected=null;}catch(error){const advanced=!!state&&(state.turn!==beforeTurn||topCard(state)?.id!==beforeTop);console.error('Game action or update failed',error);hint=advanced?'':(isEnglish()?'You cannot play that card now':'אי אפשר לשחק את הקלף הזה עכשיו');if(!advanced)feedback('invalid',settings);render();if(advanced)scheduleGame();else setTimeout(()=>{hint='';render();},850);}}
@@ -382,26 +384,29 @@ function settingsHTML(copy){
 function toggleRow(label,key){return `<div class="toggle-row setting-row"><label id="setting-${key}">${label}</label><button class="iron-switch ${settings[key]?'on':''}" data-toggle="${key}" aria-labelledby="setting-${key}" aria-pressed="${settings[key]}"><i></i></button></div>`;}
 function audioRow(label,key,volumeKey){const value=Math.round((settings[volumeKey]??0)*100);return `<div class="audio-row setting-row"><div class="audio-label"><label id="setting-${key}">${label}</label><output for="volume-${volumeKey}">${value}%</output></div><div class="audio-controls"><input id="volume-${volumeKey}" type="range" min="0" max="100" step="1" value="${value}" data-volume="${volumeKey}" data-channel="${key}" aria-labelledby="setting-${key}"><button class="iron-switch ${settings[key]?'on':''}" data-toggle="${key}" aria-labelledby="setting-${key}" aria-pressed="${settings[key]}"><i></i></button></div></div>`;}
 
-function render(){document.documentElement.lang=settings.language;document.documentElement.dir=direction();document.querySelector('meta[name="description"]')?.setAttribute('content',isEnglish()?'An ancient card game around a tavern table — five rounds, cumulative scoring, and full offline play.':'משחק קלפים עתיק סביב שולחן פונדק — חמישה סיבובים, ניקוד מצטבר ומשחק מלא גם בלי אינטרנט.');root.innerHTML=view==='home'?homeHTML():view==='duelSelect'?duelSelectHTML():gameHTML();bind();}
+let handScrollLeft=0,previousHandRects=new Map();
+function captureHandLayout(){const hand=root.querySelector('.hand');if(!hand)return;handScrollLeft=hand.scrollLeft;previousHandRects=new Map([...hand.querySelectorAll(':scope > .card')].map(card=>[card.dataset.cardId,card.getBoundingClientRect()]));}
+function render(){captureHandLayout();document.documentElement.lang=settings.language;document.documentElement.dir=direction();document.querySelector('meta[name="description"]')?.setAttribute('content',isEnglish()?'An ancient card game around a tavern table — five rounds, cumulative scoring, and full offline play.':'משחק קלפים עתיק סביב שולחן פונדק — חמישה סיבובים, ניקוד מצטבר ומשחק מלא גם בלי אינטרנט.');root.innerHTML=view==='home'?homeHTML():view==='duelSelect'?duelSelectHTML():gameHTML();bind();}
 function goHome(){flushPendingAction();persist();clearTimeout(botTimer);clearTimeout(takiTimer);clearTimeout(eventTimer);clearTimeout(roundEndTimer);clearTimeout(duelIdleTimer);clearTimeout(deckAudioTimer);audioSystem.stopAmbience();audioSystem.stopMusic(true);view='home';sheet=null;render();}
 function layoutHand(){
   const hand=root.querySelector('.hand');if(!hand)return;
   const cards=[...hand.querySelectorAll(':scope > .card')],count=cards.length;if(!count)return;
   const cardWidth=cards[0].getBoundingClientRect().width||102;
   const available=Math.max(cardWidth,hand.clientWidth-24);
-  const step=count<2?0:Math.min(cardWidth+18,(available-cardWidth)/(count-1));
-  const overlap=count<2?0:step-cardWidth;
-  const roomy=available>620,spread=Math.max(.72,(roomy?2.35:2.8)-Math.max(0,count-7)*.2);
-  const lift=Math.max(.7,(roomy?1.55:2)-Math.max(0,count-8)*.09);
-  const scale=count>=13?.93:count>=11?.96:1;
+  const portrait=matchMedia('(max-width:599px) and (orientation:portrait)').matches;
+  const {browse,overlap,spread,lift,scale}=calculateHandLayout({count,cardWidth,available,portrait});
   hand.dataset.cardCount=String(count);
+  hand.dataset.layout=browse?'browse':'fan';
   cards.forEach((card,index)=>{
     const offset=index-(count-1)/2;
     card.style.setProperty('--overlap',`${overlap.toFixed(2)}px`);
-    card.style.setProperty('--tilt',`${(offset*spread).toFixed(2)}deg`);
-    card.style.setProperty('--rise',`${(Math.abs(offset)*lift).toFixed(2)}px`);
+    card.style.setProperty('--tilt',`${(browse?0:offset*spread).toFixed(2)}deg`);
+    card.style.setProperty('--rise',`${(browse?0:Math.abs(offset)*lift).toFixed(2)}px`);
     card.style.setProperty('--hand-scale',String(scale));
   });
+  if(browse)hand.scrollLeft=Math.min(handScrollLeft,Math.max(0,hand.scrollWidth-hand.clientWidth));
+  if(!settings.reducedMotion)cards.forEach(card=>{const before=previousHandRects.get(card.dataset.cardId),after=card.getBoundingClientRect();if(!before)return;const dx=before.left-after.left,dy=before.top-after.top;if(Math.abs(dx)+Math.abs(dy)>2)card.animate([{translate:`${dx}px ${dy}px`},{translate:'0 0'}],{duration:220,easing:'cubic-bezier(.2,.75,.25,1)'});});
+  previousHandRects.clear();
 }
 function bind(){
   root.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>{sheet=b.dataset.open;render();requestAnimationFrame(()=>root.querySelector('.sheet-close,[data-close-sheet]')?.focus({preventScroll:true}));});
@@ -422,8 +427,8 @@ function bind(){
     input.onchange=()=>{apply();if(input.dataset.channel==='sound'&&settings.sound)audioSystem.play('cardPlaySoft');};
   });
   root.querySelectorAll('[data-players]').forEach(b=>b.onclick=()=>{settings.playerCount=+b.dataset.players;saveSettings(settings);render();});
-  root.querySelector('[data-duel]')?.addEventListener('click',()=>{view='duelSelect';sheet=null;render();});
-  root.querySelectorAll('[data-opponent]').forEach(b=>b.onclick=()=>{settings.duelOpponent=b.dataset.opponent;saveSettings(settings);clearMatch();startSession('duel');});
+  root.querySelector('[data-duel]')?.addEventListener('click',()=>{view='duelSelect';sheet=null;render();void preloadBrammExpressions();});
+  root.querySelectorAll('[data-opponent]').forEach(b=>b.onclick=async()=>{settings.duelOpponent=b.dataset.opponent;saveSettings(settings);clearMatch();if(b.dataset.opponent==='bramm'){b.classList.add('loading');b.setAttribute('aria-busy','true');}try{await startSession('duel');}catch(error){console.error('Unable to prepare duel assets',error);b.classList.remove('loading');b.setAttribute('aria-busy','false');}});
   root.querySelector('[data-tavern]')?.addEventListener('click',()=>{clearMatch();startSession('tavern');});
   root.querySelector('[data-quick]')?.addEventListener('click',()=>{clearMatch();startSession('quick');});
   root.querySelector('[data-resume]')?.addEventListener('click',()=>{const saved=loadMatch();startSession(saved?.mode||'tavern',saved);});
@@ -434,23 +439,27 @@ function bind(){
   root.querySelector('[data-draw]')?.addEventListener('click',()=>{if(currentPlayer(state).id==='p0'&&!state.taki?.open)submit({type:ACTIONS.DRAW,playerId:'p0'});});
   root.querySelector('[data-close-taki]')?.addEventListener('click',()=>submit({type:ACTIONS.END_TURN,playerId:'p0'}));
   root.querySelectorAll('[data-color]').forEach(b=>b.onclick=()=>submit({type:ACTIONS.CHOOSE_COLOR,playerId:'p0',color:b.dataset.color}));
-  root.querySelectorAll('.hand .card.legal').forEach(card=>{
+  const twoStepPlay=matchMedia('(hover:none) and (pointer:coarse)').matches||matchMedia('(max-width:599px)').matches;
+  const selectCard=card=>{selected=card.dataset.cardId;root.querySelectorAll('.hand .card.selected').forEach(node=>{node.classList.remove('selected');node.setAttribute('aria-pressed','false');});card.classList.add('selected');card.setAttribute('aria-pressed','true');card.scrollIntoView({behavior:settings.reducedMotion?'auto':'smooth',block:'nearest',inline:'center'});};
+  root.querySelectorAll('.hand .card').forEach(card=>{
     let startY=0,lastY=0,startTime=0,lastTime=0,peakVelocity=0,moved=false,suppressClick=false;
-    const play=()=>submit({type:ACTIONS.PLAY,playerId:'p0',cardId:card.dataset.cardId});
+    const legal=card.classList.contains('legal'),play=()=>{if(legal)submit({type:ACTIONS.PLAY,playerId:'p0',cardId:card.dataset.cardId});};
     const reset=()=>{card.style.removeProperty('transform');card.classList.remove('selected');selected=null;};
-    card.onclick=e=>{if(suppressClick){suppressClick=false;e.preventDefault();return;}play();};
-    card.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();play();}};
-    card.onpointerdown=e=>{startY=lastY=e.clientY;startTime=lastTime=e.timeStamp;peakVelocity=0;moved=false;suppressClick=false;card.setPointerCapture(e.pointerId);selected=card.dataset.cardId;card.classList.add('selected');};
-    card.onpointermove=e=>{if(!card.hasPointerCapture(e.pointerId))return;const dy=e.clientY-startY,segmentTime=Math.max(1,e.timeStamp-lastTime);if(Math.abs(dy)>7)moved=true;peakVelocity=Math.max(peakVelocity,(lastY-e.clientY)/segmentTime);lastY=e.clientY;lastTime=e.timeStamp;card.style.transform=`translateY(${Math.min(0,dy)}px) rotate(0deg)`;};
+    card.onclick=e=>{if(suppressClick){suppressClick=false;e.preventDefault();return;}if(!twoStepPlay&&legal){play();return;}if(selected===card.dataset.cardId){if(legal)play();else{hint=isEnglish()?'That card cannot be played now':'אי אפשר לשחק את הקלף הזה עכשיו';feedback('invalid',settings);render();setTimeout(()=>{hint='';render();},850);}}else selectCard(card);};
+    card.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();if(legal&&(!twoStepPlay||selected===card.dataset.cardId))play();else selectCard(card);}};
+    if(!legal)return;
+    card.onpointerdown=e=>{startY=lastY=e.clientY;card._startX=e.clientX;startTime=lastTime=e.timeStamp;peakVelocity=0;moved=false;suppressClick=false;};
+    card.onpointermove=e=>{const dy=e.clientY-startY,dx=e.clientX-(card._startX??(card._startX=e.clientX));if(Math.abs(dx)>7&&Math.abs(dx)>Math.abs(dy)){moved=true;return;}if(Math.abs(dy)<9)return;if(!card.hasPointerCapture(e.pointerId))card.setPointerCapture(e.pointerId);const segmentTime=Math.max(1,e.timeStamp-lastTime);moved=true;peakVelocity=Math.max(peakVelocity,(lastY-e.clientY)/segmentTime);lastY=e.clientY;lastTime=e.timeStamp;card.style.transform=`translateY(${Math.min(0,dy)}px) rotate(0deg)`;};
     card.onpointerup=e=>{
       const dy=e.clientY-startY,elapsed=Math.max(1,e.timeStamp-startTime),recentElapsed=Math.max(1,e.timeStamp-lastTime),velocity=Math.max(peakVelocity,(lastY-e.clientY)/recentElapsed,(startY-e.clientY)/elapsed),discard=root.querySelector('[data-discard-anchor]')?.getBoundingClientRect(),overDiscard=discard&&e.clientX>=discard.left-28&&e.clientX<=discard.right+28&&e.clientY>=discard.top-36&&e.clientY<=discard.bottom+36,upwardFlick=dy<-22&&velocity>.28;
-      if(card.hasPointerCapture(e.pointerId))card.releasePointerCapture(e.pointerId);
+      if(card.hasPointerCapture(e.pointerId))card.releasePointerCapture(e.pointerId);card._startX=null;
       suppressClick=moved;
       if(dy<-52||upwardFlick||overDiscard){e.preventDefault();play();}
       else if(moved){e.preventDefault();reset();layoutHand();}
     };
-    card.onpointercancel=e=>{if(card.hasPointerCapture(e.pointerId))card.releasePointerCapture(e.pointerId);suppressClick=moved;reset();layoutHand();};
+    card.onpointercancel=e=>{if(card.hasPointerCapture(e.pointerId))card.releasePointerCapture(e.pointerId);card._startX=null;suppressClick=moved;reset();layoutHand();};
   });
+  root.onclick=event=>{if(selected&&!event.target.closest('.hand .card')){selected=null;root.querySelectorAll('.hand .card.selected').forEach(card=>{card.classList.remove('selected');card.setAttribute('aria-pressed','false');});}};
   layoutHand();
 }
 

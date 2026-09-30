@@ -12,6 +12,34 @@ export const BRAMM_EXPRESSIONS=Object.freeze([
 ]);
 export const brammExpressionURL=(name='01_default_smug')=>expressionAsset(BRAMM_EXPRESSIONS.includes(name)?name:'01_default_smug');
 
+const brammImageCache=new Map();
+let brammPreloadPromise=null;
+let brammReady=false;
+function loadDecodedImage(name){
+  if(brammImageCache.has(name))return brammImageCache.get(name);
+  const promise=new Promise((resolve,reject)=>{
+    const image=new Image();let settled=false;
+    const src=brammExpressionURL(name);
+    image.decoding='async';
+    image.onload=async()=>{
+      if(settled)return;settled=true;
+      try{if(typeof image.decode==='function')await image.decode();}
+      catch(error){if(!image.complete||!image.naturalWidth){reject(error);return;}}
+      resolve(image);
+    };
+    image.onerror=()=>{if(settled)return;settled=true;reject(new Error(`Unable to preload Bramm expression: ${name}`));};
+    image.src=src;
+    if(image.complete&&image.naturalWidth)image.onload();
+  });
+  brammImageCache.set(name,promise);return promise;
+}
+export function preloadBrammExpressions(){
+  if(typeof Image==='undefined')return Promise.resolve([]);
+  brammPreloadPromise ||= Promise.all(BRAMM_EXPRESSIONS.map(loadDecodedImage)).then(images=>{brammReady=true;return images;});
+  return brammPreloadPromise;
+}
+export function brammExpressionsReady(){return brammReady;}
+
 const line=(id,trigger,voice,caption,expression,priority='MEDIUM',extra={})=>Object.freeze({id,trigger,voice,caption,expression,priority,duration:extra.duration||2400,probability:extra.probability??1,cooldown:extra.cooldown??4200,...extra});
 
 export const BRAMM_REACTIONS=Object.freeze([

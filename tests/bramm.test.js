@@ -2,13 +2,28 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { BRAMM_EXPRESSIONS, BRAMM_REACTIONS, BRAMM_VOICE_LIBRARY, brammExpressionURL, createBrammController } from '../dist/duel/bramm.js';
+import { BRAMM_EXPRESSIONS, BRAMM_REACTIONS, BRAMM_VOICE_LIBRARY, brammExpressionURL, brammExpressionsReady, createBrammController, preloadBrammExpressions } from '../dist/duel/bramm.js';
 
 test('Bramm pack registers every supplied voice and expression asset',()=>{
   assert.equal(Object.keys(BRAMM_VOICE_LIBRARY).length,29);
   assert.equal(BRAMM_EXPRESSIONS.length,36);
   for(const definition of Object.values(BRAMM_VOICE_LIBRARY)){const bytes=fs.readFileSync(fileURLToPath(definition.src));assert.ok(bytes.length>128);}
   for(const expression of BRAMM_EXPRESSIONS){const bytes=fs.readFileSync(fileURLToPath(brammExpressionURL(expression)));assert.equal(bytes.subarray(1,4).toString(),'PNG');}
+});
+
+test('the complete Bramm expression manifest preloads and decodes once',async()=>{
+  const OriginalImage=globalThis.Image;let created=0,decoded=0;
+  globalThis.Image=class FakeImage{
+    set src(value){this._src=value;this.complete=true;this.naturalWidth=512;created++;queueMicrotask(()=>this.onload?.());}
+    get src(){return this._src;}
+    async decode(){decoded++;}
+  };
+  try{
+    const first=await preloadBrammExpressions(),second=await preloadBrammExpressions();
+    assert.equal(first.length,BRAMM_EXPRESSIONS.length);assert.equal(second,first);
+    assert.equal(created,BRAMM_EXPRESSIONS.length);assert.equal(decoded,BRAMM_EXPRESSIONS.length);
+    assert.equal(brammExpressionsReady(),true);
+  }finally{globalThis.Image=OriginalImage;}
 });
 
 test('Lucky becomes Still lucky after another strong player move',()=>{

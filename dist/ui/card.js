@@ -27,6 +27,14 @@ function vectorArt(card,activeColor=null){
   if(card.type===TYPES.CHANGE_COLOR&&activeColor)return `<span class="special-asset-wrap">${asset(name,'card-asset',true)}</span>`;
   return asset(name);
 }
+function cornerIndex(card,activeColor=null){
+  if(card.type===TYPES.NUMBER)return `<span class="corner-value">${card.value}</span>`;
+  const name=ART[card.type];
+  const short=card.type===TYPES.PLUS2?'<span class="corner-short">+2</span>':'';
+  if(!name)return short;
+  const resolved=(card.type===TYPES.SUPER_TAKI&&card.inheritedColor)||(card.type===TYPES.CHANGE_COLOR&&activeColor);
+  return `${asset(name,'corner-asset',!!resolved)}${short}`;
+}
 export function cardHTML(card,{small=false,hidden=false,legal=true,highlight=true,selected=false,incoming=false,arrivalDelay=0,index=0,total=1,activeColor=null,language='he'}={}){
   if(hidden) return `<div class="card card-back ${small?'small':''}" aria-label="${language==='en'?'Face-down RUNES card':'קלף רונות הפוך'}"><span class="back-sigil">${sigilHTML()}</span></div>`;
   const inherited=card.type===TYPES.SUPER_TAKI&&card.inheritedColor;
@@ -36,8 +44,8 @@ export function cardHTML(card,{small=false,hidden=false,legal=true,highlight=tru
   const tilt=(index-(total-1)/2)*spread;
   const rise=Math.abs(index-(total-1)/2)*Math.max(1.35,2.2-Math.max(0,total-8)*.1);
   const overlap=total<2?0:-42;
-  const faceMark=card.type===TYPES.NUMBER?String(card.value):card.type===TYPES.PLUS2?'+2':'';
+  const faceMark=cornerIndex(card,activeColor);
   const spokenColor=(language==='en'?{red:'burgundy',blue:'slate',green:'forest',yellow:'gold'}:{red:'בורדו',blue:'צפחה',green:'יער',yellow:'זהב'})[color]||'';
   const spokenLabel=card.type===TYPES.NUMBER?`${card.value} ${spokenColor}`:cardLabel(card,language);
-  return `<button class="card ${color} type-${card.type} ${inherited?'inherited':''} ${chosen?'chosen':''} ${small?'small':''} ${legal?'legal':'quiet'} ${legal&&highlight?'playable-hint':''} ${selected?'selected':''} ${incoming?'incoming':''}" data-card-id="${card.id}" data-hand-index="${index}" data-hand-total="${total}" style="--tilt:${tilt}deg;--rise:${rise}px;--i:${index};--overlap:${overlap}px;--arrive-delay:${arrivalDelay}ms" aria-label="${spokenLabel}" aria-disabled="${!legal}"><span class="corner top">${faceMark}</span>${card.type===TYPES.NUMBER?`<span class="corner bottom">${faceMark}</span>`:''}<span class="card-art">${vectorArt(card,activeColor)}</span><span class="card-print">${cardLabel(card,language)}</span><span class="card-scratch"></span></button>`;
+  return `<button class="card ${color} type-${card.type} ${inherited?'inherited':''} ${chosen?'chosen':''} ${small?'small':''} ${legal?'legal':'quiet'} ${legal&&highlight?'playable-hint':''} ${selected?'selected':''} ${incoming?'incoming':''}" data-card-id="${card.id}" data-hand-index="${index}" data-hand-total="${total}" style="--tilt:${tilt}deg;--rise:${rise}px;--i:${index};--overlap:${overlap}px;--arrive-delay:${arrivalDelay}ms" aria-label="${spokenLabel}" aria-disabled="${!legal}" aria-pressed="${selected}"><span class="corner top">${faceMark}</span>${card.type===TYPES.NUMBER?`<span class="corner bottom">${faceMark}</span>`:''}<span class="card-art">${vectorArt(card,activeColor)}</span><span class="card-print">${cardLabel(card,language)}</span><span class="card-scratch"></span></button>`;
 }
