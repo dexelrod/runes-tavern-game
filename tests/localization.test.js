@@ -12,8 +12,8 @@ test('Hebrew remains the default language', () => {
 
 test('card labels and accessibility text localize to English', () => {
   const reverse=makeCard(TYPES.REVERSE,'red',null,'reverse');
-  assert.equal(cardLabel(reverse,'en'),'Riposte');
-  assert.match(cardHTML(reverse,{language:'en'}),/aria-label="Riposte"/);
+  assert.equal(cardLabel(reverse,'en'),'Turnabout');
+  assert.match(cardHTML(reverse,{language:'en'}),/aria-label="Turnabout"/);
   assert.match(cardHTML(null,{hidden:true,language:'en'}),/aria-label="Face-down RUNES card"/);
 });
 

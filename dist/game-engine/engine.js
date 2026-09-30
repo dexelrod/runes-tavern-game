@@ -10,7 +10,7 @@ const playerById = (state, id) => state.players.find(p => p.id === id);
 
 export function createInitialState({ playerCount = 3, humanPlayers = 1, seed = Date.now(), players } = {}) {
   const count = Math.max(2, Math.min(10, playerCount));
-  const roster = players || Array.from({length:count}, (_, i) => ({ id:`p${i}`, name:i < humanPlayers ? (i ? `שחקן ${i+1}` : 'אתם') : ['מילו','לומי','פיפ','נורי','זיג','קוקו','ארי','ביבי','טוטו'][i-1] || `בוט ${i}`, kind:i < humanPlayers ? 'human' : 'ai' }));
+  const roster = players || Array.from({length:count}, (_, i) => ({ id:`p${i}`, name:i < humanPlayers ? (i ? `שחקן ${i+1}` : 'אתם') : ['אדרן','מירא','טורן','ליבה','סיג','אלבה','האל','רונה','דריק'][i-1] || `אורח ${i}`, nameKey:i < humanPlayers ? null : ['adren','myra','toren','leva','sig','alva','hal','runa','derik'][i-1], kind:i < humanPlayers ? 'human' : 'ai' }));
   const deck = shuffled(createDeck(), seed); const dealt = roster.map(p => ({...p, hand:[]}));
   for (let n=0;n<8;n++) for (const p of dealt) p.hand.push(deck.pop());
   // The opening card is always a number. Command cards stay in the draw pile.

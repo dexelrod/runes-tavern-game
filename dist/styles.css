@@ -143,6 +143,7 @@
 .quick-opponent .coin-prop{right:-1px;bottom:3px;transform:rotate(8deg)}
 .quick-opponent .speech{top:39px;left:74%;max-width:155px;white-space:normal;text-align:center}
 .quick-opponent .stop-seal{top:56px}
+.stop-seal.shield-seal:before{content:"";width:23px;height:27px;background:#c6b189;filter:drop-shadow(0 1px 0 #080a08);-webkit-mask:url("./assets/cards/shield.svg") center/contain no-repeat;mask:url("./assets/cards/shield.svg") center/contain no-repeat}
 
 .quick-one-on-one .hand-area{transform:translateY(-44px)}
 .quick-one-on-one .hand{height:209px;padding-inline:10px}
@@ -1447,3 +1448,71 @@ html[lang="en"] .setting-row label{direction:ltr;text-align:left}
 
 /* Keep every card physically opaque; dimming must never reveal the card below. */
 .card.quiet,.hand[data-layout="browse"] .card.quiet,.hand.taki-active .card.quiet{opacity:1!important;filter:saturate(.52) brightness(.72)}
+
+/* v64: RUNES identity and physical-table design pass. */
+.card .corner{display:flex;align-items:center;justify-content:center;gap:2px;min-width:31px}
+.corner-mark{display:grid;place-items:center}.card-suit-rune{width:10px;height:10px;flex:0 0 auto;fill:none;stroke:var(--card);stroke-width:5;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 1px #fff8dc)}
+.card-rune-watermark{position:absolute;z-index:0;left:50%;top:50%;width:55%;height:55%;translate:-50% -50%;fill:none;stroke:var(--card);stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round;opacity:.075}
+.card.type-number .number-asset{position:relative;z-index:2}.curse-two{position:absolute;z-index:3;left:50%;bottom:7%;display:flex;gap:5px;translate:-50% 0;opacity:.72}
+.curse-two i{width:3px;height:17px;border-radius:1px;background:var(--card);box-shadow:1px 1px #fff3c4;transform:rotate(-5deg)}.curse-two i+ i{transform:rotate(4deg)}
+.card.type-plus2 .card-print{text-transform:none}.card-scratch{opacity:.35;transform:translate(calc((var(--i,0) % 3)*3px),calc((var(--i,0) % 2)*2px)) rotate(calc((var(--i,0) % 4)*3deg))}
+
+/* The four colour runes are also the four table identities. */
+.house-pin{display:grid;place-items:center;clip-path:none;border-radius:50%;background:#30271d!important;border:1px solid currentColor;box-shadow:inset 0 0 0 2px #100a07,0 1px #d4b16a55}
+.house-pin.red{color:var(--red)}.house-pin.blue{color:var(--blue)}.house-pin.green{color:var(--green)}.house-pin.yellow{color:var(--yellow)}
+.house-rune{width:9px;height:9px;fill:none;stroke:#f3dfb4;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+
+/* Tavern regulars now sit behind the rim; cards and labels remain in front. */
+.tavern-table .opponent{z-index:3}.tavern-presence{position:absolute;z-index:-2;left:50%;bottom:54px;width:clamp(150px,15vw,220px);height:clamp(116px,15vw,170px);translate:-50% 0;pointer-events:none;filter:drop-shadow(0 12px 12px #000b)}
+.tavern-presence img{width:100%;height:100%;object-fit:contain;object-position:50% 100%}
+.tavern-table .seat-left .tavern-presence,.tavern-table .seat-far-left .tavern-presence{left:45%;rotate:8deg}.tavern-table .seat-right .tavern-presence,.tavern-table .seat-far-right .tavern-presence{left:55%;rotate:-8deg}
+.tavern-table .seat-marker,.tavern-table .opponent-fan,.tavern-table .seat-props{position:relative;z-index:4}
+
+/* Physical score: persistent pile plus exact numeral at every seat. */
+.seat-score{position:absolute;z-index:8;right:-31px;top:6px;width:33px;height:30px;display:grid;place-items:end center;color:#f1d18c;font:700 11px/1 var(--runes-display);text-shadow:0 1px 2px #000}
+.seat-score>bdi{position:absolute;right:-4px;bottom:-2px;min-width:17px;padding:2px 3px;border:1px solid #795226;border-radius:9px;background:#24170fd9;box-shadow:0 2px 4px #0009}
+.coin-pile{position:absolute;inset:0}.coin-pile i{position:absolute;left:calc(4px + (var(--coin) % 3)*7px);bottom:calc(3px + var(--coin)*2px);width:17px;height:9px;border:1px solid #6e421c;border-radius:50%;background:linear-gradient(#e0b662,#9d692c 58%,#523018);box-shadow:inset 0 1px #f4d88b,0 2px 2px #0008;transform:rotate(calc((var(--coin) - 3)*4deg))}
+.coins-arriving .coin-pile i{animation:coin-to-seat .62s cubic-bezier(.18,.75,.25,1) both;animation-delay:calc(.16s + var(--coin)*.07s)}
+@keyframes coin-to-seat{0%{opacity:0;transform:translate(-80px,95px) rotate(-25deg) scale(.75)}70%{opacity:1;transform:translate(0,-3px) rotate(5deg)}100%{transform:translate(0) rotate(calc((var(--coin) - 3)*4deg))}}
+.player-place{position:absolute;z-index:4;inset:0;pointer-events:none}.player-mug,.player-pouch{position:absolute;bottom:8px;width:84px;height:84px;object-fit:contain;filter:drop-shadow(0 10px 8px #000b)}.player-mug{left:max(17px,env(safe-area-inset-left));rotate:-7deg}.player-pouch{right:max(17px,env(safe-area-inset-right));rotate:8deg}.player-place>.seat-score{right:max(34px,env(safe-area-inset-right));top:auto;bottom:52px}
+.revealed-hand{position:absolute;z-index:18;left:50%;top:33px;display:flex;translate:-50% 0;filter:drop-shadow(0 6px 5px #0009)}.revealed-hand .card{position:relative!important;width:34px!important;height:48px!important;min-width:34px!important;margin-left:-20px;transform:rotate(calc((var(--i,0) - 3)*2deg))!important;pointer-events:none}.revealed-hand .card:first-child{margin-left:0}
+
+/* Active light and last-card tension replace permanent turn labels. */
+.opponent.active:before,.duel-opponent.active:before{opacity:.3!important;filter:blur(3px)}.human-turn .hand-area:before{opacity:.24;background:radial-gradient(ellipse at 50% 100%,var(--active),transparent 68%)}
+.one-card-tension .scene-lighting .table-light{filter:brightness(.82)}.opponent.last-card:before,.duel-opponent.last-card:before{opacity:.38!important}.opponent.last-card .seat-marker,.duel-opponent.last-card .duel-name{box-shadow:0 0 18px color-mix(in srgb,var(--active) 45%,transparent),0 6px 10px #000a}
+.opponent.active .opponent-fan,.quick-opponent.active .physical-fan,.duel-opponent.active .duel-fan{animation:none!important}
+.one-on-one .direction-engraving,.duel-table .direction-engraving{display:none!important}
+
+/* Results remain on the table: a small wager slip, no blackout wall. */
+.result-wrap.table-result{inset:auto 50% max(118px,calc(96px + env(safe-area-inset-bottom))) auto;translate:50% 0;width:min(370px,92vw);padding:0;background:none;backdrop-filter:none;pointer-events:none}
+.result-wrap.table-result .round-tally{width:100%;max-height:210px;overflow:auto;padding:13px 18px 12px;pointer-events:auto;border-color:#8b673c;background:linear-gradient(100deg,#ead9ad,#cfb47b);color:#2d1d12;box-shadow:0 12px 22px #000b;transform:rotate(-.35deg);animation:parchment-settle .36s cubic-bezier(.2,.72,.25,1)}
+.round-tally h2{margin:2px 0 5px;font-size:21px}.round-count{display:none}.round-tally .coin-total{margin:3px 0;font-size:12px}.round-tally .score-after{margin:2px 0}.round-tally .result-actions{margin-top:6px;gap:7px}.round-tally .result-actions button{min-height:39px}
+@keyframes parchment-settle{0%{opacity:0;translate:0 14px;rotate:-1.5deg}100%{opacity:1;translate:0;rotate:0}}
+
+/* Home: the objects themselves are the menu; their labels sit on the wood. */
+.elder-home .mode-plaque,.elder-home .duel-invite{border:0!important;background:none!important;box-shadow:none!important;border-radius:0!important;overflow:visible}.elder-home .mode-plaque:before{display:none}.elder-home .mode-plaque{filter:drop-shadow(0 9px 8px #0009)}.elder-home .mode-plaque:hover,.elder-home .duel-invite:hover{filter:brightness(1.14) drop-shadow(0 10px 9px #000b);transform:translateY(-2px)}
+.elder-home .mode-copy{padding:5px 11px 4px;border:0;border-bottom:1px solid #8d6a3c;background:linear-gradient(90deg,transparent,#160c07b8 22% 78%,transparent);text-shadow:0 2px 3px #000}
+.elder-home .duel-invite{grid-template-columns:76px 1fr 18px;width:92%;padding:3px 8px}.elder-home .duel-invite .duel-cameo{width:72px;height:72px;border:0;box-shadow:none;filter:drop-shadow(0 8px 7px #000a);overflow:visible}.elder-home .duel-invite .bramm-art-stage{background:none}.elder-home .duel-invite>span:nth-child(2){padding:6px 12px;border-bottom:1px solid #806039;background:linear-gradient(90deg,#160c07d4,transparent)}
+.elder-home .table-tools button{min-width:74px;min-height:44px}
+
+/* Wall of regulars: portrait first, name and chalk tally second. */
+.duel-select .regulars{display:grid;grid-template-columns:repeat(3,minmax(150px,1fr));gap:18px;width:min(980px,94vw);margin-inline:auto}.duel-select .regular{min-height:210px;display:grid;grid-template-rows:154px auto;padding:0 7px 10px;border:0;border-bottom:1px solid #8a663b;border-radius:2px;background:linear-gradient(180deg,transparent 0 64%,#17100bd9 78%);box-shadow:none;overflow:visible}.duel-select .regular-portrait{width:100%;height:160px}.duel-select .regular-copy{display:grid;gap:2px;text-align:center}.duel-select .regular-copy>b{font:700 18px var(--runes-display)}.duel-select .regular-copy>small{font-size:11px}.seat-invite{display:none!important}.chalk-record{display:flex!important;justify-content:center;gap:8px;margin-top:2px;font:700 11px/1 var(--runes-display);color:#d8c59b}.chalk-record i{color:#8d7560;font-style:normal}
+
+/* Parchment controls are tactile but stay native controls. */
+.sheet-wrap{animation:sheet-lift .24s ease-out}.tavern-sheet{border:1px solid #7c552d;box-shadow:0 20px 45px #000c,inset 0 0 45px #8c5e291e}.settings-section h3,.rules h3{display:inline-block;padding:3px 10px;border-bottom:2px groove #8c6337;color:#4a2e19;letter-spacing:.03em}.settings-sheet input[type="range"]{height:12px;border:1px solid #6e4b29;border-radius:2px;background:linear-gradient(#5d3a21,#8a6038);box-shadow:inset 0 2px 4px #0006}.settings-sheet input[type="range"]::-webkit-slider-thumb{width:20px;height:24px;border:2px solid #62431f;border-radius:50%;background:radial-gradient(circle at 35% 30%,#f0cf80,#a87532);box-shadow:0 2px 4px #0008}.pause-sheet{width:min(430px,92vw);text-align:center;padding:28px}.pause-sheet>p{max-width:34ch;margin:10px auto 24px}.pause-secondary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}.pause-sheet>.text-link{margin-top:12px}
+@keyframes sheet-lift{0%{opacity:0;transform:translateY(18px) rotateX(-4deg)}100%{opacity:1;transform:none}}
+
+/* Paper friction: lower draw path, quick release, tiny skid. */
+.discard.fresh>.card{animation:card-land-physical .3s cubic-bezier(.12,.76,.18,1)}
+@keyframes card-land-physical{0%{opacity:.85;transform:translate(-13px,-8px) rotate(-2deg)}76%{transform:translate(3px,1px) rotate(1.2deg)}100%{transform:rotate(.8deg)}}
+
+@media(max-width:820px){.duel-select .regulars{grid-template-columns:repeat(2,minmax(138px,1fr));gap:11px}.duel-select .regular{min-height:174px;grid-template-rows:122px auto}.duel-select .regular-portrait{height:128px}.tavern-presence{width:150px;height:118px;bottom:52px}.player-mug,.player-pouch{width:66px;height:66px}}
+@media(max-width:599px){.tavern-presence{display:none}.player-place{display:none}.seat-score{right:-23px;scale:.88}.result-wrap.table-result{bottom:max(126px,calc(105px + env(safe-area-inset-bottom)));width:min(330px,94vw)}.duel-select .regulars{grid-template-columns:repeat(2,minmax(126px,1fr));gap:9px}.duel-select .regular{min-height:158px;grid-template-rows:108px auto}.duel-select .regular-portrait{height:114px}.duel-select .regular-copy>b{font-size:15px}.duel-select .regular-copy>small{font-size:9px}.elder-home .duel-invite .duel-cameo{width:55px;height:55px}.elder-home .duel-invite{grid-template-columns:57px 1fr 16px}.pause-sheet{padding:22px 17px}}
+@media(max-width:380px){.duel-select .regulars{grid-template-columns:repeat(2,minmax(112px,1fr))}.duel-select .regular{grid-template-rows:94px auto;min-height:145px}.duel-select .regular-portrait{height:100px}.chalk-record{font-size:9px}}
+@media(prefers-reduced-motion:reduce){.coins-arriving .coin-pile i,.result-wrap.table-result .round-tally,.sheet-wrap,.discard.fresh>.card{animation:none!important}}
+.reduced-motion .coins-arriving .coin-pile i,.reduced-motion .result-wrap.table-result .round-tally,.reduced-motion .sheet-wrap,.reduced-motion .discard.fresh>.card{animation:none!important}
+.tavern-presence{z-index:1}
+.duel-select .regular{grid-template-columns:1fr}
+.duel-select .regulars{width:100%;max-width:980px}
+.rules{width:min(720px,94vw)}.rule-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:16px 0}.rule-grid section{display:grid;grid-template-columns:52px 1fr;align-items:center;gap:9px;padding:8px;border:1px solid #825d342e;border-radius:3px;background:#6b47260d}.rule-grid img{width:48px;height:58px;object-fit:contain;filter:sepia(.2) contrast(1.1)}.rule-grid h3{margin:0;padding:0;border:0;font-size:16px}.rule-grid p{margin:3px 0 0;font-size:12px;line-height:1.3}.rules details{margin:12px 0 16px;padding:10px;border-block:1px solid #8b63373d}.rules summary{cursor:pointer;font-weight:700}.rules details p{font-size:13px;line-height:1.5}
+@media(max-width:520px){.rule-grid{grid-template-columns:1fr}.rule-grid section{grid-template-columns:44px 1fr;padding:6px}.rule-grid img{width:41px;height:49px}.rule-grid h3{font-size:14px}.rule-grid p{font-size:11px}}

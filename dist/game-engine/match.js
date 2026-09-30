@@ -2,10 +2,10 @@ import { createInitialState, restoreState, serializeState } from './engine.js';
 
 export const MATCH_VERSION=1;
 export const TAVERN_ROSTER=Object.freeze([
-  {id:'p0',name:'אתם',nameKey:'you',kind:'human',archetype:'wanderer',house:'sun'},
-  {id:'p1',name:'איילה',nameKey:'aila',kind:'ai',archetype:'hunter',house:'stag'},
-  {id:'p2',name:'רון',nameKey:'ron',kind:'ai',archetype:'bard',house:'raven'},
-  {id:'p3',name:'בראן',nameKey:'bran',kind:'ai',archetype:'mercenary',house:'dragon'}
+  {id:'p0',name:'אתם',nameKey:'you',kind:'human',archetype:'wanderer',house:'yellow'},
+  {id:'p1',name:'איילה',nameKey:'aila',kind:'ai',archetype:'hunter',house:'green'},
+  {id:'p2',name:'רון',nameKey:'ron',kind:'ai',archetype:'bard',house:'red'},
+  {id:'p3',name:'בראן',nameKey:'bran',kind:'ai',archetype:'mercenary',house:'blue'}
 ]);
 export const NPC_EASTER_EGGS=Object.freeze(['לוסיאן','איניגו','לידיה','וירן','סורן','ויילין']);
 
@@ -32,7 +32,8 @@ export function createQuickSession({playerCount=3,seed=Date.now()}={}){
 
 export function createDuelSession({seed=Date.now(),opponent}={}){
   if(!opponent?.id)throw new Error('Duel opponent is required');
-  const players=[{id:'p0',name:'אתם',nameKey:'you',kind:'human',archetype:'wanderer',house:'sun'},{id:'p1',name:opponent.name,nameKey:opponent.id,kind:'ai',archetype:opponent.archetype,house:opponent.id,duelOpponentId:opponent.id}];
+  const duelHouses={ron:'red',aila:'green',bran:'blue',sela:'yellow',kesh:'blue',bramm:'red'};
+  const players=[{id:'p0',name:'אתם',nameKey:'you',kind:'human',archetype:'wanderer',house:'yellow'},{id:'p1',name:opponent.name,nameKey:opponent.id,kind:'ai',archetype:opponent.archetype,house:duelHouses[opponent.id]||'blue',duelOpponentId:opponent.id}];
   return {version:MATCH_VERSION,mode:'duel',phase:'round',round:1,totalRounds:5,suddenDeath:false,seed,opponentId:opponent.id,scores:scoreMap(players),roster:freshRoster(players),results:[],championId:null,game:createInitialState({playerCount:2,players,seed})};
 }
 
