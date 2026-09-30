@@ -70,6 +70,14 @@ test('duel character is composited behind a physical far rim',()=>{
   assert.match(css,/\.duel-presence \.duel-sprite\{[\s\S]*mask-image:radial-gradient/);
 });
 
+test('Bramm keeps one fixed two-layer image stage across game renders',()=>{
+  assert.match(app,/data-bramm-stage-placeholder/);
+  assert.match(app,/placeholder\.replaceWith\(brammStage\)/);
+  assert.match(app,/function syncBrammStage\(stage\)/);
+  assert.match(css,/\.bramm-art-stage \.bramm-art-previous/);
+  assert.match(css,/\.bramm-art-stage \.bramm-art-current/);
+});
+
 test('compact art direction stays layered, deterministic, and safe-area aware',()=>{
   for(const variable of ['--scene-density','--engraving-opacity','--ambient-light-strength','--seat-spacing','--prop-scale','--mobile-hand-zone'])assert.ok(css.includes(variable),`missing ${variable}`);
   assert.match(css,/@media \(max-width:599px\)/);

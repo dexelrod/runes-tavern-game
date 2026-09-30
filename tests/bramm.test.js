@@ -2,13 +2,28 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { BRAMM_EXPRESSIONS, BRAMM_REACTIONS, BRAMM_VOICE_LIBRARY, brammExpressionURL, brammExpressionsReady, createBrammController, preloadBrammExpressions } from '../dist/duel/bramm.js';
+import { BRAMM_EXPRESSIONS, BRAMM_REACTIONS, BRAMM_VOICE_LIBRARY, brammExpressionURL, brammExpressionsReady, createBrammController, preloadBrammExpressions, resolveBrammReaction, resolveBrammVoice } from '../dist/duel/bramm.js';
 
 test('Bramm pack registers every supplied voice and expression asset',()=>{
   assert.equal(Object.keys(BRAMM_VOICE_LIBRARY).length,29);
   assert.equal(BRAMM_EXPRESSIONS.length,36);
   for(const definition of Object.values(BRAMM_VOICE_LIBRARY)){const bytes=fs.readFileSync(fileURLToPath(definition.src));assert.ok(bytes.length>128);}
+  for(const reaction of BRAMM_REACTIONS){
+    assert.ok(reaction.captions.en);assert.ok(reaction.captions.he);assert.doesNotMatch(reaction.captions.he,/\[[^\]]+\]/);
+    const localized=resolveBrammVoice(reaction.voice,'he');assert.match(localized.src,/_he\.mp3$/);assert.equal(localized.caption,reaction.captions.he);
+    if(reaction.voice!=='bramm_win_05'){const bytes=fs.readFileSync(fileURLToPath(localized.src));assert.ok(bytes.length>128);}
+  }
   for(const expression of BRAMM_EXPRESSIONS){const bytes=fs.readFileSync(fileURLToPath(brammExpressionURL(expression)));assert.equal(bytes.subarray(1,4).toString(),'PNG');}
+});
+
+test('Bramm resolves exact bilingual captions without changing the base reaction identity',()=>{
+  const samples=[
+    ['one_card_01','...No.','אוי לא..'],
+    ['win_04','Never in doubt.','איזה מודאג, מה מודאג.. הייתי רגוע כל המשחק.'],
+    ['win_08','Good game. For you.','משחק טוב. יחסית.'],
+    ['loss_01','...Again.','לא נחשב.. עוד פעם.']
+  ];
+  for(const [id,en,he] of samples){const base=BRAMM_REACTIONS.find(item=>item.id===id),english=resolveBrammReaction(base,'en'),hebrew=resolveBrammReaction(base,'he');assert.equal(english.caption,en);assert.equal(hebrew.caption,he);assert.equal(english.voice,hebrew.voice);assert.equal(hebrew.locale,'he');}
 });
 
 test('the complete Bramm expression manifest preloads and decodes once',async()=>{

@@ -1,6 +1,40 @@
 const expressionAsset=name=>new URL(`../assets/bramm/expressions/bramm_${name}.png`,import.meta.url).href;
 const voiceAsset=name=>new URL(`../assets/bramm/voice/${name}.mp3`,import.meta.url).href;
 
+const BRAMM_HE_CAPTIONS=Object.freeze({
+  bramm_intro_01:'בראם. בראם הבלתי מנוצח.',
+  bramm_intro_02:'היי! בואו לראות. זה לא ייקח הרבה זמן.',
+  bramm_taunt_01:'נו, נראה אם יש פה משהו מרשים.',
+  bramm_taunt_02:'מתישהו היום? הבירה מתחממת.',
+  bramm_mock_move_01:'באמת? זה המהלך?',
+  bramm_mock_move_02:'אה, זה מוצא חן בעיניי. כל הביטחון הזה, בלי שום סיבה.',
+  bramm_player_good_move_01:'מזל של מתחילים.',
+  bramm_player_good_move_02:'שוב מזל.',
+  bramm_bramm_good_move_01:'הנה. ככה עושים את זה.',
+  bramm_bramm_good_move_02:'כולם ראו את זה? ברור שכולם ראו את זה.',
+  bramm_player_draw_01:'עוד קלף. יופי. למה לעצור כאן?',
+  bramm_bramm_draw_01:'שצ',
+  bramm_bramm_draw_02:'קלפים זבל. ידעתי מהרגע שהתיישבתי.',
+  bramm_excuse_01:'זה לא נחשב.',
+  bramm_excuse_02:'זה.. חוק חדש. לא הרבה מכירים.',
+  bramm_player_one_card_01:'אוי לא..',
+  bramm_player_one_card_02:'קלף אחרון! צריך להגיד קלף אחרון!',
+  bramm_player_one_card_03:'חייב פלוס שתיים.. או קשת.. או מלך.. כל דבר.',
+  bramm_loss_01:'לא נחשב.. עוד פעם.',
+  bramm_win_01:'הנה זה! בראם הבלתי מנוצח!',
+  bramm_win_02:'אמרתי או לא אמרתי?! אמרתי או לא?!',
+  bramm_win_03:'מי המלך? אני.',
+  bramm_win_04:'איזה מודאג, מה מודאג.. הייתי רגוע כל המשחק.',
+  bramm_win_05:'כבר היה נראה שזה אבוד, אה?',
+  bramm_win_06:'מישהו חשב שזה ייגמר אחרת?!',
+  bramm_win_07:'אוי, זה היה מגעיל. עוד סיבוב?',
+  bramm_win_08:'משחק טוב. יחסית.',
+  bramm_win_09:'מישהו שיביא עוד בירה! ניצחון עושה צמא!',
+  bramm_win_10:'בלתי מנוצח.'
+});
+
+export const normalizeBrammLocale=locale=>locale==='he'?'he':'en';
+
 export const BRAMM_STATES=Object.freeze(['swaggering','competitive','irritated','rattled','panic','relief','defeated']);
 export const BRAMM_STATE_EXPRESSIONS=Object.freeze({
   swaggering:'01_default_smug',competitive:'10_satisfied_good_move',irritated:'09_irritated_lucky',
@@ -40,7 +74,7 @@ export function preloadBrammExpressions(){
 }
 export function brammExpressionsReady(){return brammReady;}
 
-const line=(id,trigger,voice,caption,expression,priority='MEDIUM',extra={})=>Object.freeze({id,trigger,voice,caption,expression,priority,duration:extra.duration||2400,probability:extra.probability??1,cooldown:extra.cooldown??4200,...extra});
+const line=(id,trigger,voice,caption,expression,priority='MEDIUM',extra={})=>Object.freeze({id,trigger,voice,caption,captions:Object.freeze({en:caption,he:BRAMM_HE_CAPTIONS[voice]}),expression,priority,duration:extra.duration||2400,probability:extra.probability??1,cooldown:extra.cooldown??4200,...extra});
 
 export const BRAMM_REACTIONS=Object.freeze([
   line('intro_01','intro','bramm_intro_01','Bramm. Bramm the Unbeaten.','02_intro_boast','CRITICAL',{category:'intro',oncePerMatch:true,nextState:'swaggering'}),
@@ -74,7 +108,22 @@ export const BRAMM_REACTIONS=Object.freeze([
   line('win_10','win_quiet','bramm_win_10','Unbeaten.','27_smug_unbeaten','CRITICAL',{category:'result',cooldown:0,duration:2600})
 ]);
 
-export const BRAMM_VOICE_LIBRARY=Object.freeze(Object.fromEntries(BRAMM_REACTIONS.map(item=>[item.voice,{src:voiceAsset(item.voice),caption:item.caption,priority:item.priority}])));
+export const BRAMM_VOICE_LIBRARY=Object.freeze(Object.fromEntries(BRAMM_REACTIONS.map(item=>[item.voice,Object.freeze({
+  src:voiceAsset(item.voice),
+  sources:Object.freeze({en:voiceAsset(item.voice),he:voiceAsset(`${item.voice}_he`)}),
+  caption:item.caption,
+  captions:item.captions,
+  priority:item.priority
+})])));
+export function resolveBrammReaction(reaction,locale='en'){
+  if(!reaction)return null;const resolvedLocale=normalizeBrammLocale(locale);
+  return {...reaction,locale:resolvedLocale,caption:reaction.captions?.[resolvedLocale]??reaction.caption};
+}
+export function resolveBrammVoice(name,locale='en'){
+  const definition=BRAMM_VOICE_LIBRARY[name];if(!definition)return null;
+  const resolvedLocale=normalizeBrammLocale(locale);
+  return {name,locale:resolvedLocale,src:definition.sources[resolvedLocale],caption:definition.captions[resolvedLocale],priority:definition.priority};
+}
 const byId=Object.freeze(Object.fromEntries(BRAMM_REACTIONS.map(item=>[item.id,item])));
 
 export function createBrammController({random=Math.random,now=()=>Date.now(),initial=null}={}){

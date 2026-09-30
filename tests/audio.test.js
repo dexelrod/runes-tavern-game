@@ -23,3 +23,15 @@ test('card placement rotates variations and rapid duplicates are rejected',async
 test('music, ambience, sfx, and voice have independent gain channels',async()=>withWebAudio(async()=>{const system=new AudioSystem();system.setSettings({sound:true,music:true,ambience:true,sfxVolume:.5,musicVolume:.24,ambienceVolume:.1,voiceVolume:.7});system.prime();assert.equal(system.channelGains.sfx.gain.value,.5);assert.equal(system.channelGains.music.gain.value,.24);assert.equal(system.channelGains.ambience.gain.value,.1);assert.equal(system.channelGains.voice.gain.value,.7);await system.startMusic();system.setSettings({sound:true,music:false,ambience:true});assert.equal(system.channelGains.music.gain.value,0);assert.ok(system.play('cardPlay'));}));
 
 test('new rounds rotate across the four-track roster and join chunked soundtracks into one Web Audio buffer',async()=>withWebAudio(async()=>{const random=Math.random;Math.random=()=>0;try{const system=new AudioSystem();system.musicIndex=0;await system.startMusic();const first=system.musicNode.track;await system.startMusic({newRound:true});assert.notEqual(system.musicNode.track,first);const chunked=new AudioSystem();chunked.musicIndex=2;await chunked.startMusic();assert.equal(Array.isArray(chunked.musicNode.track),true);assert.equal(chunked.musicNode.track.length,4);assert.equal(chunked.musicNode.buffer.duration,.04);system.stopAll();chunked.stopAll();assert.equal(system.musicNode,null);assert.equal(system.ambienceNode,null);}finally{Math.random=random;}}));
+
+test('Bramm preloads only the requested locale through Web Audio',async()=>{
+  const Native=globalThis.AudioContext,nativeFetch=globalThis.fetch,requested=[];globalThis.AudioContext=Context;globalThis.fetch=async url=>{requested.push(String(url));return{ok:true,arrayBuffer:async()=>new ArrayBuffer(8)};};
+  try{const system=new AudioSystem();await system.preloadVoice('he',['bramm_intro_01','bramm_loss_01']);assert.equal(requested.length,2);assert.ok(requested.every(url=>url.endsWith('_he.mp3')));assert.ok(requested.every(url=>!url.endsWith('/bramm_intro_01.mp3')));}
+  finally{globalThis.AudioContext=Native;globalThis.fetch=nativeFetch;}
+});
+
+test('a missing Hebrew Bramm file stays silent and never falls back to English',async()=>{
+  const Native=globalThis.AudioContext,nativeFetch=globalThis.fetch,requested=[];globalThis.AudioContext=Context;globalThis.fetch=async url=>{requested.push(String(url));return{ok:false,arrayBuffer:async()=>new ArrayBuffer(0)};};
+  try{const system=new AudioSystem();system.setSettings({sound:true,dialogue:true});assert.equal(await system.playVoice('bramm_win_05',{locale:'he'}),null);assert.deepEqual(requested.map(url=>url.split('/').at(-1)),['bramm_win_05_he.mp3']);}
+  finally{globalThis.AudioContext=Native;globalThis.fetch=nativeFetch;}
+});

@@ -1,4 +1,4 @@
-import { BRAMM_VOICE_LIBRARY } from '../duel/bramm.js';
+import { BRAMM_VOICE_LIBRARY, normalizeBrammLocale, resolveBrammVoice } from '../duel/bramm.js';
 
 const asset=name=>new URL(`../assets/audio/${name}`,import.meta.url).href;
 const clamp=value=>Math.max(0,Math.min(1,value));
@@ -65,12 +65,17 @@ export class AudioSystem{
     if(!Array.isArray(track))return this.load(track);const key=`track:${track.join('|')}`;if(this.buffers.has(key))return this.buffers.get(key);if(this.loads.has(key))return this.loads.get(key);
     const context=this.ensureContext();if(!context)return null;const request=Promise.all(track.map(url=>this.load(url))).then(parts=>{if(parts.some(part=>!part))return null;const channels=Math.max(...parts.map(part=>part.numberOfChannels||1)),sampleRate=parts[0].sampleRate||48000,length=parts.reduce((sum,part)=>sum+(part.length||Math.round((part.duration||0)*sampleRate)),0),joined=context.createBuffer(channels,length,sampleRate);let offset=0;for(const part of parts){const partLength=part.length||Math.round((part.duration||0)*sampleRate);for(let channel=0;channel<channels;channel++){const source=part.getChannelData?.(Math.min(channel,(part.numberOfChannels||1)-1));if(source)joined.copyToChannel(source,channel,offset);}offset+=partLength;}this.buffers.set(key,joined);this.loads.delete(key);return joined;}).catch(()=>{this.loads.delete(key);return null;});this.loads.set(key,request);return request;
   }
-  loadVoice(name){const definition=BRAMM_VOICE_LIBRARY[name];return definition?this.load(definition.src):Promise.resolve(null);}
-  preloadVoice(names=Object.keys(BRAMM_VOICE_LIBRARY)){return Promise.allSettled(names.map(name=>this.loadVoice(name)));}
+  async loadVoice(name,locale='en'){
+    const definition=resolveBrammVoice(name,locale);if(!definition)return null;
+    const buffer=await this.load(definition.src);
+    if(!buffer&&definition.locale==='he'&&['localhost','127.0.0.1'].includes(globalThis.location?.hostname))console.warn('[Bramm] Missing Hebrew voice asset; keeping the Hebrew caption without audio.',name);
+    return buffer;
+  }
+  preloadVoice(locale='en',names=Object.keys(BRAMM_VOICE_LIBRARY)){const resolved=normalizeBrammLocale(locale);return Promise.allSettled(names.map(name=>this.loadVoice(name,resolved)));}
   makeSource(buffer,channel,{volume=1,rate=1,loop=false}={}){const context=this.ensureContext(),channelGain=this.channelGains[channel];if(!context||!channelGain)return null;const source=context.createBufferSource(),gain=context.createGain();source.buffer=buffer;source.loop=loop;source.playbackRate.value=rate;gain.gain.value=clamp(volume);source.connect(gain);gain.connect(channelGain);return {source,gain,buffer,channel,loop,stopped:false,paused:false};}
-  async playVoice(name,{priority='LOW',volume=1,onEnded=null,locked=false}={}){
+  async playVoice(name,{priority='LOW',volume=1,onEnded=null,locked=false,locale='en'}={}){
     if(!this.enabled||!this.channelEnabled.voice||this.channels.voice<=0)return null;const rank=VOICE_PRIORITY[priority]||VOICE_PRIORITY.LOW;if(this.voiceSource&&(this.voiceLocked||rank<this.voicePriority))return null;
-    const request=++this.voiceRequest,buffer=await this.loadVoice(name);if(!buffer||request!==this.voiceRequest||!this.channelEnabled.voice)return null;if(this.voiceSource)this.stopVoice({restoreMusic:false});const node=this.makeSource(buffer,'voice',{volume});if(!node)return null;
+    const request=++this.voiceRequest,buffer=await this.loadVoice(name,locale);if(!buffer||request!==this.voiceRequest||!this.channelEnabled.voice)return null;if(this.voiceSource)this.stopVoice({restoreMusic:false});const node=this.makeSource(buffer,'voice',{volume});if(!node)return null;
     this.voiceSource=node;this.voicePriority=rank;this.voiceLocked=locked;this.voiceOnEnded=onEnded;this.duckMusic(.79,110);
     node.source.onended=()=>{if(this.voiceSource!==node)return;this.voiceSource=null;this.voicePriority=0;this.voiceLocked=false;const callback=this.voiceOnEnded;this.voiceOnEnded=null;this.duckMusic(1,260);callback?.(buffer.duration||0);};try{node.source.start(0);return {...node,duration:buffer.duration||0};}catch{this.voiceSource=null;this.voicePriority=0;this.voiceLocked=false;return null;}
   }

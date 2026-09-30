@@ -1302,6 +1302,8 @@ html[lang="en"] .setting-row label{direction:ltr;text-align:left}
 .bramm-identity>div span{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#d3bd91}
 .bramm-identity strong{font:800 17px/1 var(--runes-ui);color:#f2d58f}
 .bramm-speech{position:absolute;z-index:13;right:14px;top:82px;width:max-content;max-width:205px;padding:9px 12px;border:1px solid #7a5a35;border-radius:7px;background:linear-gradient(105deg,#ead7ac,#d8b983);color:#302015;font:700 14px/1.35 var(--runes-ui);text-align:center;box-shadow:0 3px 0 #4c301a,0 9px 18px #000a}
+.bramm-speech[dir="rtl"]{direction:rtl;text-align:right;unicode-bidi:plaintext}
+.bramm-speech[dir="ltr"]{direction:ltr;text-align:left;unicode-bidi:plaintext}
 .bramm-speech:after{content:"";position:absolute;left:-7px;bottom:13px;width:12px;height:12px;background:#ddbF8c;border-left:1px solid #7a5a35;border-bottom:1px solid #7a5a35;transform:rotate(45deg)}
 
 @media (min-width:900px) and (min-aspect-ratio:11/10){
