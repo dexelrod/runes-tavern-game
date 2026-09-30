@@ -103,6 +103,13 @@ test('resume play indicator uses an optically centered drawn triangle',()=>{
   assert.match(css,/\.resume-marker \.resume-seal:after\{[^}]*left:50%;top:50%;[^}]*translate\(-42%,-50%\)/);
 });
 
+test('card corner artwork is unframed and number corners use SVG glyphs',()=>{
+  assert.match(css,/\.corner\{[^}]*border:0;[^}]*background:none;[^}]*box-shadow:none/);
+  assert.match(css,/\.number-corner-asset\{width:22px;height:22px\}/);
+  assert.doesNotMatch(css,/\.corner-short\{/);
+  assert.match(card,/number-\$\{card\.value\}\.svg`,'corner-asset number-corner-asset'/);
+});
+
 test('environmental refinement uses real cards and removes the old generic mug and coins',()=>{
   assert.match(app,/cardBackStackHTML\('mode-token menu-card-stack quick-card-stack'\)/);
   assert.match(app,/cardBackStackHTML\('abandoned-cards'\)/);

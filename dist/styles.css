@@ -1341,12 +1341,11 @@ html[lang="en"] .setting-row label{direction:ltr;text-align:left}
 }
 
 /* v52: mobile portrait is an interaction layout, not a compressed desktop fan. */
-.corner{display:grid;place-items:center;min-width:25px;min-height:25px;padding:2px;border:1px solid color-mix(in srgb,var(--card) 78%,#3b2416);border-radius:4px;background:#f2dfb7f2;box-shadow:0 1px 0 #fff7d7 inset,0 2px 3px #2a160d45;text-shadow:none}
-.corner-value{font:900 17px/1 var(--runes-ui);color:var(--card)}
+.corner{display:grid;place-items:center;min-width:25px;min-height:25px;padding:2px;border:0;border-radius:0;background:none;box-shadow:none;text-shadow:none}
 .corner-asset{display:block;width:19px;height:19px;object-fit:contain;color:var(--card)}
+.number-corner-asset{width:22px;height:22px}
 .corner-asset.masked-card-asset{background:var(--card);-webkit-mask:var(--asset) center/contain no-repeat;mask:var(--asset) center/contain no-repeat}
 .corner-asset.native-card-asset{filter:drop-shadow(0 1px #fff8dc)}
-.corner-short{position:absolute;right:-8px;bottom:-6px;min-width:19px;padding:2px 3px;border:1px solid #5e3b23;border-radius:7px;background:var(--card);color:#fff4d4;font:900 9px/1 var(--runes-ui);box-shadow:0 1px 2px #0006}
 .corner.bottom{display:grid}
 .hand .card{transition:transform .18s cubic-bezier(.2,.75,.25,1),margin .2s ease,filter .16s,opacity .16s,box-shadow .18s}
 
@@ -1388,7 +1387,7 @@ html[lang="en"] .setting-row label{direction:ltr;text-align:left}
   .hand[data-layout="browse"] .card.quiet{opacity:.88;filter:saturate(.7) brightness(.9)}
   .card .corner.top{left:6px;top:6px;min-width:29px;min-height:29px}
   .card .corner.bottom{right:6px;bottom:6px}
-  .corner-value{font-size:18px}.corner-asset{width:21px;height:21px}
+  .corner-asset{width:21px;height:21px}.number-corner-asset{width:24px;height:24px}
   .card-art{inset:22px 8px;transform:scale(.82)}.card-print{font-size:9px}
   .waiting .hand{transform:none}
 

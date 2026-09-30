@@ -28,12 +28,11 @@ function vectorArt(card,activeColor=null){
   return asset(name);
 }
 function cornerIndex(card,activeColor=null){
-  if(card.type===TYPES.NUMBER)return `<span class="corner-value">${card.value}</span>`;
+  if(card.type===TYPES.NUMBER)return asset(`number-${card.value}.svg`,'corner-asset number-corner-asset');
   const name=ART[card.type];
-  const short=card.type===TYPES.PLUS2?'<span class="corner-short">+2</span>':'';
-  if(!name)return short;
+  if(!name)return '';
   const resolved=(card.type===TYPES.SUPER_TAKI&&card.inheritedColor)||(card.type===TYPES.CHANGE_COLOR&&activeColor);
-  return `${asset(name,'corner-asset',!!resolved)}${short}`;
+  return asset(name,'corner-asset',!!resolved);
 }
 export function cardHTML(card,{small=false,hidden=false,legal=true,highlight=true,selected=false,incoming=false,arrivalDelay=0,index=0,total=1,activeColor=null,language='he'}={}){
   if(hidden) return `<div class="card card-back ${small?'small':''}" aria-label="${language==='en'?'Face-down RUNES card':'קלף רונות הפוך'}"><span class="back-sigil">${sigilHTML()}</span></div>`;
