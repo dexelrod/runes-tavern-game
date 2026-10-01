@@ -1664,3 +1664,30 @@ html[lang="en"] .setting-row label{direction:ltr;text-align:left}
  .elder-home .primary-runes-logo{width:146px}
  .elder-home .primary-modes .mode-plaque,.elder-home .duel-invite{min-height:74px}
 }
+
+/* Round end is a separate readable composition, not the playing layout. */
+.result-wrap.table-result .round-tally{max-height:min(340px,48dvh);padding:18px 22px;transform:none;color:#302012}
+.result-wrap.table-result .round-tally h2{color:#302012;font-size:24px;line-height:1.3;text-shadow:none;margin:6px 0 12px}
+.result-wrap.table-result .round-tally>small,.result-wrap.table-result .round-tally p,.result-wrap.table-result .coin-total span,.result-wrap.table-result .score-after{color:#57402b;font-size:14px;line-height:1.45;opacity:1;text-shadow:none}
+.result-wrap.table-result .score-after bdi{color:#302012;font-size:20px}
+.result-wrap.table-result .coin-total strong{color:#302012;animation:none;background:#c6a05b;border-color:#88662f;text-shadow:none}
+.result-wrap.table-result .round-tally .text-link{color:#302012;background:#e8d5a8;border:1px solid #8c6a39;min-height:44px;font-size:14px}
+.result-wrap.table-result .round-tally .leather-button{min-height:44px;font-size:16px;color:#fff0cc}
+.round-complete .status-stack,.round-complete .table-caption,.round-complete .opponent.last-card:after,.round-complete .quick-opponent.last-card:after,.round-complete .duel-opponent.last-card:after{display:none}
+.round-complete .revealed-hand{top:calc(100% + 12px);z-index:4;max-width:140px}
+.round-complete .revealed-hand .card{opacity:1!important;filter:none!important;margin-left:-12px}
+.round-complete .opponent-fan{visibility:hidden}
+.round-complete .tavern-table .opponent-fan{visibility:hidden}
+.round-complete .seat-props{opacity:.55;filter:brightness(.8);pointer-events:none}
+.round-complete.tavern-table .seat-top .seat-props{left:calc(100% + 52px);top:68px}
+.round-complete.tavern-table .seat-top .revealed-hand{top:calc(100% + 12px)}
+@media(min-width:900px) and (min-aspect-ratio:11/10){
+ .round-complete.tavern-table .seat-top{top:clamp(64px,10vh,100px)}
+ .round-complete.tavern-table .center{top:72%;scale:.85}
+}
+@media(max-width:599px){
+ .result-wrap.table-result .round-tally{padding:14px 16px;max-height:40dvh}
+ .result-wrap.table-result .round-tally h2{font-size:22px}
+ .round-complete .revealed-hand .card{width:28px!important;min-width:28px!important;height:40px!important}
+ .round-complete.tavern-table .seat-props{display:none}
+}
