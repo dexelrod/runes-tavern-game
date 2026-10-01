@@ -1490,7 +1490,7 @@ html[lang="en"] .setting-row label{direction:ltr;text-align:left}
 @keyframes parchment-settle{0%{opacity:0;translate:0 14px;rotate:-1.5deg}100%{opacity:1;translate:0;rotate:0}}
 
 /* Home: the objects themselves are the menu; their labels sit on the wood. */
-.elder-home .mode-plaque,.elder-home .duel-invite{border:0!important;background:none!important;box-shadow:none!important;border-radius:0!important;overflow:visible}.elder-home .mode-plaque:before{display:none}.elder-home .mode-plaque{filter:drop-shadow(0 9px 8px #0009)}.elder-home .mode-plaque:hover,.elder-home .duel-invite:hover{filter:brightness(1.14) drop-shadow(0 10px 9px #000b);transform:translateY(-2px)}
+.elder-home .mode-plaque,.elder-home .duel-invite{overflow:hidden}.elder-home .mode-plaque:before{display:none}.elder-home .mode-plaque{filter:drop-shadow(0 9px 8px #0009)}.elder-home .mode-plaque:hover,.elder-home .duel-invite:hover{filter:brightness(1.14) drop-shadow(0 10px 9px #000b);transform:translateY(-2px)}
 .elder-home .mode-copy{padding:5px 11px 4px;border:0;border-bottom:1px solid #8d6a3c;background:linear-gradient(90deg,transparent,#160c07b8 22% 78%,transparent);text-shadow:0 2px 3px #000}
 .elder-home .duel-invite{grid-template-columns:76px 1fr 18px;width:92%;padding:3px 8px}.elder-home .duel-invite .duel-cameo{width:72px;height:72px;border:0;box-shadow:none;filter:drop-shadow(0 8px 7px #000a);overflow:visible}.elder-home .duel-invite .bramm-art-stage{background:none}.elder-home .duel-invite>span:nth-child(2){padding:6px 12px;border-bottom:1px solid #806039;background:linear-gradient(90deg,#160c07d4,transparent)}
 .elder-home .table-tools button{min-width:74px;min-height:44px}
@@ -1630,4 +1630,34 @@ html[lang="en"] .setting-row label{direction:ltr;text-align:left}
  .elder-home .home-scene{justify-content:flex-start;gap:12px;padding-top:14px}
  .elder-home .primary-runes-logo{width:154px}
  .elder-home .primary-modes .mode-plaque{min-height:112px;grid-template-rows:48px auto}
+}
+
+/* Phone menu uses one consistent row for each way to play. */
+@media(max-width:599px) and (orientation:portrait){
+ .elder-home .home-scene{gap:24px;justify-content:center;padding:24px 20px}
+ .elder-home .table-choices{gap:12px;width:min(370px,100%)}
+ .elder-home .primary-modes{display:grid;grid-template-columns:1fr;gap:12px}
+ .elder-home .primary-modes .mode-plaque,.elder-home .duel-invite{display:grid;grid-template-columns:68px minmax(0,1fr);grid-template-rows:1fr;align-items:center;justify-items:stretch;min-height:86px;padding:10px 14px;text-align:start;border:1px solid #94703f;border-radius:6px;background:linear-gradient(120deg,#172019f2,#2c2018f2);box-shadow:inset 0 1px #e2bf6a24,0 4px 9px #0006;filter:none}
+ .elder-home .mode-plaque .mode-token{position:relative;inset:auto;grid-column:1;grid-row:1;margin:0;justify-self:center;transform:none;scale:.8;width:66px;height:60px}
+ .elder-home .mode-plaque .coin-stack{width:118px;height:42px;scale:.54;transform:none}
+ .elder-home .mode-plaque .mode-copy,.elder-home .duel-invite>span:nth-child(2){grid-column:2;grid-row:1;text-align:start;padding:0;border:0;background:none}
+ .elder-home .mode-copy strong,.elder-home .duel-invite strong{font-size:20px;line-height:1.25}
+ .elder-home .mode-copy small,.elder-home .duel-invite small{font-size:13px;line-height:1.45;margin-top:4px;display:block;color:#d2bc92}
+ .elder-home .duel-invite .duel-cameo{grid-column:1;grid-row:1;width:62px;height:64px;justify-self:center;overflow:hidden;filter:none;border-radius:4px}
+ .elder-home .invite-arrow{display:none}
+ .elder-home .resume-marker{grid-template-columns:48px minmax(0,1fr);padding:12px;gap:3px 10px;border-color:#ccaa66;background:linear-gradient(120deg,#28332cf2,#322518f2)}
+ .elder-home .resume-game-token{grid-column:1;grid-row:1/4;scale:.75}
+ .elder-home .resume-marker .resume-kicker,.elder-home .resume-marker strong,.elder-home .resume-marker small{grid-column:2;text-align:start}
+ .elder-home .resume-marker .resume-seal{display:none}
+ .elder-home .resume-marker strong{font-size:19px;line-height:1.3}
+ .elder-home .resume-marker small{font-size:13px;line-height:1.4}
+ .elder-home .table-tools{margin-top:8px;gap:24px}
+ .elder-home .table-tools button{display:flex;gap:8px;align-items:center;justify-content:center;min-height:44px}
+ .elder-home .table-tools button i{margin:0;width:22px;height:22px}
+ .elder-home .primary-runes-logo{width:min(210px,55vw)}
+}
+@media(max-width:599px) and (max-height:650px) and (orientation:portrait){
+ .elder-home .home-scene{justify-content:flex-start;padding-top:14px;gap:14px}
+ .elder-home .primary-runes-logo{width:146px}
+ .elder-home .primary-modes .mode-plaque,.elder-home .duel-invite{min-height:74px}
 }

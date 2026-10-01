@@ -513,13 +513,14 @@ function bind(){
     card.onclick=e=>{if(suppressClick){suppressClick=false;e.preventDefault();return;}if(!legal){rejectCard();return;}if(!twoStepPlay||selected===card.dataset.cardId)play();else selectCard(card);};
     card.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();if(!legal)rejectCard();else if(!twoStepPlay||selected===card.dataset.cardId)play();else selectCard(card);}};
     if(!legal)return;
-    card.onpointerdown=e=>{startY=lastY=e.clientY;card._startX=e.clientX;startTime=lastTime=e.timeStamp;peakVelocity=0;moved=false;suppressClick=false;};
+    card.onpointerdown=e=>{startY=lastY=e.clientY;card._startX=card._gestureStartX=e.clientX;startTime=lastTime=e.timeStamp;peakVelocity=0;moved=false;suppressClick=false;};
     card.onpointermove=e=>{const dy=e.clientY-startY,dx=e.clientX-(card._startX??(card._startX=e.clientX));if(Math.abs(dx)>7&&Math.abs(dx)>Math.abs(dy)){moved=true;return;}if(Math.abs(dy)<9)return;if(!card.hasPointerCapture(e.pointerId))card.setPointerCapture(e.pointerId);const segmentTime=Math.max(1,e.timeStamp-lastTime);moved=true;peakVelocity=Math.max(peakVelocity,(lastY-e.clientY)/segmentTime);lastY=e.clientY;lastTime=e.timeStamp;card.style.transform=`translateY(${Math.min(0,dy)}px) rotate(0deg)`;};
     card.onpointerup=e=>{
       const dy=e.clientY-startY,elapsed=Math.max(1,e.timeStamp-startTime),recentElapsed=Math.max(1,e.timeStamp-lastTime),velocity=Math.max(peakVelocity,(lastY-e.clientY)/recentElapsed,(startY-e.clientY)/elapsed),discard=root.querySelector('[data-discard-anchor]')?.getBoundingClientRect(),overDiscard=discard&&e.clientX>=discard.left-28&&e.clientX<=discard.right+28&&e.clientY>=discard.top-36&&e.clientY<=discard.bottom+36,upwardFlick=dy<-22&&velocity>.28;
       if(card.hasPointerCapture(e.pointerId))card.releasePointerCapture(e.pointerId);card._startX=null;
       suppressClick=moved;
-      if(dy<-52||upwardFlick||overDiscard){e.preventDefault();play();}
+      const dx=e.clientX-(card._gestureStartX??e.clientX),verticalIntent=Math.abs(dy)>Math.abs(dx)*1.2;
+      if(verticalIntent&&(dy<-52||upwardFlick||overDiscard)){e.preventDefault();play();}
       else if(moved){e.preventDefault();reset();layoutHand();}
     };
     card.onpointercancel=e=>{if(card.hasPointerCapture(e.pointerId))card.releasePointerCapture(e.pointerId);card._startX=null;suppressClick=moved;reset();layoutHand();};
