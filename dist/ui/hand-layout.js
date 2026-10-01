@@ -1,6 +1,6 @@
 export function calculateHandLayout({count,cardWidth,available,portrait=false}){
-  const minimumCorner=portrait?Math.min(58,Math.max(46,cardWidth*.56)):Math.min(58,Math.max(40,cardWidth*.42));
-  const browse=count>=8&&cardWidth+Math.max(0,count-1)*minimumCorner>available;
+  const minimumCorner=portrait?cardWidth+10:Math.min(58,Math.max(40,cardWidth*.42));
+  const browse=(portrait?count>1:count>=8)&&cardWidth+Math.max(0,count-1)*minimumCorner>available;
   const step=count<2?0:browse?minimumCorner:Math.min(cardWidth+18,Math.max(minimumCorner,(available-cardWidth)/(count-1)));
   const roomy=available>620;
   return Object.freeze({
