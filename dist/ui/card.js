@@ -45,7 +45,7 @@ export function cardHTML(card,{small=false,hidden=false,legal=true,highlight=tru
   const color=inherited||chosen||(card.color===WILD?'wild':card.color);
   const faceMark=cornerIndex(card,activeColor);
   const spokenColor=(language==='en'?{red:'burgundy',blue:'slate',green:'forest',yellow:'gold'}:{red:'בורדו',blue:'צפחה',green:'יער',yellow:'זהב'})[color]||'';
-  const spokenLabel=card.type===TYPES.NUMBER?`${card.value} ${spokenColor}`:cardLabel(card,language);
+  const spokenLabel=card.type===TYPES.NUMBER?`${card.value} ${spokenColor}`:`${cardLabel(card,language)}${spokenColor?' '+spokenColor:''}`;
   const rune=color!=='wild'?suitRune(color):'';
   const watermark=card.type===TYPES.NUMBER?suitRune(color,'card-rune-watermark'):'';
   const curseTwo=card.type===TYPES.PLUS2?'<span class="curse-two" aria-hidden="true"><i></i><i></i></span>':'';

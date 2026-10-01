@@ -23,7 +23,7 @@ test('hand spacing is measured from the live container and recalculated after re
 });
 
 test('QA interaction safeguards keep the table fixed and game state visible',()=>{
-  assert.match(app,/const isPaused=\(\)=>view==='game'&&\(sheet==='pause'\|\|document\.hidden\)/);
+  assert.match(app,/const isPaused=\(\)=>view==='game'&&\(Boolean\(sheet\)\|\|document\.hidden\)/);
   assert.match(app,/if\(isPaused\(\)\|\|!state/);
   assert.match(app,/document\.addEventListener\('visibilitychange'/);
   assert.match(app,/function actionStripHTML\(\)/);
