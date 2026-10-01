@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { BRAMM_EXPRESSIONS, BRAMM_REACTIONS, BRAMM_VOICE_LIBRARY, brammExpressionURL, brammExpressionsReady, createBrammController, preloadBrammExpressions, resolveBrammReaction, resolveBrammVoice } from '../dist/duel/bramm.js';
 
 test('Bramm pack registers every supplied voice and expression asset',()=>{
-  assert.equal(Object.keys(BRAMM_VOICE_LIBRARY).length,29);
+  assert.equal(Object.keys(BRAMM_VOICE_LIBRARY).length,41);
   assert.equal(BRAMM_EXPRESSIONS.length,36);
   for(const definition of Object.values(BRAMM_VOICE_LIBRARY)){const bytes=fs.readFileSync(fileURLToPath(definition.src));assert.ok(bytes.length>128);}
   for(const reaction of BRAMM_REACTIONS){
@@ -59,7 +59,7 @@ test('one-card panic persists and recovery returns through relief',()=>{
   const bramm=createBrammController({random:()=>0,now:()=>10000});
   assert.equal(bramm.react('player_one_card',{},true).voice,'bramm_player_one_card_01');
   assert.equal(bramm.snapshot().state,'panic');
-  assert.equal(bramm.react('one_card_persist',{},true).voice,'bramm_player_one_card_02');
+  assert.equal(bramm.react('one_card_persist',{},true).voice,'bramm_player_one_card_03','03 stays the later, desperate-defence line');
   assert.equal(bramm.oneCardRecovered().expression,'21_sudden_relief');
   assert.equal(bramm.snapshot().flags.bramm_survived_one_card_scare,true);
 });
@@ -69,13 +69,15 @@ test('result selection uses one context-appropriate critical line',()=>{
   bramm.react('player_one_card',{},true);bramm.oneCardRecovered();
   const win=bramm.react('win',{survivedOneCard:true},true);
   assert.equal(win.voice,'bramm_win_05');assert.equal(win.priority,'CRITICAL');
-  const loss=createBrammController({random:()=>0,now:()=>10000}).react('loss',{},true);
-  assert.equal(loss.voice,'bramm_loss_01');assert.equal(loss.nextState,'defeated');
+  const matchLoss=createBrammController({random:()=>0,now:()=>10000}).react('match_loss',{},true);
+  assert.match(matchLoss.voice,/^bramm_match_loss_0[123]$/);assert.equal(matchLoss.nextState,'defeated');
+  const roundLoss=createBrammController({random:()=>0,now:()=>10000}).react('round_loss',{},true);
+  assert.equal(roundLoss.voice,'bramm_loss_01');
 });
 
 test('reaction metadata stays data-driven and complete',()=>{
   for(const reaction of BRAMM_REACTIONS){for(const key of ['id','trigger','priority','voice','expression','duration'])assert.ok(reaction[key]);}
-  assert.equal(new Set(BRAMM_REACTIONS.map(item=>item.voice)).size,29);
+  assert.equal(new Set(BRAMM_REACTIONS.map(item=>item.voice)).size,41);
 });
 
 test('short-term character memory survives a saved-match restore',()=>{
@@ -113,4 +115,47 @@ test('every new match against Bramm opens with his voiced introduction',()=>{
   assert.doesNotMatch(app,/firstEncounter/);
   assert.match(app,/if\(!saved\)\{const epoch=sessionEpoch;const timer=setTimeout\(\(\)=>\{if\(epoch===sessionEpoch\)runBramm\('intro',\{\},true\);/);
   const bramm=createBrammController({random:()=>0});assert.ok(bramm.react('intro',{},true).voice.startsWith('bramm_intro_'));
+});
+
+test('round and match results use separate pools, and the old loss line is round-only',()=>{
+  const pools={round_win:/^bramm_round_win_0[1-4]$/,round_loss:/^bramm_loss_01$/,match_loss:/^bramm_match_loss_0[1-3]$/,win:/^bramm_win_\d\d$/};
+  for(const [trigger,pattern] of Object.entries(pools))for(let i=0;i<30;i++){const voice=createBrammController().react(trigger,{},true)?.voice;assert.match(voice,pattern,`${trigger} → ${voice}`);}
+  assert.ok(!BRAMM_REACTIONS.some(r=>r.trigger==='loss'),'no ambiguous "loss" trigger remains');
+  const app=fs.readFileSync(new URL('../dist/app.js',import.meta.url),'utf8');
+  assert.match(app,/else runBramm\('match_loss',\{\},true\);\n      \}else if\(isBrammDuel\(\)\)runBramm\(opponentWon\?'round_win':'round_loss',\{\},true\);/);
+});
+test('player one-card reactions vary, never repeat back-to-back, and 04 does not exist',()=>{
+  const app=fs.readFileSync(new URL('../dist/app.js',import.meta.url),'utf8'),bramm=fs.readFileSync(new URL('../dist/duel/bramm.js',import.meta.url),'utf8');
+  assert.doesNotMatch(app+bramm,/one_card_04/);
+  const seen=new Set();
+  for(let seed=0;seed<200;seed++){let n=seed;const random=()=>((n=(n*9301+49297)%233280)/233280);const c=createBrammController({random});let last=null;
+    for(let scare=0;scare<4;scare++){const r=c.react('player_one_card',{brammCards:scare*2},true);seen.add(r.voice);assert.notEqual(r.voice,last);last=r.voice;c.oneCardRecovered();}}
+  for(const id of ['01','02','05','06','07'])assert.ok(seen.has(`bramm_player_one_card_${id}`),`one-card ${id} never chosen`);
+  assert.ok(!seen.has('bramm_player_one_card_03'),'03 is not an instant reaction');
+});
+test('idle lines are rare: gated by cooldown, recent speech and a per-round budget',()=>{
+  let clock=0;const c=createBrammController({random:()=>0,now:()=>clock});
+  c.beginRound();for(let i=0;i<4;i++)c.observe('player_neutral_move');
+  clock=60000;const first=c.react('idle_quiet');assert.match(first.voice,/^bramm_idle_0[12]$/);
+  for(let i=0;i<4;i++)c.observe('player_neutral_move');clock+=60000;
+  assert.equal(c.react('idle_quiet'),null,'a second idle needs a genuinely long round');
+  c.react('bramm_good_move',{},true);for(let i=0;i<45;i++)c.observe('player_neutral_move');clock+=60000;
+  assert.ok(c.react('idle_quiet'),'a very long round may allow one more');
+  for(let i=0;i<60;i++)c.observe('player_neutral_move');clock+=60000;
+  assert.equal(c.react('idle_quiet'),null,'never more than two in a round');
+  clock=0;const fresh=createBrammController({random:()=>0,now:()=>clock});fresh.react('round_win',{},true);for(let i=0;i<4;i++)fresh.observe('player_neutral_move');clock=5000;
+  assert.equal(fresh.react('idle_quiet'),null,'idle waits well after the last line');
+});
+test('anti-repeat is language independent',()=>{
+  const c=createBrammController({random:()=>0});const a=c.react('match_loss',{},true),b=c.react('match_loss',{},true);
+  assert.notEqual(a.voice,b.voice);assert.equal(resolveBrammReaction(a,'he').voice,a.voice);
+  assert.match(resolveBrammVoice(a.voice,'he').src,/_he\.mp3$/);
+});
+
+test('consecutive round losses vary between "...Again." and an excuse',()=>{
+  const c=createBrammController({random:()=>0});
+  const lines=[0,1,2,3].map(()=>c.react('round_loss',{},true).voice);
+  assert.equal(lines[0],'bramm_loss_01');
+  for(let i=1;i<lines.length;i++)assert.notEqual(lines[i],lines[i-1]);
+  assert.ok(lines.slice(1).some(v=>/bramm_excuse_0[12]/.test(v)));
 });

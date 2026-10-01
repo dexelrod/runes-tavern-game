@@ -8,7 +8,12 @@ export const TAVERN_REGULARS=Object.freeze([
   {name:'רון',nameKey:'ron',kind:'ai',archetype:'bard',house:'red'},
   {name:'בראן',nameKey:'bran',kind:'ai',archetype:'mercenary',house:'blue'},
   {name:'סֶלָה',nameKey:'sela',kind:'ai',archetype:'scholar',house:'yellow'},
-  {name:'קֶשׁ',nameKey:'kesh',kind:'ai',archetype:'mysterious',house:'blue'}
+  {name:'קֶשׁ',nameKey:'kesh',kind:'ai',archetype:'mysterious',house:'blue'},
+  {name:'רודריק',nameKey:'roderic',kind:'ai',archetype:'mercenary',house:'red'},
+  {name:'ליאו',nameKey:'lio',kind:'ai',archetype:'bard',house:'yellow'},
+  {name:'מוגרת׳',nameKey:'mograth',kind:'ai',archetype:'mercenary',house:'green'},
+  {name:'הארו',nameKey:'harrow',kind:'ai',archetype:'hunter',house:'blue'},
+  {name:'ראסק',nameKey:'rusk',kind:'ai',archetype:'mysterious',house:'yellow'}
 ]);
 const HUMAN_SEAT=Object.freeze({id:'p0',name:'אתם',nameKey:'you',kind:'human',archetype:'wanderer',house:'yellow'});
 export function tavernGuestsFor(seed){
@@ -33,7 +38,7 @@ export function createQuickSession({playerCount=3,seed=Date.now()}={}){
 
 export function createDuelSession({seed=Date.now(),opponent}={}){
   if(!opponent?.id)throw new Error('Duel opponent is required');
-  const duelHouses={ron:'red',aila:'green',bran:'blue',sela:'yellow',kesh:'blue',bramm:'red'};
+  const duelHouses={ron:'red',aila:'green',bran:'blue',sela:'yellow',kesh:'blue',roderic:'red',lio:'yellow',mograth:'green',harrow:'blue',rusk:'yellow',bramm:'red'};
   const players=[{id:'p0',name:'אתם',nameKey:'you',kind:'human',archetype:'wanderer',house:'yellow'},{id:'p1',name:opponent.name,nameKey:opponent.id,kind:'ai',archetype:opponent.archetype,house:duelHouses[opponent.id]||'blue',duelOpponentId:opponent.id}];
   return {version:MATCH_VERSION,mode:'duel',phase:'round',round:1,totalRounds:5,suddenDeath:false,seed,opponentId:opponent.id,scores:scoreMap(players),roster:freshRoster(players),results:[],championId:null,game:createInitialState({playerCount:2,players,seed})};
 }
@@ -68,7 +73,7 @@ export function standings(match){return match.roster.map(player=>({...player,sco
 export function serializeSession(match){return JSON.stringify(match);}
 export function restoreSession(json){
   const raw=typeof json==='string'?JSON.parse(json):structuredClone(json);
-  if(raw?.game&&raw.version===MATCH_VERSION){if(raw.mode==='quick'&&raw.game.players?.length>6)throw new Error('Unsupported quick-game player count');raw.game=restoreState(serializeState(raw.game));const keys={אתם:'you',איילה:'aila',רון:'ron',בראן:'bran','סֶלָה':'sela','קֶשׁ':'kesh',בראם:'bramm'};for(const group of [raw.roster||[],raw.game.players||[]])for(const player of group)player.nameKey||=player.duelOpponentId||keys[player.name];return raw;}
+  if(raw?.game&&raw.version===MATCH_VERSION){if(raw.mode==='quick'&&raw.game.players?.length>6)throw new Error('Unsupported quick-game player count');raw.game=restoreState(serializeState(raw.game));const keys={אתם:'you',איילה:'aila',רון:'ron',בראן:'bran','סֶלָה':'sela','קֶשׁ':'kesh',רודריק:'roderic',ליאו:'lio','מוגרת׳':'mograth',הארו:'harrow',ראסק:'rusk',בראם:'bramm'};for(const group of [raw.roster||[],raw.game.players||[]])for(const player of group)player.nameKey||=player.duelOpponentId||keys[player.name];return raw;}
   if(raw?.players)return createQuickSessionFromLegacy(raw);
   throw new Error('Unsupported saved session');
 }

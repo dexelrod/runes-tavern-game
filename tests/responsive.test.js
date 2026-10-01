@@ -74,3 +74,12 @@ test('entry animations only run when content is new, so re-renders never flicker
   assert.match(css,/\.speech\.enter\{animation/);
   assert.match(css,/\.result-slip\.enter\{animation/);
 });
+
+test('install icons, favicons and the share image exist and are declared',()=>{
+  const manifest=JSON.parse(read('manifest.webmanifest'));
+  assert.ok(manifest.icons.some(i=>i.sizes==='512x512'&&i.purpose==='maskable'));
+  for(const icon of manifest.icons)assert.ok(existsSync(new URL(`../dist/${icon.src.replace('./','')}`,import.meta.url)),icon.src);
+  for(const ref of [...html.matchAll(/href="\.\/(assets\/brand\/[^"]+)"/g)].map(m=>m[1]))assert.ok(existsSync(new URL(`../dist/${ref}`,import.meta.url)),ref);
+  assert.match(html,/og:image" content="https:\/\/[^"]+\/assets\/brand\/share\.jpg"/);
+  assert.ok(existsSync(new URL('../dist/assets/brand/share.jpg',import.meta.url)));
+});

@@ -102,11 +102,12 @@ bdi{unicode-bidi:isolate}
 .card-rune-watermark{position:absolute;z-index:0;left:50%;top:50%;width:55%;height:55%;translate:-50% -50%;fill:none;stroke:var(--card);stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round;opacity:.075}
 .card-print{position:absolute;z-index:5;left:.69em;right:.69em;bottom:.44em;color:var(--card);font:700 .5em/1.05 var(--ui);letter-spacing:.035em;text-align:center;text-transform:uppercase;text-wrap:balance;opacity:.92}
 .card.type-number .card-print{display:none}
-.card.type-plus2 .card-print{text-transform:none}
-/* Curse stands where the Two would be: two faint tally strokes under the art. */
-.curse-two{position:absolute;z-index:3;left:50%;bottom:6%;display:flex;gap:.3em;translate:-50% 0;opacity:.5}
-.curse-two i{width:.16em;height:.8em;border-radius:1px;background:var(--card);transform:rotate(-5deg)}
-.curse-two i+i{transform:rotate(4deg)}
+.card-print{bottom:.5em;left:1.1em;right:1.1em;padding:.08em .3em;color:color-mix(in srgb,var(--card) 66%,#1a0f08);background:linear-gradient(90deg,transparent,#eddcb2 16% 84%,transparent)}
+[lang=he] .card-print,.card-print:lang(he){font-size:.56em;letter-spacing:0}
+.card.type-superTaki .card-print{letter-spacing:0;font-size:.46em}
+/* Below ~88px the printed name is unreadable noise; the art and corner carry the card. */
+.card:not(.card-back){container-type:inline-size}
+@container (max-width:88px){.card-print{display:none}}
 .card-scratch{position:absolute;z-index:6;width:2.1em;height:1px;right:-.25em;top:2.2em;background:#563a2028;opacity:.35;transform:rotate(calc((var(--i,0) % 4) * 3deg - 12deg))}
 /* Card back */
 .card.card-back{background-color:var(--burgundy);background-image:linear-gradient(45deg,transparent 44%,#d1a55322 45% 48%,transparent 49%),linear-gradient(-45deg,transparent 44%,#d1a55316 45% 48%,transparent 49%),linear-gradient(#7a2940,#531827);background-size:14px 14px,14px 14px,100% 100%;border-color:#ae8144;box-shadow:inset 0 0 0 .25em #371019,inset 0 0 0 .375em #c2914a88,var(--shadow-card)}
@@ -125,7 +126,7 @@ bdi{unicode-bidi:isolate}
   --rim:calc(var(--head) + var(--fig-h) + 6px);
   --rim-curve:5%;--rim-thick:16px;
   --card-w:clamp(64px,20vw,88px);
-  --pile-w:clamp(72px,22vw,98px);
+  --pile-w:clamp(72px,24vw,110px);
   --back-w:20px;
   --hand-lift:26px;
 }
@@ -146,6 +147,8 @@ bdi{unicode-bidi:isolate}
 .seat-figure{position:relative;width:100%;height:var(--fig-h);display:flex;justify-content:center;align-items:flex-end;overflow:hidden;pointer-events:none}
 .seat-figure>img{display:block;height:calc(var(--fig-h) * 1.06);width:auto;max-width:150%;object-fit:contain;object-position:50% 0;translate:0 6%;filter:brightness(.82) saturate(.9) drop-shadow(0 6px 8px #0009);transition:filter .5s ease}
 .seat.active .seat-figure>img{filter:brightness(1.02) saturate(1) drop-shadow(0 6px 10px #000a)}
+.sprite-figure .duel-sprite{display:block;width:calc(var(--fig-h) * 1.08);height:calc(var(--fig-h) * 1.08);flex:0 0 auto;background:var(--sprite-sheet,url('./assets/duel-opponents.png')) no-repeat;background-size:500% 500%;background-position:var(--sprite-x) var(--sprite-y);translate:0 9%;filter:brightness(.82) saturate(.9) drop-shadow(0 6px 8px #0009);transition:filter .5s ease;-webkit-mask-image:radial-gradient(ellipse 50% 92% at 50% 45%,#000 62%,transparent 100%);mask-image:radial-gradient(ellipse 50% 92% at 50% 45%,#000 62%,transparent 100%)}
+.seat.active .sprite-figure .duel-sprite{filter:brightness(1.02) saturate(1) drop-shadow(0 6px 10px #000a)}
 .seat-plate{position:relative;z-index:3;display:flex;align-items:center;gap:6px;max-width:100%;min-height:30px;margin-top:-2px;padding:3px 8px;border:1px solid var(--line);border-radius:5px;background:linear-gradient(#262520f0,#141512f0);box-shadow:var(--shadow-plaque);color:var(--cream);transition:box-shadow .3s ease,border-color .3s ease}
 .seat-name{display:grid;min-width:0;text-align:center}
 .seat-name b{overflow:hidden;font:700 13px/1.15 var(--display);white-space:nowrap;text-overflow:ellipsis}
@@ -166,7 +169,7 @@ bdi{unicode-bidi:isolate}
 .mode-tavern,.mode-duel{--seat-h:98px}
 .seat-score.scored{animation:score-glow 1.6s ease-out .55s both}
 .seat-props{position:absolute;display:none}
-.revealed-hand{position:absolute;z-index:4;top:calc(var(--fig-h) + 34px);left:50%;display:flex;translate:-50% 0;--cw:25px}
+.revealed-hand{position:absolute;z-index:4;top:calc(var(--fig-h) + 34px);left:50%;display:flex;translate:-50% 0;--cw:25px;max-width:100%}
 .revealed-hand .card{--cw:inherit;margin-left:calc(var(--cw) * -.45);transform:rotate(calc((var(--i,0) - 3) * 2deg));pointer-events:none;box-shadow:0 2px 4px #0009}
 .revealed-hand .card:first-child{margin-left:0}
 .revealed-more{align-self:center;margin-left:4px;padding:2px 5px;border-radius:3px;background:#0e0f0dd9;font:800 11px/1 var(--ui);color:#f0d9a4}
@@ -186,12 +189,16 @@ bdi{unicode-bidi:isolate}
 .seats-3 .seat{--seat-w:33%}.seats-3 .seat-w{--sx:17%}.seats-3 .seat-e{--sx:83%}
 .seats-4 .seat{--seat-w:25%}.seats-4 .seat-w{--sx:12.5%}.seats-4 .seat-nw{--sx:37.5%}.seats-4 .seat-ne{--sx:62.5%}.seats-4 .seat-e{--sx:87.5%}
 .seats-5 .seat{--seat-w:20%}.seats-5 .seat-w{--sx:10%}.seats-5 .seat-nw{--sx:30%}.seats-5 .seat-ne{--sx:70%}.seats-5 .seat-e{--sx:90%}
-.seats-4 .seat-plate,.seats-5 .seat-plate{flex-wrap:wrap;justify-content:center;gap:3px;padding:3px 5px}
+.seats-4 .seat-plate,.seats-5 .seat-plate{flex-direction:column;justify-content:center;gap:1px;padding:3px 5px;min-width:min(100%,64px)}
 .seats-4 .house-pin,.seats-5 .house-pin{display:none}
 .seats-5 .seat-name b{font-size:12px}
+/* No stake yet: an empty pile shows nothing rather than a lonely 0. */
+.seat-score.empty{display:none}
+/* Crowded phone tables: smaller fans so neighbours never merge into one band. */
+@media (max-width:599px){.seats-4 .seat-fan i,.seats-5 .seat-fan i{--back-w:13px}}
 /* Duel opponent: one large figure, centred. Sprites come from the shared sheet. */
 .duel-figure{overflow:hidden}
-.duel-figure .duel-sprite{display:block;width:calc(var(--fig-h) * 1.15);height:calc(var(--fig-h) * 1.15);flex:0 0 auto;background:url('./assets/duel-opponents.png') no-repeat;background-size:500% 500%;background-position:var(--sprite-x) var(--sprite-y);translate:0 8%;filter:brightness(.92) saturate(.92) drop-shadow(0 8px 10px #000a);-webkit-mask-image:radial-gradient(ellipse 50% 92% at 50% 45%,#000 62%,transparent 100%);mask-image:radial-gradient(ellipse 50% 92% at 50% 45%,#000 62%,transparent 100%)}
+.duel-figure .duel-sprite{display:block;width:calc(var(--fig-h) * 1.15);height:calc(var(--fig-h) * 1.15);flex:0 0 auto;background:var(--sprite-sheet,url('./assets/duel-opponents.png')) no-repeat;background-size:500% 500%;background-position:var(--sprite-x) var(--sprite-y);translate:0 8%;filter:brightness(.92) saturate(.92) drop-shadow(0 8px 10px #000a);-webkit-mask-image:radial-gradient(ellipse 50% 92% at 50% 45%,#000 62%,transparent 100%);mask-image:radial-gradient(ellipse 50% 92% at 50% 45%,#000 62%,transparent 100%)}
 .duel-seat.active .duel-figure .duel-sprite{filter:brightness(1.04) drop-shadow(0 8px 10px #000a)}
 .bramm-art-stage{position:relative;display:block;height:100%;aspect-ratio:2/3;flex:0 0 auto}
 .duel-figure .bramm-art-stage{height:calc(var(--fig-h) * 1.85);align-self:flex-start;translate:0 -1%}
@@ -253,7 +260,7 @@ bdi{unicode-bidi:isolate}
 .player-place{display:none}
 .turn-whisper,.human-quip{position:absolute;z-index:25;left:50%;bottom:calc(var(--card-w) * 1.4 + var(--hand-lift) + 14px + var(--safe-bottom));max-width:min(92vw,420px);padding:8px 12px;border:1px solid #8a6a3e;border-radius:6px;background:#f1e2bdf2;color:#2c1b0e;font:700 14px/1.25 var(--ui);text-align:center;box-shadow:0 6px 14px #0009;translate:-50% 0;pointer-events:none}
 .human-quip{background:#171a17f0;color:var(--cream);border-color:var(--line)}
-.hand .card.incoming{animation:hand-receive .42s cubic-bezier(.2,.75,.25,1) both;animation-delay:max(0ms,var(--arrive-delay,0ms))}
+.hand .card.incoming{animation:hand-receive .42s cubic-bezier(.2,.75,.25,1) both;animation-delay:var(--arrive-delay,0ms)}
 
 /* 9. Table notes (crossbow, action strip, captions) --------------------- */
 .table-notes{position:relative;z-index:15;display:grid;justify-items:center;gap:6px;min-height:8px;padding:0 10px 6px}
@@ -268,7 +275,8 @@ bdi{unicode-bidi:isolate}
 .fire-button:active{translate:0 2px}
 
 /* 10. Colour choice ----------------------------------------------------- */
-.color-choice{position:absolute;inset:0;z-index:90;display:grid;place-items:center;background:#0a0503a6;animation:fade-in .18s ease-out both}
+.color-choice{position:absolute;inset:0;z-index:90;display:grid;place-items:center;background:#0a0503a6}
+.color-choice.enter{animation:fade-in .16s ease-out both}
 .gem-ring{display:grid;gap:14px;justify-items:center;padding:18px 18px 20px;border:1px solid #8a6a3e;border-radius:12px;background:linear-gradient(#262520f5,#141512f5);box-shadow:0 16px 40px #000c}
 .gem-title{font:700 20px/1 var(--display);color:var(--cream)}
 .gems{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
@@ -311,8 +319,11 @@ bdi{unicode-bidi:isolate}
 .coin-pile.tiny i{width:12px}
 
 /* 12. Sheets & controls ------------------------------------------------- */
-.sheet-wrap{position:absolute;inset:0;z-index:100;display:grid;place-items:center;padding:calc(12px + var(--safe-top)) 12px calc(12px + var(--safe-bottom));background:#0a0503c4;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);animation:fade-in .18s ease-out both}
-.tavern-sheet{position:relative;width:min(100%,520px);max-height:100%;overflow:auto;overscroll-behavior:contain;padding:16px 20px 18px;border:1px solid #8a6a3e;border-radius:6px;background:linear-gradient(135deg,var(--parchment-hi),var(--parchment) 54%,#d9be86);color:#2c1b0e;box-shadow:inset 0 0 0 4px #f6ead0aa,inset 0 0 0 5px #a98657,0 24px 50px #000d;animation:sheet-in .26s cubic-bezier(.2,.8,.25,1) both}
+.pause-wrap{background:#0a0503a0!important;-webkit-backdrop-filter:blur(1.5px)!important;backdrop-filter:blur(1.5px)!important}
+.sheet-wrap{position:absolute;inset:0;z-index:100;display:grid;place-items:center;padding:calc(12px + var(--safe-top)) 12px calc(12px + var(--safe-bottom));background:#0a0503c4;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.sheet-wrap.enter{animation:fade-in .16s ease-out both}
+.sheet-wrap.enter .tavern-sheet{animation:sheet-in .22s cubic-bezier(.2,.8,.25,1) both}
+.tavern-sheet{position:relative;width:min(100%,520px);max-height:100%;overflow:auto;overscroll-behavior:contain;padding:16px 20px 18px;border:1px solid #8a6a3e;border-radius:6px;background:linear-gradient(135deg,var(--parchment-hi),var(--parchment) 54%,#d9be86);color:#2c1b0e;box-shadow:inset 0 0 0 4px #f6ead0aa,inset 0 0 0 5px #a98657,0 24px 50px #000d}
 .sheet-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 6px;padding-bottom:8px;border-bottom:1px solid #a9865766}
 .sheet-head h2{margin:0;font:700 24px/1.1 var(--display)}
 .sheet-close{display:grid;place-items:center;width:44px;height:44px;flex:0 0 auto;padding:0;border:1px solid #a98657;border-radius:50%;background:#f6ead0;color:#3a2412;font:400 28px/1 var(--ui)}
@@ -394,7 +405,7 @@ input[type=range]::-moz-range-thumb{width:24px;height:24px;border:2px solid #5b3
 .object-cards .card:nth-child(3){rotate:9deg;translate:8px 1px}
 .object-cards-resume .card:nth-child(3){rotate:16deg;translate:12px 4px}
 .object-coins{width:78px;height:auto;filter:drop-shadow(0 6px 5px #000b)}
-.duel-cameo{border-radius:50%;overflow:hidden;width:68px;height:68px;margin:0 8px;background:radial-gradient(circle at 50% 35%,#3a2a1a,#140c07);box-shadow:0 0 0 2px #8a6a3e,0 0 0 4px #1a0e07,0 6px 10px #000a}
+.duel-cameo{border-radius:50%;overflow:hidden;width:68px;height:68px;margin:0;background:radial-gradient(circle at 50% 35%,#3a2a1a,#140c07);box-shadow:0 0 0 2px #8a6a3e,0 0 0 4px #1a0e07,0 6px 10px #000a}
 .duel-cameo .bramm-art-stage{height:auto;width:100%;aspect-ratio:2/3;align-self:start;translate:0 -2%}
 .duel-cameo .bramm-art{object-fit:cover;object-position:50% 0}
 .resume-choice .choice-copy strong{color:#f6d68c}
@@ -408,7 +419,8 @@ input[type=range]::-moz-range-thumb{width:24px;height:24px;border:2px solid #5b3
 /* 14. Duel select -------------------------------------------------------- */
 .screen-select{--rim:22%;--rim-curve:5%}
 .select-layer{gap:12px}
-.select-head{position:relative;display:flex;align-items:center;justify-content:center;width:min(100%,980px);min-height:56px;text-align:center}
+.home-layer>*,.select-layer>*{flex-shrink:0}
+.select-head{position:relative;display:flex;align-items:center;justify-content:center;width:min(100%,980px);min-height:56px;padding-inline:52px;text-align:center}
 .select-head .back-button{position:absolute;inset-inline-start:0;top:50%;translate:0 -50%}
 .select-head small{color:var(--cream-dim);font:500 14px/1.2 var(--ui)}
 .select-head h1{margin:2px 0 0;font:700 clamp(24px,6vw,34px)/1.1 var(--display);color:#f3dfb2;text-shadow:0 2px 4px #000}
@@ -417,7 +429,7 @@ input[type=range]::-moz-range-thumb{width:24px;height:24px;border:2px solid #5b3
 .regular.chosen{box-shadow:0 0 0 2px #e2bd6c88,0 8px 16px #0009}
 .regular.loading{opacity:.7;cursor:progress}
 .regular-portrait{position:relative;display:grid;place-items:end center;aspect-ratio:1/1;overflow:hidden;background:radial-gradient(ellipse at 50% 70%,#4a2f18,#16100b 70%)}
-.regular-portrait .duel-sprite{display:block;width:100%;height:100%;background:url('./assets/duel-opponents.png') no-repeat;background-size:500% 500%;background-position:var(--sprite-x) var(--sprite-y);transition:scale .2s ease}
+.regular-portrait .duel-sprite{display:block;width:100%;height:100%;background:var(--sprite-sheet,url('./assets/duel-opponents.png')) no-repeat;background-size:500% 500%;background-position:var(--sprite-x) var(--sprite-y);transition:scale .2s ease}
 .regular:hover .regular-portrait .duel-sprite{scale:1.04}
 .regular-copy{display:grid;gap:2px;padding:8px 6px 10px}
 .regular-copy b{font:700 17px/1.1 var(--display);color:#f3dfb2}
@@ -425,14 +437,16 @@ input[type=range]::-moz-range-thumb{width:24px;height:24px;border:2px solid #5b3
 .regular-copy em{color:#b9a27a;font:400 12px/1.25 var(--ui);font-style:normal}
 .chalk-record{justify-self:center;display:flex;gap:4px;margin-top:4px;padding:2px 8px;border-radius:10px;background:#0b0c0a;color:#f0d9a4;font:800 13px/1.3 var(--ui);direction:ltr}
 .chalk-record i{opacity:.55;font-style:normal}
-.champion-regular{flex-direction:row;width:min(100%,560px);min-height:150px;text-align:start;border-color:#a8813f;background:linear-gradient(100deg,#2a2015,#120e0a 70%)}
+.champion-regular{flex-direction:row;width:fit-content;min-width:min(100%,400px);max-width:100%;min-height:150px;text-align:start;border-color:#a8813f;background:linear-gradient(100deg,#2a2015,#120e0a 70%)}
 .champion-regular .regular-portrait{aspect-ratio:auto;width:42%;max-width:230px;flex:0 0 auto;place-items:start center;background:radial-gradient(ellipse at 50% 60%,#5a3a1c,#16100b 70%)}
 .champion-regular .bramm-art-stage{height:auto;width:100%;aspect-ratio:2/3}
-.champion-regular .regular-copy{align-content:center;gap:4px;padding:12px 16px}
+.champion-regular .regular-copy{align-content:center;gap:4px;padding:14px 28px 14px 18px}
 .champion-regular .regular-copy b{font-size:26px}
 .champion-regular .chalk-record{justify-self:start}
 .champion-kicker{color:#e6b867!important;letter-spacing:.06em;text-transform:uppercase;font-size:11px!important}
-.regulars{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:min(100%,640px)}
+.regulars{--cols:4;--gap:8px;display:flex;flex-wrap:wrap;justify-content:center;gap:var(--gap);width:min(100%,640px)}
+.regulars>.regular{width:calc((100% - (var(--cols) - 1) * var(--gap)) / var(--cols))}
+@media (max-width:420px){.regulars .regular-copy em{display:none}.regulars .regular-copy{padding:6px 3px 8px}.regulars .regular-copy b{font-size:15px}.regulars .regular-copy small{font-size:10.5px}}
 .select-note{margin:2px 0 0;max-width:520px;color:var(--cream-dim);font:500 14px/1.4 var(--ui);text-align:center;text-shadow:0 1px 2px #000}
 
 /* 15. Breakpoints ------------------------------------------------------ */
@@ -445,26 +459,50 @@ input[type=range]::-moz-range-thumb{width:24px;height:24px;border:2px solid #5b3
 }
 /* Tablet portrait */
 @media (min-width:600px) and (orientation:portrait){
-  .screen-game{--head:calc(60px + var(--safe-top));--seat-h:110px;--card-w:clamp(92px,13vw,128px);--pile-w:clamp(110px,15vw,150px);--back-w:30px;--hand-lift:34px;--rim-curve:4%}
+  .screen-game{--head:calc(60px + var(--safe-top));--seat-h:110px;--card-w:clamp(92px,15vw,140px);--pile-w:clamp(110px,18vw,170px);--back-w:30px;--hand-lift:34px;--rim-curve:4%}
   .screen-game.with-figures{--fig-h:clamp(150px,17vh,230px)}
   .screen-game.mode-quick{--fig-h:clamp(40px,8vh,110px)}
   .screen-game.mode-duel{--fig-h:clamp(220px,25vh,320px)}
   .seat-name b{font-size:15px}
   .seat-count{font-size:16px}
   .seat-props{display:block}
-  .home-choices{width:min(100%,520px)}
-  .primary-runes-logo{width:clamp(240px,40vw,340px)}
-  .regulars{grid-template-columns:repeat(5,1fr);width:min(100%,900px)}
-  .champion-regular{width:min(100%,760px)}
+  .home-choices{width:min(100%,600px);gap:10px}
+  .primary-runes-logo{width:clamp(260px,46vw,430px)}
+  .home-choice{min-height:116px;gap:22px}
+  .choice-object{width:120px;height:100px}
+  .object-cards{width:80px;height:100px}
+  .object-cards .card{--cw:66px}
+  .object-coins{width:108px}
+  .duel-cameo{width:96px;height:96px}
+  .choice-copy strong{font-size:31px}
+  .choice-copy small{font-size:18px}
+  .choice-record{font-size:14px}
+  .tool-button{min-height:52px;font-size:17px;padding:0 22px}
+  .select-layer{gap:18px}
+  .select-head{margin-top:auto}
+  .select-note{margin-bottom:auto}
+  .regulars{--cols:5;--gap:14px;width:min(100%,760px)}
+  .champion-regular{min-height:240px}
+  .champion-regular .regular-portrait{width:220px}
+  .champion-regular .regular-copy b{font-size:36px}
+  .select-head h1{font-size:40px}
+  .select-head small{font-size:17px}
+  .regular-copy b{font-size:22px}
+  .regular-copy small,.regular-copy em{font-size:14px}
+  .chalk-record{font-size:15px}
+  .select-note{font-size:16px}
 }
 /* Landscape with room: tablets, laptops, desktops */
 @media (orientation:landscape) and (min-height:501px){
-  .screen-game{--head:calc(60px + var(--safe-top));--seat-h:clamp(96px,13vh,128px);--card-w:clamp(88px,min(8vw,13.5vh),136px);--pile-w:clamp(92px,min(7.4vw,12.5vh),132px);--back-w:clamp(26px,2.3vw,36px);--hand-lift:34px;--hand-drop:18px;--rim-curve:3%}
+  .screen-game{--head:calc(60px + var(--safe-top));--seat-h:clamp(96px,13vh,128px);--card-w:clamp(88px,min(8vw,13.5vh),136px);--pile-w:clamp(88px,min(8.4vw,14vh),168px);--back-w:clamp(26px,2.3vw,36px);--hand-lift:34px;--hand-drop:18px;--rim-curve:3%}
   .screen-game.with-figures{--fig-h:clamp(120px,19vh,240px)}
   .screen-game.mode-quick{--fig-h:clamp(40px,11vh,130px)}
   .seat-plate{min-height:clamp(30px,3.6vh,40px);padding:4px 10px}
-  .seat-name b{font-size:clamp(15px,1.5vh,19px)}
-  .seat-count{font-size:clamp(15px,1.5vh,19px)}
+  .seat-name b{font-size:clamp(15px,1.75vh,21px)}
+  .seat-count{font-size:clamp(15px,1.75vh,21px)}
+  .seat-score{font-size:clamp(13px,1.5vh,18px)}
+  .round-marker,.head-score{font-size:clamp(13px,1.45vh,17px)}
+  .game-head .icon-button{width:clamp(44px,4.6vh,54px);height:clamp(44px,4.6vh,54px)}
   .screen-game.mode-duel{--fig-h:clamp(170px,27vh,320px)}
   .round-marker{font-size:14px}
   .head-score{display:none}
@@ -477,18 +515,34 @@ input[type=range]::-moz-range-thumb{width:24px;height:24px;border:2px solid #5b3
   .seats-4 .seat-w{--sx:13%}.seats-4 .seat-nw{--sx:38%}.seats-4 .seat-ne{--sx:62%}.seats-4 .seat-e{--sx:87%}
   .seats-5 .seat-w{--sx:10%}.seats-5 .seat-nw{--sx:30%}.seats-5 .seat-ne{--sx:70%}.seats-5 .seat-e{--sx:90%}
   .seats-4 .house-pin,.seats-5 .house-pin{display:grid}
-  .seats-4 .seat-plate,.seats-5 .seat-plate{flex-wrap:nowrap;gap:6px;padding:3px 8px}
+  .seats-4 .seat-plate,.seats-5 .seat-plate{flex-direction:row;flex-wrap:nowrap;gap:6px;padding:3px 8px}
   /* Side seats of a crowded table sit lower, on the table's flanks. */
   .seats-4 .seat-w,.seats-4 .seat-e,.seats-5 .seat-w,.seats-5 .seat-e{top:calc(var(--seat-h) * .62)}
+  .hand-frame{padding-inline:clamp(16px,8vw,150px)}
   .player-place{position:absolute;bottom:calc(14px + var(--safe-bottom));inset-inline-end:clamp(12px,3vw,48px);display:flex;align-items:flex-end;gap:10px}
-  .player-drink{width:clamp(44px,4vw,64px);height:auto;filter:drop-shadow(0 6px 5px #000b)}
-  .player-place .seat-score{position:static;font-size:16px}
+  .player-drink{width:clamp(44px,6.5vh,84px);height:auto;filter:drop-shadow(0 6px 5px #000b)}
+  .player-place .seat-score{position:static;font-size:clamp(15px,1.8vh,21px)}
   .seat-score{font-size:15px}
   .home-choices{width:min(100%,560px)}
   .screen-select{--rim:30%}
-  .regulars{grid-template-columns:repeat(5,1fr);width:min(100%,1100px)}
-  .champion-regular{width:min(100%,620px);min-height:clamp(150px,24vh,260px)}
-  .champion-regular .regular-copy b{font-size:32px}
+  .regulars{--cols:5;--gap:clamp(10px,1.4vh,18px);width:min(96vw,84vh)}
+  .regulars .regular-copy em{display:none}
+  .champion-regular{min-height:clamp(140px,21vh,270px)}
+  .champion-regular .regular-portrait{width:clamp(150px,19vh,250px)}
+  .champion-regular .regular-copy b{font-size:clamp(28px,3.6vh,44px)}
+  .champion-regular .regular-copy small,.champion-regular .regular-copy em{font-size:clamp(13px,1.5vh,18px)}
+  .select-head h1{font-size:clamp(28px,3.8vh,46px)}
+  .select-head small{font-size:clamp(14px,1.6vh,18px)}
+  .regular-copy b{font-size:clamp(17px,2.1vh,24px)}
+  .regular-copy small,.regular-copy em{font-size:clamp(12px,1.35vh,15px)}
+  .chalk-record{font-size:clamp(13px,1.4vh,16px)}
+  .select-note{font-size:clamp(14px,1.6vh,18px)}
+}
+/* Laptop-height landscape: trim the figure band so piles, notes and hand never collide. */
+@media (orientation:landscape) and (min-height:501px) and (max-height:820px){
+  .screen-game.with-figures{--fig-h:clamp(110px,16vh,150px)}
+  .screen-game.mode-duel{--fig-h:clamp(150px,22vh,190px)}
+  .screen-game{--pile-w:clamp(84px,12.5vh,110px);--card-w:clamp(84px,13vh,112px)}
 }
 /* Seat props on roomy layouts: beside the fan, in world space. */
 @media (min-width:600px) and (min-height:501px){
@@ -510,30 +564,36 @@ input[type=range]::-moz-range-thumb{width:24px;height:24px;border:2px solid #5b3
   .result-slip{width:min(92vw,420px);padding:20px 24px 16px}
   .result-slip h2{font-size:28px}
 }
-/* Big desktop: a home screen that actually uses the table. */
+/* Big desktop: the three objects sit across the table, scaled with the
+   window height so 1366×768 and 2560×1440 frame the same shot. */
 @media (orientation:landscape) and (min-width:1000px) and (min-height:600px){
-  .screen-home{--rim:44%;--rim-curve:9%}
-  .home-title{margin-top:clamp(20px,7vh,90px)}
-  .primary-runes-logo{width:clamp(260px,22vw,380px)}
-  .home-choices{grid-auto-flow:column;grid-auto-columns:1fr;gap:clamp(16px,3vw,48px);width:min(92vw,1100px);margin-top:auto;margin-bottom:auto;padding-top:clamp(40px,10vh,120px)}
-  .home-choice{flex-direction:column;justify-content:flex-start;gap:12px;min-height:0;padding:16px 10px 18px;text-align:center}
+  .screen-home{--rim:42%;--rim-curve:9%}
+  .home-layer{padding-bottom:calc(clamp(14px,3vh,40px) + var(--safe-bottom))}
+  .home-title{margin-top:clamp(18px,6vh,90px)}
+  .primary-runes-logo{width:clamp(250px,27vh,460px)}
+  .home-choices{grid-auto-flow:column;grid-auto-columns:1fr;gap:clamp(16px,4vh,64px);width:min(92vw,128vh);margin:auto 0;padding-top:clamp(32px,9vh,140px)}
+  .home-choice{flex-direction:column;justify-content:flex-start;gap:clamp(10px,1.6vh,22px);min-height:0;padding:clamp(14px,2vh,28px) 10px clamp(16px,2.2vh,30px);text-align:center;transition:background .2s ease}
   .home-choice+.home-choice:before{display:none}
-  .home-choice:hover,.home-choice:focus-visible{background:radial-gradient(ellipse at 50% 35%,#e8a04f26,transparent 70%)}
-  .home-choice:hover .choice-object{translate:0 -4px}
-  .choice-object{width:150px;height:130px;transition:translate .2s ease}
+  .home-choice:hover,.home-choice:focus-visible{background:radial-gradient(ellipse at 50% 38%,#e8a04f22,transparent 68%)}
+  .home-choice:hover .choice-object{translate:0 -3px;filter:drop-shadow(0 10px 8px #000a)}
+  .home-choice:active .choice-object{translate:0 1px;filter:drop-shadow(0 3px 3px #000c);transition-duration:.05s}
+  .choice-object{width:clamp(150px,20vh,280px);height:clamp(124px,16.5vh,230px);filter:drop-shadow(0 6px 6px #000a);transition:translate .18s ease,filter .18s ease}
   .choice-copy{justify-items:center}
-  .choice-copy strong{font-size:clamp(24px,2vw,30px)}
-  .choice-copy small{font-size:15px}
-  .choice-record{justify-self:center}
+  .choice-copy strong{font-size:clamp(24px,3.1vh,42px)}
+  .choice-copy small{font-size:clamp(15px,1.7vh,21px)}
+  .choice-record{justify-self:center;font-size:clamp(12px,1.35vh,16px)}
   .choice-arrow{display:none}
-  .object-cards{width:110px;height:120px}
-  .object-cards .card{--cw:84px;left:12px}
-  .object-coins{width:140px}
-  .duel-cameo{width:122px;height:122px;margin:4px auto}
-  .home-tools{margin-top:0;margin-bottom:clamp(10px,4vh,40px)}
+  .object-cards{width:clamp(110px,15vh,210px);height:clamp(120px,16vh,220px)}
+  .object-cards .card{--cw:clamp(84px,11vh,150px);left:12%}
+  .object-coins{width:clamp(130px,17vh,240px)}
+  .duel-cameo{width:clamp(118px,15.5vh,210px);height:clamp(118px,15.5vh,210px);margin:4px auto}
+  .home-tools{margin:0;gap:clamp(10px,1.4vh,18px)}
+  .tool-button{min-height:clamp(44px,4.8vh,58px);padding:0 clamp(16px,2vh,24px);font-size:clamp(15px,1.7vh,19px)}
+  .tool-icon{width:clamp(18px,2vh,24px);height:clamp(18px,2vh,24px)}
 }
 /* Short landscape phones: the table is the whole screen; no figures, no props. */
 @media (orientation:landscape) and (max-height:500px){
+  .seats-4 .seat-plate,.seats-5 .seat-plate{flex-direction:row}
   .screen-game{--head:calc(44px + var(--safe-top));--fig-h:0px!important;--seat-h:64px;--card-w:clamp(56px,13vh,70px);--pile-w:clamp(56px,14vh,72px);--back-w:16px;--hand-lift:16px;--rim-curve:12%}
   .game-head .icon-button{width:40px;height:40px}
   /* Seats become one compact row: [portrait] plate · fan · coins. */
@@ -553,21 +613,33 @@ input[type=range]::-moz-range-thumb{width:24px;height:24px;border:2px solid #5b3
   .seats-3 .seat{--seat-w:32%}
   .head-score{display:flex}
   .hand-area{padding-bottom:calc(4px + var(--safe-bottom))}
-  .table-notes{position:absolute;inset-inline-end:10px;bottom:4px;max-width:44%}
+  .table-notes{position:absolute;inset-inline-end:10px;bottom:4px;max-width:calc(50vw - var(--pile-w) * 1.3 - 18px)}
+  .crossbow-panel{gap:8px;padding:5px 5px 5px 10px}
+  .crossbow-panel b{font-size:14px}
+  .crossbow-panel small{font-size:12px}
+  .fire-button{min-width:64px;min-height:42px;padding:0 12px;font-size:15px}
   .board{grid-template-rows:var(--seat-h) minmax(0,1fr)}
   .result-slip{top:50%;max-height:calc(100% - 8px)}
-  .screen-home{--rim:20%}
+  .screen-home{--rim:13%}
   .home-layer{flex-direction:row;flex-wrap:wrap;justify-content:center;align-content:center;gap:8px 24px}
   .home-title{margin:0}
   .primary-runes-logo{width:180px}
   .home-choices{margin:0;padding:0;width:min(60%,440px)}
   .home-choice{min-height:64px}
   .home-tools{width:100%;margin-top:4px}
-  .regulars{grid-template-columns:repeat(5,1fr);width:min(100%,800px)}
+  .regulars{--cols:5;width:min(100%,800px)}
   .champion-regular{min-height:110px}
   .champion-regular .regular-portrait{width:120px}
   .regulars .regular-portrait{aspect-ratio:4/3}
   .regular-copy em{display:none}
+}
+
+/* Ten regulars on laptop-height landscape: a slimmer champion card and no attitude line. */
+@media (orientation:landscape) and (min-height:501px) and (max-height:860px){
+  .champion-regular{min-height:clamp(120px,17vh,150px)}
+  .champion-regular .regular-portrait{width:clamp(110px,15vh,140px)}
+  .regulars .regular-copy em{display:none}
+  .regulars{width:min(96vw,88vh)}
 }
 
 /* 16. Motion ------------------------------------------------------------ */
@@ -605,3 +677,15 @@ input[type=range]::-moz-range-thumb{width:24px;height:24px;border:2px solid #5b3
 /* A fanned (non-browsing) hand never scrolls: rotation overflow is visual only. */
 .hand-frame:not(.browsing){overflow-x:hidden}
 .duel-seat.opponent-bramm .seat-props{display:none!important}
+
+/* Preparing a table (Bramm's art decodes first): acknowledge the tap at once. */
+.home-choice.loading,.regular.loading{opacity:.72;cursor:progress;pointer-events:none}
+/* Pointer feedback: a legal card lifts a finger's width; nothing jumps. */
+@media (hover:hover) and (pointer:fine){
+  .human-turn .hand .card.legal:hover{transform:translateY(calc(var(--rise,0px) - 12px)) rotate(var(--tilt,0deg));box-shadow:var(--shadow-raised),0 0 0 1px #f0ce7dc0;z-index:55}
+  .human-turn .hand .card.legal:active{transform:translateY(calc(var(--rise,0px) - 8px)) rotate(var(--tilt,0deg));transition-duration:.05s}
+  .draw-pile.draw-suggested:hover .card,.draw-pile:hover .card{translate:0 -2px}
+  .regular:hover{translate:0 -2px}
+}
+.hand .card.quiet{cursor:default}
+.regular{transition:translate .16s ease,border-color .16s ease,box-shadow .16s ease}

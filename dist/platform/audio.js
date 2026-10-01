@@ -19,6 +19,8 @@ export const SOUND_LIBRARY=Object.freeze({
   takiClose:{src:asset('crossbow-close.wav'),channel:'sfx',volume:.74,cooldown:180,maxVoices:1},
   colorChange:{src:asset('color-change.wav'),channel:'sfx',volume:.7,cooldown:220,maxVoices:1},
   stopSkip:{src:asset('stop-skip.wav'),channel:'sfx',volume:.68,cooldown:220,maxVoices:1},
+  kingPlay:{src:asset('king-play.wav'),channel:'sfx',volume:.66,cooldown:220,maxVoices:1},
+  quickstepPlay:{src:asset('quickstep-play.wav'),channel:'sfx',volume:.64,cooldown:220,maxVoices:1},
   reverse:{src:asset('reverse.wav'),channel:'sfx',volume:.7,cooldown:220,maxVoices:1},
   plusCard:{src:asset('plus-card.wav'),channel:'sfx',volume:.72,cooldown:220,maxVoices:1},
   lastCard:{src:asset('last-card.wav'),channel:'sfx',volume:.72,cooldown:550,maxVoices:1},
@@ -27,7 +29,7 @@ export const SOUND_LIBRARY=Object.freeze({
 });
 
 export const CARD_PLAY_VARIATIONS=Object.freeze(['cardPlay','cardPlayVariation1','cardPlayVariation2','cardPlayVariation3','cardPlayVariation4','cardPlayVariation5']);
-export const AMBIENCE_TRACKS=Object.freeze(['tavern-loop-1.wav','tavern-loop-2.wav','tavern-loop-3.wav','tavern-loop-4.wav'].map(asset));
+export const AMBIENCE_TRACKS=Object.freeze(['tavern-loop-1.wav','tavern-loop-2.wav','tavern-loop-3.wav','tavern-loop-4.wav','tavern-loop-5.wav'].map(asset));
 const chunkedTrack=stem=>Object.freeze([1,2,3,4].map(part=>asset(`${stem}-part-${part}.wav`)));
 export const MUSIC_TRACKS=Object.freeze([asset('runes-round.wav'),asset('gambit-by-the-hearth.m4a'),chunkedTrack('soundtrack-3'),chunkedTrack('soundtrack-4')]);
 const CHANNEL_DEFAULTS={sfx:.9,ambience:.18,music:.14,voice:.92};

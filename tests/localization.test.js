@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { defaults } from '../dist/platform/storage.js';
 import { makeCard, TYPES } from '../dist/game-engine/cards.js';
 import { cardHTML, cardLabel } from '../dist/ui/card.js';
-import { getDuelOpponent, localizeDuelOpponent } from '../dist/duel/opponents.js';
+import { DUEL_OPPONENTS, getDuelOpponent, localizeDuelOpponent } from '../dist/duel/opponents.js';
 
 test('Hebrew remains the default language', () => {
   assert.equal(defaults.language, 'he');
@@ -22,6 +22,7 @@ test('duel opponents expose English identity and dialogue', () => {
   assert.equal(ron.name,'Ron');
   assert.match(ron.descriptor,/The Bard/);
   assert.ok(ron.dialoguePools.pleased.every(line=>!/[א-ת]/.test(line)));
+  for(const opponent of DUEL_OPPONENTS){const en=localizeDuelOpponent(opponent,'en');assert.ok(en.name&&!/[א-ת]/.test(en.name+en.descriptor),opponent.id);for(const lines of Object.values(en.dialoguePools))assert.ok(lines.every(line=>!/[א-ת]/.test(line)),opponent.id);}
 });
 
 test('the application offers both language choices and updates document direction', async () => {

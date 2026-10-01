@@ -30,7 +30,19 @@ const BRAMM_HE_CAPTIONS=Object.freeze({
   bramm_win_07:'אוי, זה היה מגעיל. עוד סיבוב?',
   bramm_win_08:'משחק טוב. יחסית.',
   bramm_win_09:'מישהו שיביא עוד בירה! ניצחון עושה צמא!',
-  bramm_win_10:'בלתי מנוצח.'
+  bramm_win_10:'בלתי מנוצח.',
+  bramm_player_one_card_05:'אין סיבה להילחץ... למה שאני אילחץ?',
+  bramm_player_one_card_06:'נו באמת. איך הגענו למצב הזה?',
+  bramm_player_one_card_07:'לא להסתכל עליי! הכול בשליטה!',
+  bramm_round_win_01:'הנה. הסדר חזר על כנו.',
+  bramm_round_win_02:'עוד נקודה של בראם. תזכרו את זה.',
+  bramm_round_win_03:'כולם ראו, כן? יופי.',
+  bramm_round_win_04:'לא רע. בשביל חימום.',
+  bramm_match_loss_01:'טוב. משחק אחד. זה לא אומר כלום.',
+  bramm_match_loss_02:'אפשר ליהנות מהרגע. זה לא קורה הרבה.',
+  bramm_match_loss_03:'שאף אחד לא ירשום את זה!!',
+  bramm_idle_01:'הממ. יכול להיות גרוע יותר. יכול להיות הרבה יותר טוב.',
+  bramm_idle_02:'בירה טובה, טברנה גרועה..'
 });
 
 export const normalizeBrammLocale=locale=>locale==='he'?'he':'en';
@@ -92,10 +104,28 @@ export const BRAMM_REACTIONS=Object.freeze([
   line('bramm_draw_02','bramm_draw','bramm_bramm_draw_02','Bad deck. Knew it the moment I sat down.','14_blame_the_deck','MEDIUM',{category:'draw',nextState:'rattled',probability:.22}),
   line('excuse_01','setback','bramm_excuse_01',"That doesn't count.",'15_defensive_excuse','MEDIUM',{category:'excuse',probability:.18,nextState:'irritated',setFlags:['bramm_has_used_excuse']}),
   line('excuse_02','setback','bramm_excuse_02','House rule.','16_rules_lawyer','MEDIUM',{category:'excuse',probability:.18,nextState:'irritated',setFlags:['bramm_has_used_excuse']}),
+  // Player reaches one card. One immediate reaction, chosen by context weight
+  // (see ONE_CARD_WEIGHTS) and the shared recent-voice anti-repeat.
   line('one_card_01','player_one_card','bramm_player_one_card_01','...No.','17_one_card_sober_shock','CRITICAL',{category:'one_card',cooldown:0,nextState:'panic',setFlags:['bramm_has_seen_player_one_card'],duration:3000}),
-  line('one_card_02','one_card_persist','bramm_player_one_card_02',"You've got two. You've definitely got two.",'18_one_card_denial','MEDIUM',{category:'one_card',probability:.55,cooldown:8000,nextState:'panic',duration:3200}),
-  line('one_card_03','one_card_persist','bramm_player_one_card_03','Come on. Curse. Curse. Give me something horrible.','19_one_card_desperate','MEDIUM',{category:'one_card',probability:.45,cooldown:8000,nextState:'panic',duration:3800}),
-  line('loss_01','loss','bramm_loss_01','...Again.','31_again','CRITICAL',{category:'result',cooldown:0,nextState:'defeated',duration:3800}),
+  line('one_card_02','player_one_card','bramm_player_one_card_02',"You've got two. You've definitely got two.",'18_one_card_denial','CRITICAL',{category:'one_card',cooldown:0,nextState:'panic',setFlags:['bramm_has_seen_player_one_card'],duration:3200}),
+  line('one_card_05','player_one_card','bramm_player_one_card_05','Right. Nobody panic. Especially me.','22_fake_calm_after_panic','CRITICAL',{category:'one_card',cooldown:0,nextState:'panic',setFlags:['bramm_has_seen_player_one_card'],duration:4500}),
+  line('one_card_06','player_one_card','bramm_player_one_card_06','Oh, come on. How did we get here?','29_defeated_disbelief','CRITICAL',{category:'one_card',cooldown:0,nextState:'panic',setFlags:['bramm_has_seen_player_one_card'],duration:4100}),
+  line('one_card_07','player_one_card','bramm_player_one_card_07',"Stop looking over here! I've got this!",'32_angry_at_spectators','CRITICAL',{category:'one_card',cooldown:0,nextState:'panic',setFlags:['bramm_has_seen_player_one_card','bramm_has_addressed_tavern'],duration:4100}),
+  // Later, while the player is still on one card and Bramm is hunting for an answer.
+  line('one_card_03','one_card_persist','bramm_player_one_card_03','Come on. Curse. Curse. Give me something horrible.','19_one_card_desperate','MEDIUM',{category:'one_card',probability:.6,cooldown:8000,nextState:'panic',duration:3800}),
+  // Round results while the match continues.
+  line('loss_01','round_loss','bramm_loss_01','...Again.','31_again','CRITICAL',{category:'result',cooldown:0,nextState:'irritated',duration:3800}),
+  line('round_win_01','round_win','bramm_round_win_01','There. Order restored.','10_satisfied_good_move','CRITICAL',{category:'result',cooldown:0,nextState:'swaggering',duration:3600}),
+  line('round_win_02','round_win','bramm_round_win_02',"That's one more. Keep count.",'27_smug_unbeaten','CRITICAL',{category:'result',cooldown:0,nextState:'swaggering',duration:3700}),
+  line('round_win_03','round_win','bramm_round_win_03','Everybody saw that, right? Good.','03_calling_to_tavern','CRITICAL',{category:'result',cooldown:0,nextState:'swaggering',setFlags:['bramm_has_addressed_tavern'],duration:3800}),
+  line('round_win_04','round_win','bramm_round_win_04','Not bad. For a warm-up.','34_drinking_relaxed','CRITICAL',{category:'result',cooldown:0,nextState:'swaggering',duration:3500}),
+  // Final result: Bramm loses the whole match.
+  line('match_loss_01','match_loss','bramm_match_loss_01','Fine. One match. Means nothing.','29_defeated_disbelief','CRITICAL',{category:'result',cooldown:0,nextState:'defeated',duration:4900}),
+  line('match_loss_02','match_loss','bramm_match_loss_02',"Enjoy it. This doesn't happen often.",'30_defeated_sulk','CRITICAL',{category:'result',cooldown:0,nextState:'defeated',duration:4400}),
+  line('match_loss_03','match_loss','bramm_match_loss_03','Nobody writes this down!','32_angry_at_spectators','CRITICAL',{category:'result',cooldown:0,nextState:'defeated',duration:3700}),
+  // Rare lines for a genuinely quiet stretch (see the idle gate in pick()).
+  line('idle_01','idle_quiet','bramm_idle_01','Hm. Could be worse. Could be much better.','33_muttering','LOW',{category:'idle',probability:.35,cooldown:18000,duration:5100}),
+  line('idle_02','idle_quiet','bramm_idle_02','Good ale. Terrible company.','34_drinking_relaxed','LOW',{category:'idle',probability:.35,cooldown:18000,duration:4000}),
   line('win_01','win_general','bramm_win_01','There it is! Bramm the Unbeaten!','24_big_victory','CRITICAL',{category:'result',cooldown:0,duration:3600}),
   line('win_02','win_boast','bramm_win_02','Did I not say it? DID I NOT SAY IT?','25_victory_to_tavern','CRITICAL',{category:'result',cooldown:0,duration:3900}),
   line('win_03','win_comfortable','bramm_win_03','Go on. Tell them who beat you.','23_gloating','CRITICAL',{category:'result',cooldown:0,duration:3400}),
@@ -128,10 +158,23 @@ export function resolveBrammVoice(name,locale='en'){
 }
 const byId=Object.freeze(Object.fromEntries(BRAMM_REACTIONS.map(item=>[item.id,item])));
 
+// Context weights for the immediate one-card reaction. First scare of the
+// match favours the quiet shock; later scares lean on denial, the audience and
+// talking himself down. Anti-repeat still removes his last three voices.
+const ONE_CARD_WEIGHTS=Object.freeze({
+  one_card_01:({oneCardScares})=>oneCardScares===0?3:1,
+  one_card_02:({oneCardScares})=>oneCardScares===0?1:1.6,
+  one_card_05:({brammCards=0})=>brammCards>=5?2:1,
+  one_card_06:({flags})=>flags.bramm_was_previously_ahead?2:1,
+  one_card_07:({flags,oneCardScares})=>flags.bramm_has_addressed_tavern||oneCardScares>0?2:1
+});
+
 export function createBrammController({random=Math.random,now=()=>Date.now(),initial=null}={}){
   let state=BRAMM_STATES.includes(initial?.state)?initial.state:'swaggering',lastSpokenAt=Number.isFinite(initial?.lastSpokenAt)?initial.lastSpokenAt:-Infinity,spoken=[...(initial?.spoken||[])],recentVoices=[...(initial?.recentVoices||[])].slice(0,3),recentCategories=[...(initial?.recentCategories||[])],goodMoveStreak=initial?.counters?.goodMoveStreak||0,oneCardScares=initial?.counters?.oneCardScares||0,eventsSinceSpoken=initial?.counters?.eventsSinceSpoken||0,nonCriticalThisRound=initial?.counters?.nonCriticalThisRound||0;
   const flags={bramm_has_mocked_player_draw:false,bramm_has_been_forced_to_draw_after_mock:false,bramm_claimed_control:false,bramm_was_countered_after_boast:false,bramm_has_seen_player_one_card:false,bramm_survived_one_card_scare:false,bramm_has_used_excuse:false,bramm_has_addressed_tavern:false,bramm_was_previously_ahead:false,bramm_was_previously_behind:false,...(initial?.flags||{})};
   const choose=items=>items[Math.floor(random()*items.length)];
+  const chooseWeighted=(items,weight)=>{const weights=items.map(item=>Math.max(0,weight(item))),total=weights.reduce((sum,value)=>sum+value,0);if(!total)return choose(items);let roll=random()*total;for(let i=0;i<items.length;i++){roll-=weights[i];if(roll<0)return items[i];}return items.at(-1);};
+  let idleThisRound=0,eventsThisRound=0;
   const remember=reaction=>{
     spoken.push(reaction.id);recentVoices=[reaction.voice,...recentVoices.filter(value=>value!==reaction.voice)].slice(0,3);
     recentCategories=[reaction.category,...recentCategories].slice(0,4);lastSpokenAt=now();
@@ -153,21 +196,26 @@ export function createBrammController({random=Math.random,now=()=>Date.now(),ini
       else if(flags.bramm_claimed_control&&random()<.52)resolved='win_boast';
       else resolved=random()<.22?'win_quiet':random()<.48?'win_comfortable':'win_general';
     }
+    // "...Again." is Bramm's round-loss line. If he lost the previous round
+    // too, he reaches for an excuse instead of saying it twice in a row.
+    if(resolved==='round_loss'&&recentVoices.includes('bramm_loss_01'))resolved='setback';
+    if(resolved==='idle_quiet'&&(idleThisRound>=2||(idleThisRound===1&&eventsThisRound<45)))return null;
     let candidates=BRAMM_REACTIONS.filter(item=>item.trigger===resolved&&!recentVoices.includes(item.voice)&&(!item.oncePerMatch||!spoken.includes(item.id)));
     if(!candidates.length)candidates=BRAMM_REACTIONS.filter(item=>item.trigger===resolved&&item.voice!==recentVoices[0]&&(!item.oncePerMatch||!spoken.includes(item.id)));
     if(!candidates.length)return null;
-    const reaction=choose(candidates);
+    const reaction=resolved==='player_one_card'?chooseWeighted(candidates,item=>ONE_CARD_WEIGHTS[item.id]?.({flags,oneCardScares,...context})??1):choose(candidates);
     if(!force&&reaction.priority!=='CRITICAL'){
       if(nonCriticalThisRound>=3||eventsSinceSpoken<2||now()-lastSpokenAt<Math.max(8000,reaction.cooldown))return null;
       if(recentCategories[0]===reaction.category&&random()<.7)return null;
       if(random()>reaction.probability)return null;
     }
+    if(reaction.category==='idle')idleThisRound++;
     remember(reaction);return {...reaction,state};
   }
   return Object.freeze({
     react:pick,
-    observe(trigger,context={}){eventsSinceSpoken++;if(trigger==='bramm_draw'&&(context.amount||0)>=4)return {expression:'32_angry_at_spectators',duration:1800};const visual={player_good_move:'08_dismissive_lucky',player_good_move_callback:'09_irritated_lucky',bramm_good_move:'10_satisfied_good_move',player_draw:'12_mock_generous',bramm_draw:'14_blame_the_deck',bramm_draw_callback:'13_dont_say_anything',setback:'15_defensive_excuse',player_neutral_move:'06_mocking_disbelief',slow_player:'05_impatient',one_card_persist:'20_one_card_panic'}[trigger];return visual?{expression:visual,duration:1200}:null;},
-    beginRound(){nonCriticalThisRound=0;eventsSinceSpoken=0;},
+    observe(trigger,context={}){eventsSinceSpoken++;eventsThisRound++;if(trigger==='bramm_draw'&&(context.amount||0)>=4)return {expression:'32_angry_at_spectators',duration:1800};const visual={player_good_move:'08_dismissive_lucky',player_good_move_callback:'09_irritated_lucky',bramm_good_move:'10_satisfied_good_move',player_draw:'12_mock_generous',bramm_draw:'14_blame_the_deck',bramm_draw_callback:'13_dont_say_anything',setback:'15_defensive_excuse',player_neutral_move:'06_mocking_disbelief',slow_player:'05_impatient',one_card_persist:'20_one_card_panic'}[trigger];return visual?{expression:visual,duration:1200}:null;},
+    beginRound(){nonCriticalThisRound=0;eventsSinceSpoken=0;idleThisRound=0;eventsThisRound=0;},
     force(id){const reaction=byId[id];if(!reaction)return null;remember(reaction);return {...reaction,state};},
     setState(next){if(BRAMM_STATES.includes(next))state=next;return state;},
     setFlag(key,value=true){if(key in flags)flags[key]=!!value;},

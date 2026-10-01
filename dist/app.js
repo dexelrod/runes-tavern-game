@@ -20,7 +20,7 @@ const isEnglish=()=>settings.language==='en';
 const direction=()=>isEnglish()?'ltr':'rtl';
 const colorNames={he:{red:'בורדו',blue:'צפחה',green:'יער',yellow:'זהב'},en:{red:'Burgundy',blue:'Slate',green:'Forest',yellow:'Gold'}};
 const archetypeNames={he:{hunter:'הציידת',bard:'הפייטן',mercenary:'שכיר החרב',wanderer:'הנודד',scholar:'המלומד',mysterious:'הנוסע'},en:{hunter:'The Hunter',bard:'The Bard',mercenary:'The Mercenary',wanderer:'The Wanderer',scholar:'The Scholar',mysterious:'The Traveler'}};
-const playerNames={you:'You',aila:'Aila',ron:'Ron',bran:'Bran',sela:'Sela',kesh:'Kesh',bramm:'Bramm',adren:'Adren',myra:'Myra',toren:'Toren',leva:'Leva',sig:'Sig',alva:'Alva',hal:'Hal',runa:'Runa',derik:'Derik',אתם:'You',איילה:'Aila',רון:'Ron',בראן:'Bran',אדרן:'Adren',מירא:'Myra',טורן:'Toren',ליבה:'Leva',סיג:'Sig',אלבה:'Alva',האל:'Hal',רונה:'Runa',דריק:'Derik',לוסיאן:'Lucien',איניגו:'Inigo',לידיה:'Lydia',וירן:'Viren',סורן:'Soren',ויילין:'Waylin'};
+const playerNames={you:'You',aila:'Aila',ron:'Ron',bran:'Bran',sela:'Sela',kesh:'Kesh',roderic:'Roderic',lio:'Lio',mograth:'Mograth',harrow:'Harrow',rusk:'Rusk',bramm:'Bramm',adren:'Adren',myra:'Myra',toren:'Toren',leva:'Leva',sig:'Sig',alva:'Alva',hal:'Hal',runa:'Runa',derik:'Derik',אתם:'You',איילה:'Aila',רון:'Ron',בראן:'Bran',אדרן:'Adren',מירא:'Myra',טורן:'Toren',ליבה:'Leva',סיג:'Sig',אלבה:'Alva',האל:'Hal',רונה:'Runa',דריק:'Derik',לוסיאן:'Lucien',איניגו:'Inigo',לידיה:'Lydia',וירן:'Viren',סורן:'Soren',ויילין:'Waylin'};
 function colorName(color){return colorNames[settings.language]?.[color]||colorNames.he[color]||'';}
 function colorRuneHTML(color,className='color-rune'){
   const paths={red:'<path d="M32 7c3 12-8 14-3 24 3-6 8-8 10-14 8 10 12 22 4 33-8 11-28 8-31-5-2-9 4-17 12-23-1 9 2 12 5 14-1-11 7-15 3-29z"/>',blue:'<path d="M8 39c10-13 20-13 30 0s20 13 28 0M8 24c10-13 20-13 30 0s20 13 28 0"/>',green:'<path d="M32 57V28M32 38C18 37 12 27 11 13c10 2 17 7 21 15m0 8c13-2 20-10 21-23-10 2-17 8-21 17"/>',yellow:'<circle cx="32" cy="32" r="12"/><path d="M32 5v11m0 32v11M5 32h11m32 0h11M13 13l8 8m22 22 8 8m0-38-8 8M21 43l-8 8"/>'};
@@ -60,10 +60,10 @@ function performBrammReaction(reaction,{voiceDelay=0}={}){
   if(voiceDelay){const timer=setTimeout(play,settings.reducedMotion?80:voiceDelay);brammSequenceTimers.push(timer);}else play();
   return localized;
 }
-function runBramm(trigger,context={},force=false){if(view!=='game'||isPaused()||!isBrammDuel()||!brammController)return null;const visual=brammController.observe(trigger,context);if(visual)setBrammExpression(visual.expression,visual.duration);const reaction=brammController.react(trigger,context,force);if(!reaction)return visual;settings.brammRecentVoices=brammController.snapshot().recentVoices;saveSettings(settings);if(trigger==='loss'){setBrammExpression('29_defeated_disbelief',Math.max(1800,reaction.duration));const epoch=sessionEpoch,timer=setTimeout(()=>{if(epoch===sessionEpoch)performBrammReaction(reaction);},settings.reducedMotion?120:620);brammSequenceTimers.push(timer);return reaction;}if(trigger==='player_one_card'){setBrammExpression('36_mug_stops_midair');const epoch=sessionEpoch,timer=setTimeout(()=>{if(epoch===sessionEpoch)performBrammReaction(reaction);},settings.reducedMotion?120:700);brammSequenceTimers.push(timer);return reaction;}const delay=trigger==='win'&&reaction.id==='win_04'?260:0;return performBrammReaction(reaction,{voiceDelay:delay});}
-function brammArtHTML(opponent,{context='table'}={}){if(opponent?.id!=='bramm')return `<i class="duel-sprite" style="${duelSpriteStyle(opponent,context==='table'?duelReaction:'idle')}"></i>`;if(context==='table'&&root.querySelector('.bramm-art-stage.bramm-table'))return '<span data-bramm-stage-placeholder></span>';const expression=context==='table'?brammExpression:'01_default_smug';return `<span class="bramm-art-stage bramm-${context}"><img class="bramm-art bramm-art-current" src="${brammExpressionURL(expression)}" alt="" draggable="false" onerror="this.onerror=null;this.src='${brammExpressionURL('01_default_smug')}'"></span>`;}
+function runBramm(trigger,context={},force=false){if(view!=='game'||isPaused()||!isBrammDuel()||!brammController)return null;const visual=brammController.observe(trigger,context);if(visual)setBrammExpression(visual.expression,visual.duration);const reaction=brammController.react(trigger,context,force);if(!reaction)return visual;settings.brammRecentVoices=brammController.snapshot().recentVoices;saveSettings(settings);if(trigger==='match_loss'){setBrammExpression('29_defeated_disbelief',Math.max(1800,reaction.duration));const epoch=sessionEpoch,timer=setTimeout(()=>{if(epoch===sessionEpoch)performBrammReaction(reaction);},settings.reducedMotion?120:620);brammSequenceTimers.push(timer);return reaction;}if(trigger==='player_one_card'){setBrammExpression('36_mug_stops_midair');const epoch=sessionEpoch,timer=setTimeout(()=>{if(epoch===sessionEpoch)performBrammReaction(reaction);},settings.reducedMotion?120:700);brammSequenceTimers.push(timer);return reaction;}const delay=trigger==='win'&&reaction.id==='win_04'?260:0;return performBrammReaction(reaction,{voiceDelay:delay});}
+function brammArtHTML(opponent,{context='table'}={}){if(opponent?.id!=='bramm')return `<i class="duel-sprite sheet-${opponent?.sheet||'a'}" style="${duelSpriteStyle(opponent,context==='table'?duelReaction:'idle')}"></i>`;if(context==='table'&&root.querySelector('.bramm-art-stage.bramm-table'))return '<span data-bramm-stage-placeholder></span>';const expression=context==='table'?brammExpression:'01_default_smug';return `<span class="bramm-art-stage bramm-${context}"><img class="bramm-art bramm-art-current" src="${brammExpressionURL(expression)}" alt="" draggable="false" onerror="this.onerror=null;this.src='${brammExpressionURL('01_default_smug')}'"></span>`;}
 function syncBrammStage(stage){if(!stage)return;const current=stage.querySelector('.bramm-art-current'),currentURL=brammExpressionURL(brammExpression);if(current&&current.src!==currentURL)current.src=currentURL;stage.classList.remove('is-changing');}
-function scheduleDuelIdle(){clearTimeout(duelIdleTimer);if(view!=='game'||isPaused()||session?.mode!=='duel'||session.phase!=='round')return;const opponent=currentDuelOpponent(),epoch=sessionEpoch;duelIdleTimer=setTimeout(()=>{if(epoch!==sessionEpoch||view!=='game'||isPaused()||session?.mode!=='duel'||session.phase!=='round'||eventBanner)return scheduleDuelIdle();if(isBrammDuel()){const cards=state.players.map(p=>p.hand.length),ahead=cards[1]<=cards[0];if(!runBramm('idle_taunt',{ahead})?.voice)setBrammExpression(ahead?'34_drinking_relaxed':'35_drinking_nervous',settings.reducedMotion?1400:2800);}else setDuelReaction('drink',opponent.dialoguePools.drink.at(Math.floor(Math.random()*opponent.dialoguePools.drink.length)),true);scheduleDuelIdle();},opponent.idleFrequency+Math.random()*9000);}
+function scheduleDuelIdle(){clearTimeout(duelIdleTimer);if(view!=='game'||isPaused()||session?.mode!=='duel'||session.phase!=='round')return;const opponent=currentDuelOpponent(),epoch=sessionEpoch;duelIdleTimer=setTimeout(()=>{if(epoch!==sessionEpoch||view!=='game'||isPaused()||session?.mode!=='duel'||session.phase!=='round'||eventBanner)return scheduleDuelIdle();if(isBrammDuel()){const cards=state.players.map(p=>p.hand.length),ahead=cards[1]<=cards[0],quiet=state.phase==='playing'&&cards[0]!==1&&!motionLocked&&!audioSystem.voiceSource&&!brammCaptionLine;const spoke=quiet&&(runBramm('idle_quiet')?.voice||runBramm('idle_taunt',{ahead})?.voice);if(!spoke)setBrammExpression(ahead?'34_drinking_relaxed':'35_drinking_nervous',settings.reducedMotion?1400:2800);}else setDuelReaction('drink',opponent.dialoguePools.drink.at(Math.floor(Math.random()*opponent.dialoguePools.drink.length)),true);scheduleDuelIdle();},opponent.idleFrequency+Math.random()*9000);}
 function setDuelReaction(kind,text=null,force=false){if(session?.mode!=='duel'||isBrammDuel())return;const opponent=currentDuelOpponent(),weight=opponent.reactionWeights[kind]??1;if(!force&&(Date.now()-lastDuelReactionAt<4200||Math.random()>weight))return;lastDuelReactionAt=Date.now();duelReaction=kind;clearTimeout(duelReactionTimer);if(text)showQuip('p1',text,force);render();const epoch=sessionEpoch;duelReactionTimer=setTimeout(()=>{if(epoch!==sessionEpoch)return;duelReaction='idle';render();scheduleDuelIdle();},settings.reducedMotion?350:1100+Math.random()*1200);}
 function duelLine(kind){const pool=currentDuelOpponent().dialoguePools[kind]||[];return pool[Math.floor(Math.random()*pool.length)];}
 function recordDuelResult(){if(session?.mode!=='duel'||session.phase!=='matchFinished'||session.recorded)return;const id=session.opponentId,record=settings.duelRecords?.[id]||{played:0,won:0};settings.duelRecords={...(settings.duelRecords||{}),[id]:{played:record.played+1,won:record.won+(session.championId==='p0'?1:0)}};session.recorded=true;saveSettings(settings);}
@@ -77,11 +77,14 @@ function setSession(next){
     try{onState(action);}catch(error){console.error('Non-blocking game presentation error',error);screenReaderLine='';captionLine='';}
     if(nextState.phase==='finished'&&session.phase==='round'){
       session=finishRound(session);const opponentWon=session.results.at(-1)?.winnerId==='p1',finalDuel=session.mode==='duel'&&session.phase==='matchFinished';
+      // Bramm speaks exactly one result line, chosen from the real match state:
+      // round win / round loss while the match continues, match win / match loss at the end.
       if(isBrammDuel()&&finalDuel){
         const humanScore=session.scores?.p0||0,brammScore=session.scores?.p1||0,spread=Math.abs(brammScore-humanScore),snapshot=brammController.snapshot();
         if(opponentWon)runBramm('win',{close:spread<=3,crushing:spread>=12,wasBehind:snapshot.flags.bramm_was_previously_behind,survivedOneCard:snapshot.flags.bramm_survived_one_card_scare},true);
-        else runBramm('loss',{},true);
-      }else if(session.mode==='duel'){setDuelReaction(opponentWon?'pleased':'annoyed',duelLine(opponentWon?'pleased':'annoyed'),true);}
+        else runBramm('match_loss',{},true);
+      }else if(isBrammDuel())runBramm(opponentWon?'round_win':'round_loss',{},true);
+      else if(session.mode==='duel'){setDuelReaction(opponentWon?'pleased':'annoyed',duelLine(opponentWon?'pleased':'annoyed'),true);}
       roundResultVisible=false;const epoch=sessionEpoch,authoredBeat=isBrammDuel()&&finalDuel;
       audioSystem.duckMusic(.08,240);
       roundEndTimer=setTimeout(()=>{if(epoch!==sessionEpoch)return;revealRoundResult();},settings.reducedMotion?(authoredBeat?900:120):(authoredBeat?1850:1050));
@@ -189,7 +192,9 @@ async function animateCardMovement(action){
   if(!draw)source?.classList.remove('motion-source');
 }
 function showEvent(kind,playerId=null,amount=null,cardId=null){clearTimeout(eventTimer);eventBanner={kind,playerId,targetId:playerId,amount,cardId};const epoch=sessionEpoch;eventTimer=setTimeout(()=>{if(epoch!==sessionEpoch)return;eventBanner=null;captionLine='';if(view==='game'&&!motionLocked)render();},settings.reducedMotion?300:1100);}
-function showQuip(player,text,force=false){if(!settings.dialogue||!text||(!force&&Date.now()-lastQuipAt<7800))return;lastQuipAt=Date.now();clearTimeout(quipTimer);quip={player,text};quipTimer=setTimeout(()=>{quip=null;render();},Math.min(2800,1500+text.length*42));}
+const FEMININE_HE=[['אני צריך','אני צריכה'],['אני חושב','אני חושבת'],['אני מחזיר','אני מחזירה']];
+function voicedLine(playerId,text){if(!text||isEnglish()||!isFeminine(state?.players?.find(p=>p.id===playerId)))return text;return FEMININE_HE.reduce((line,[m,f])=>line.replace(m,f),text);}
+function showQuip(player,text,force=false){text=voicedLine(player,text);if(!settings.dialogue||!text||(!force&&Date.now()-lastQuipAt<7800))return;lastQuipAt=Date.now();clearTimeout(quipTimer);quip={player,text};quipTimer=setTimeout(()=>{quip=null;render();},Math.min(2800,1500+text.length*42));}
 function botLine(playerId,trigger){const player=state.players.find(p=>p.id===playerId),pool=(isEnglish()?dialogueEn:dialogueHe)[player?.archetype]?.[trigger]||[];return pool[Math.floor(Math.random()*pool.length)];}
 function cardCountLabel(count){return isEnglish()?(count===0?'No cards':count===1?'1 card':`${count} cards`):(count===0?'אין קלפים':count===1?'קלף אחד':`${count} קלפים`);}
 function cardCountHTML(count){return isEnglish()?(count===0?'No cards':count===1?'<bdi>1</bdi> card':`<bdi>${count}</bdi> cards`):(count===0?'אין קלפים':count===1?'קלף אחד':`<bdi>${count}</bdi> קלפים`);}
@@ -224,7 +229,8 @@ function announce(entries){
   if(play){const card=state.discardPile.find(c=>c.id===play.cardId),label=card?(card.type===TYPES.NUMBER?`${card.value} ${colorName(card.color)}`:cardLabel(card,'he')):'קלף';return play.playerId==='p0'?`שיחקתם ${label}`:`${names[play.playerId]} ${verb(play.playerId,'שיחק','שיחקה')} ${label}`;}
   return'';
 }
-function isFeminine(player){return!!player&&(['hunter','scholar'].includes(player.archetype)||['איילה','לידיה','סֶלָה'].includes(player.name));}
+const CHARACTER_GENDER={aila:'f',sela:'f',ron:'f',bran:'f',kesh:'m',roderic:'m',lio:'m',mograth:'m',harrow:'m',rusk:'m',bramm:'m'};
+function isFeminine(player){if(!player)return false;const known=player.gender||CHARACTER_GENDER[player.nameKey||player.duelOpponentId];if(known)return known==='f';return(['hunter','scholar'].includes(player.archetype)||['איילה','לידיה','סֶלָה','מירא','ליבה','אלבה','רונה'].includes(player.name));}
 function winnerLine(player,unit='round'){if(!player)return'';const hand=unit==='hand';if(isEnglish())return player.id==='p0'?(hand?'You won the hand':'You won the round'):`${displayName(player)} won the ${hand?'hand':'round'}`;if(player.id==='p0')return hand?'ניצחתם ביד':'ניצחתם בסיבוב';return`${player.name} ${isFeminine(player)?'ניצחה':'ניצח'} ${hand?'ביד':'בסיבוב'}`;}
 function onState(action){
   const previousCounts={...lastCounts};
@@ -244,6 +250,8 @@ function onState(action){
   if(stop)audioSystem.play('stopSkip',{delay:effectDelay});
   if(reverse)audioSystem.play('reverse',{delay:effectDelay});
   if(stack)audioSystem.play('plusCard',{delay:effectDelay});
+  if(again)audioSystem.play('quickstepPlay',{delay:effectDelay});
+  if(playedCard?.type===TYPES.KING)audioSystem.play('kingPlay',{delay:effectDelay});
   if(color)audioSystem.play('colorChange');
   const playedBy=played&&state.players.find(player=>player.id===played.playerId);
   if(playedBy?.hand.length===1)audioSystem.play('lastCard',{delay:(stop||reverse||stack||opened||closed)?230:90});
@@ -266,14 +274,15 @@ function onState(action){
   }
   if(session.mode==='duel'){
     const humanMove=played?.playerId==='p0',opponentMove=played?.playerId==='p1';
-    if(isBrammDuel()){
+    if(isBrammDuel()&&state.phase!=='finished'){
       const humanCount=state.players[0].hand.length,brammCount=state.players[1].hand.length,oldHuman=previousCounts.p0??humanCount;
       if(humanCount<brammCount)brammController.setFlag('bramm_was_previously_behind');else if(brammCount<humanCount)brammController.setFlag('bramm_was_previously_ahead');
       if(oldHuman>1&&humanCount===1){
-        runBramm('player_one_card',{},true);const epoch=sessionEpoch;
-        for(const wait of [3400,9200]){const timer=setTimeout(()=>{if(epoch===sessionEpoch&&state?.phase==='playing'&&state.players[0]?.hand.length===1)runBramm('one_card_persist');},settings.reducedMotion?Math.min(wait,1800):wait);brammSequenceTimers.push(timer);}
+        runBramm('player_one_card',{brammCards:brammCount},true);const epoch=sessionEpoch;
+        for(const wait of [9500]){const timer=setTimeout(()=>{if(epoch===sessionEpoch&&state?.phase==='playing'&&state.players[0]?.hand.length===1)runBramm('one_card_persist');},settings.reducedMotion?Math.min(wait,1800):wait);brammSequenceTimers.push(timer);}
       }else if(oldHuman===1&&humanCount>1){const relief=brammController.oneCardRecovered();if(relief)performBrammReaction(relief);}
       else if((penalty?.playerId==='p1'&&penalty.amount>=4)||stop?.skipped==='p1')runBramm('setback');
+      else if((draw?.playerId==='p1'||penalty?.playerId==='p1')&&humanCount===1)runBramm('one_card_persist');
       else if((draw?.playerId==='p1'||penalty?.playerId==='p1'))runBramm('bramm_draw',{amount:(draw||penalty)?.amount||1});
       else if(draw?.playerId==='p0'||penalty?.playerId==='p0')runBramm('player_draw',{amount:(draw||penalty)?.amount||1});
       else if(humanMove&&(reverse||opened||stack||stop||playedCard?.type===TYPES.KING))runBramm('player_good_move');
@@ -376,20 +385,21 @@ const seatPropStories=Object.freeze({
 function propsHTML(player){const archetype=player.archetype||'wanderer',variants=seatPropStories[archetype]||seatPropStories.wanderer,identity=[...`${player.id}:${archetype}`].reduce((sum,char)=>sum+char.charCodeAt(0),0),items=variants[Math.abs((session?.seed||0)+identity)%variants.length];return `<span class="seat-props" aria-hidden="true">${items.map((item,index)=>`<img class="seat-object prop-${index+1}" src="./assets/props/${propAssets[item]}" alt="" draggable="false">`).join('')}</span>`;}
 let lastPenaltyShown=0,slipShownFor=-1;
 function freshQuip(){if(!quip||quip.rendered)return'';quip.rendered=true;return'enter';}
-const TAVERN_FIGURES=new Set(['aila','ron','bran','sela','kesh']);
+const TAVERN_FIGURES=new Set(['aila','ron','bran','sela','kesh']),TAVERN_SPRITES=new Set(['roderic','lio','mograth','harrow','rusk']);
 // Score as coins: one coin per four points (min one), stacked four high, at most
 // three stacks. The exact number always sits beside the pile.
 function coinStacks(score){if(score<=0)return[];const coins=Math.min(12,1+Math.floor(score/4)),stacks=[];for(let left=coins;left>0;left-=4)stacks.push(Math.min(4,left));return stacks;}
 function coinPileHTML(score,extra=''){return `<span class="coin-pile ${extra}" aria-hidden="true">${coinStacks(score).map((height,index)=>`<i style="--coins:${height};--stack:${index}"></i>`).join('')}</span>`;}
 function seatScoreHTML(player){
   if(!['tavern','duel'].includes(session.mode))return'';
-  const score=session.scores?.[player.id]||0,latest=session.results.at(-1),scored=roundResultVisible&&session.phase!=='round'&&latest?.winnerId===player.id;
-  return `<span class="seat-score ${scored?'scored':''}" data-score-anchor="${player.id}" aria-label="${isEnglish()?`${score} points`:`${score} נקודות`}">${coinPileHTML(score)}<bdi>${score}</bdi></span>`;
+  const score=session.scores?.[player.id]||0,latest=session.results.at(-1),scored=roundResultVisible&&session.phase!=='round'&&latest?.winnerId===player.id&&slipShownFor!==session.results.length;
+  return `<span class="seat-score ${scored?'scored':''} ${score?'':'empty'}" data-score-anchor="${player.id}" aria-label="${isEnglish()?`${score} points`:`${score} נקודות`}">${coinPileHTML(score)}<bdi>${score}</bdi></span>`;
 }
-function revealedHandHTML(player){if(session.phase==='round'||!roundResultVisible||!player.hand.length)return'';const shown=player.hand.slice(0,7),more=player.hand.length-shown.length;return `<span class="revealed-hand" aria-hidden="true">${shown.map((card,index)=>cardHTML(card,cardOptions({small:true,legal:false,highlight:false,index}))).join('')}${more>0?`<b class="revealed-more">+<bdi>${more}</bdi></b>`:''}</span>`;}
+function revealedHandHTML(player){if(session.phase==='round'||!roundResultVisible||!player.hand.length)return'';const shown=player.hand.slice(0,compactLayout()?4:7),more=player.hand.length-shown.length;return `<span class="revealed-hand" aria-hidden="true">${shown.map((card,index)=>cardHTML(card,cardOptions({small:true,legal:false,highlight:false,index}))).join('')}${more>0?`<b class="revealed-more">+<bdi>${more}</bdi></b>`:''}</span>`;}
 function seatFigureHTML(player){
   if(session.mode==='duel')return `<div class="seat-figure duel-figure">${brammArtHTML(currentDuelOpponent(),{context:'table'})}<i class="contact-shadow"></i></div>`;
   if(session.mode==='tavern'&&TAVERN_FIGURES.has(player.nameKey))return `<div class="seat-figure"><img src="./assets/characters/table/${player.nameKey}-seated.webp" alt="" draggable="false"></div>`;
+  if(session.mode==='tavern'&&TAVERN_SPRITES.has(player.nameKey))return `<div class="seat-figure sprite-figure"><i class="duel-sprite sheet-b" style="${duelSpriteStyle(getDuelOpponent(player.nameKey),'idle')}"></i></div>`;
   return'';
 }
 const SEAT_LAYOUTS=Object.freeze({1:['n'],2:['nw','ne'],3:['w','n','e'],4:['w','nw','ne','e'],5:['w','nw','n','ne','e']});
@@ -448,7 +458,8 @@ function actionStripText(){
   if(last)return en?`${displayName(last)} is down to the last card`:`ל${displayName(last)} נשאר קלף אחרון`;
   return'';
 }
-function choiceHTML(){if(state.awaitingColor?.playerId!=='p0')return'';const en=isEnglish();return `<div class="color-choice" role="dialog" aria-modal="true" aria-label="${en?'Choose a colour':'בחירת צבע'}"><div class="gem-ring"><span class="gem-title">${en?'Choose a colour':'בחרו צבע'}</span><div class="gems">${DISPLAY_COLORS.map(c=>`<button class="gem ${c}" data-color="${c}"><i>${colorRuneHTML(c,'gem-rune')}</i><span>${colorName(c)}</span></button>`).join('')}</div></div></div>`;}
+let choiceShown=false;
+function choiceHTML(){if(state.awaitingColor?.playerId!=='p0'){choiceShown=false;return'';}const en=isEnglish(),enter=choiceShown?'':'enter';choiceShown=true;return `<div class="color-choice ${enter}" role="dialog" aria-modal="true" aria-label="${en?'Choose a colour':'בחירת צבע'}"><div class="gem-ring"><span class="gem-title">${en?'Choose a colour':'בחרו צבע'}</span><div class="gems">${DISPLAY_COLORS.map(c=>`<button class="gem ${c}" data-color="${c}"><i>${colorRuneHTML(c,'gem-rune')}</i><span>${colorName(c)}</span></button>`).join('')}</div></div></div>`;}
 function captionHTML(){return settings.captions&&!settings.hideTableMessages&&captionLine?`<div class="table-caption" role="status">${captionLine}</div>`:'';}
 function roundMarkerHTML(){
   if(session.mode==='quick')return'';
@@ -469,7 +480,7 @@ function gameHTML(){
   const handCards=shown.map((card,i)=>{const incoming=incomingCardDelays.get(card.id);return cardHTML(card,cardOptions({legal:isHumanTurn&&legal.has(card.id),highlight:settings.playableHints,selected:selected===card.id,incoming:!!incoming,arrivalDelay:incoming?incoming.delay-(performance.now()-incoming.started):0,index:i,total:shown.length}));}).join('');
   const drawSuggested=isHumanTurn&&!state.taki?.open&&legal.size===0;
   const resolvedTopColor=top.type===TYPES.CHANGE_COLOR&&state.awaitingColor?null:state.activeColor,showActiveColor=top.color==='wild'||top.type===TYPES.CHANGE_COLOR||top.type===TYPES.SUPER_TAKI||state.activeColor!==top.color;
-  const figures=session.mode==='duel'||(session.mode==='tavern'&&opponents.some(p=>TAVERN_FIGURES.has(p.nameKey)));
+  const figures=session.mode==='duel'||(session.mode==='tavern'&&opponents.some(p=>TAVERN_FIGURES.has(p.nameKey)||TAVERN_SPRITES.has(p.nameKey)));
   // Play-by-play notes ("Bramm takes 2", "Nothing matches — draw a card") are optional; on by default they stay hidden.
   const strip=settings.hideTableMessages?'':actionStripText();
   const arrows=`<svg class="direction-ring ${state.direction<0?'counter':''} ${eventBanner?.kind==='reverse'?'lit':''}" viewBox="0 0 300 300" aria-hidden="true"><path class="ring-route" d="M57 181A105 105 0 0 1 226 74"/><path class="ring-head" d="m219 54 9 22-24 4"/><path class="ring-route" d="M243 119A105 105 0 0 1 74 226"/><path class="ring-head" d="m81 246-9-22 24-4"/></svg>`;
@@ -522,7 +533,8 @@ function summaryHTML(){
   return `<div class="result-slip ${slipEnter} round-slip" role="dialog" aria-labelledby="result-title"><small>${kicker}</small><h2 id="result-title">${winnerLine(winner)}</h2><div class="tally"><div class="tally-sum">${breakdown}</div><strong class="tally-total"><bdi>+${result.points}</bdi></strong></div>${session.suddenDeath?`<p class="tie-note">${en?'Tied at the top — one more hand decides it.':'שוויון בראש הטבלה — יד אחת נוספת תכריע.'}</p>`:''}<ol class="standings compact">${scoreRows}</ol><div class="result-actions"><button class="primary-button" data-next>${nextLabel}</button><button class="text-button" data-home>${en?'Save and leave':'לשמור ולצאת'}</button></div></div>`;
 }
 /* ------------------------------ Sheets ------------------------------ */
-function sheetFrame(kind,titleId,title,body,{closeLabel}){return `<div class="sheet-wrap ${kind}-wrap" data-sheet-backdrop><article class="tavern-sheet ${kind}-sheet" role="dialog" aria-modal="true" aria-labelledby="${titleId}"><header class="sheet-head"><h2 id="${titleId}">${title}</h2><button class="sheet-close" data-close-sheet aria-label="${closeLabel}"><span aria-hidden="true">×</span></button></header>${body}</article></div>`;}
+let lastSheetShown=null;
+function sheetFrame(kind,titleId,title,body,{closeLabel}){const enter=lastSheetShown!==kind?'enter':'';lastSheetShown=kind;return `<div class="sheet-wrap ${kind}-wrap ${enter}" data-sheet-backdrop><article class="tavern-sheet ${kind}-sheet" role="dialog" aria-modal="true" aria-labelledby="${titleId}"><header class="sheet-head"><h2 id="${titleId}">${title}</h2><button class="sheet-close" data-close-sheet aria-label="${closeLabel}"><span aria-hidden="true">×</span></button></header>${body}</article></div>`;}
 function quickSheetHTML(){
   const en=isEnglish();
   const body=`<p class="sheet-lede">${en?'One hand, no score. Random faces from the common room.':'יד אחת, בלי ניקוד. זרים מהאולם המשותף.'}</p><div class="field-label" id="players-label">${en?'Players at the table':'שחקנים ליד השולחן'}</div><div class="segmented player-count" role="radiogroup" aria-labelledby="players-label">${[2,3,4,6].map(n=>`<button role="radio" data-players="${n}" aria-checked="${settings.playerCount===n}" class="${settings.playerCount===n?'on':''}"><bdi>${n}</bdi></button>`).join('')}</div><div class="sheet-actions"><button class="primary-button" data-quick>${en?'Deal the cards':'לחלק קלפים'}</button><button class="text-button" data-close-sheet>${en?'Back':'חזרה'}</button></div>`;
@@ -557,7 +569,7 @@ function rulesHTML(){
   return sheetFrame('rules','rules-title',en?'House Rules':'חוקי הבית',body,{closeLabel:en?'Close rules':'לסגור את החוקים'});
 }
 function sheetHTML(){
-  if(!sheet)return'';
+  if(!sheet){lastSheetShown=null;return'';}
   if(sheet==='pause')return pauseHTML();
   if(sheet==='rules')return rulesHTML();
   if(sheet==='quick')return quickSheetHTML();
@@ -582,7 +594,10 @@ function render(){
   const brammStage=root.querySelector('.bramm-art-stage.bramm-table');
   document.documentElement.lang=settings.language;document.documentElement.dir=direction();
   document.querySelector('meta[name="description"]')?.setAttribute('content',isEnglish()?'RUNES — a card game around a tavern table: Quick Play, a five-round Tavern Match, and Duels with the regulars.':'רונות — משחק קלפים סביב שולחן פונדק: משחק מהיר, משחק פונדק בן חמישה סיבובים ודו־קרב מול הקבועים.');
+  const openSheet=root.querySelector('.tavern-sheet'),sheetScroll=openSheet?{kind:openSheet.className,top:openSheet.scrollTop}:null;
   root.innerHTML=view==='home'?homeHTML():view==='duelSelect'?duelSelectHTML():gameHTML();
+  // Re-rendering while a sheet is open (a toggle, a language switch) keeps its scroll position.
+  const reopened=root.querySelector('.tavern-sheet');if(sheetScroll&&reopened&&reopened.className===sheetScroll.kind)reopened.scrollTop=sheetScroll.top;
   const placeholder=root.querySelector('[data-bramm-stage-placeholder]');if(brammStage&&placeholder){placeholder.replaceWith(brammStage);syncBrammStage(brammStage);}
   bind();
 }
@@ -605,7 +620,7 @@ function layoutHand(){
   const frame=handFrame(),hand=root.querySelector('.hand');if(!frame||!hand)return;
   const cards=[...hand.querySelectorAll(':scope > .card')],count=cards.length;
   hand.dataset.cardCount=String(count);if(!count){updateHandOverflow();return;}
-  const compact=compactLayout(),cardWidth=cards[0].offsetWidth||96,available=Math.max(cardWidth,frame.clientWidth-16-(compact?0:cardWidth*.3));
+  const compact=compactLayout(),cardWidth=cards[0].offsetWidth||96,frameStyle=getComputedStyle(frame),inner=frame.clientWidth-parseFloat(frameStyle.paddingLeft)-parseFloat(frameStyle.paddingRight),available=Math.max(cardWidth,inner-(compact?0:cardWidth*.3));
   const {browse,overlap,tilt,rise}=calculateHandLayout({count,cardWidth,available,compact});
   hand.dataset.layout=browse?'browse':'fan';frame.classList.toggle('browsing',browse);
   cards.forEach((card,index)=>{const offset=index-(count-1)/2;card.style.setProperty('--overlap',`${overlap.toFixed(1)}px`);card.style.setProperty('--tilt',`${(offset*tilt).toFixed(2)}deg`);card.style.setProperty('--rise',`${(Math.abs(offset)**1.6*rise).toFixed(1)}px`);});
@@ -651,10 +666,10 @@ function bind(){
   });
   root.querySelectorAll('[data-players]').forEach(b=>b.onclick=()=>{settings.playerCount=+b.dataset.players;saveSettings(settings);render();root.querySelector(`[data-players="${b.dataset.players}"]`)?.focus({preventScroll:true});});
   root.querySelector('[data-duel]')?.addEventListener('click',()=>{view='duelSelect';sheet=null;render();void preloadBrammExpressions();});
-  root.querySelectorAll('[data-opponent]').forEach(b=>b.onclick=async()=>{settings.duelOpponent=b.dataset.opponent;saveSettings(settings);clearMatch();b.classList.add('loading');b.setAttribute('aria-busy','true');try{await startSession('duel');}catch(error){console.error('Unable to prepare duel assets',error);b.classList.remove('loading');b.setAttribute('aria-busy','false');}});
+  root.querySelectorAll('[data-opponent]').forEach(b=>b.onclick=async()=>{if(root.querySelector('.regular.loading'))return;settings.duelOpponent=b.dataset.opponent;saveSettings(settings);clearMatch();b.classList.add('loading');b.setAttribute('aria-busy','true');try{await startSession('duel');}catch(error){console.error('Unable to prepare duel assets',error);b.classList.remove('loading');b.setAttribute('aria-busy','false');}});
   root.querySelector('[data-tavern]')?.addEventListener('click',()=>{clearMatch();startSession('tavern');});
   root.querySelector('[data-quick]')?.addEventListener('click',()=>{clearMatch();startSession('quick');});
-  root.querySelector('[data-resume]')?.addEventListener('click',()=>{const saved=loadMatch();startSession(saved?.mode||'tavern',saved);});
+  root.querySelector('[data-resume]')?.addEventListener('click',event=>{const button=event.currentTarget;if(button.classList.contains('loading'))return;button.classList.add('loading');button.setAttribute('aria-busy','true');const saved=loadMatch();startSession(saved?.mode||'tavern',saved);});
   root.querySelector('[data-next]')?.addEventListener('click',startNextHand);
   root.querySelector('[data-rematch]')?.addEventListener('click',()=>{clearMatch();startSession('duel');});
   root.querySelector('[data-choose-opponent]')?.addEventListener('click',()=>{clearMatch();goHome();view='duelSelect';render();});
@@ -714,7 +729,10 @@ window.BrammDebug=Object.freeze({
   expression:value=>{if(!BRAMM_EXPRESSIONS.includes(value))return false;setBrammExpression(value);return true;},
   simulateOneCard:()=>runBramm('player_one_card',{},true),
   simulateWin:()=>runBramm('win',{close:true,survivedOneCard:true},true),
-  simulateLoss:()=>runBramm('loss',{},true),
+  simulateLoss:()=>runBramm('match_loss',{},true),
+  simulateRoundWin:()=>runBramm('round_win',{},true),
+  simulateRoundLoss:()=>runBramm('round_loss',{},true),
+  simulateIdle:()=>runBramm('idle_quiet'),
   reactions:BRAMM_REACTIONS,
   expressions:BRAMM_EXPRESSIONS
 });
@@ -727,4 +745,6 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('pagehide',()=>{flushPendingAction();persist();suspendAudio();});
 let handLayoutFrame=0;
 window.addEventListener('resize',()=>{cancelAnimationFrame(handLayoutFrame);handLayoutFrame=requestAnimationFrame(layoutHand);},{passive:true});
+// Warm the card-face artwork so masked SVGs never paint blank on first use.
+for(const name of ['number-1','number-3','number-4','number-5','number-6','number-7','number-8','number-9','shield','curse-plus-2','turnabout','quickstep','crossbow','runed-crossbow','rune','king']){const image=new Image();image.decoding='async';image.src=`./assets/cards/${name}.svg`;}
 registerWebMCP();render();

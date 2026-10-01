@@ -189,3 +189,222 @@ The screen-reader live region still announces everything. · `dist/platform/stor
 Still unused on purpose: the Halden pack (owner: unfinished, not voiced) and `assets/brand/runes-wordmark.svg` (alternate logo; harmless). `bramm_intro_03` is scripted but never recorded, and the Hebrew `bramm_win_05` doesn't exist (the caption shows without audio).
 
 **Versioning for the follow-up.** Codex published the main pass as v70, then v72 (commit `43392f1`, which also added a harmless `round-complete` class to the game shell; it's preserved). This follow-up bumps `index.html` and `sw.js` to **v73**. · `dist/index.html`, `dist/sw.js`, `dist/app.js`.
+
+## 13. Bramm voice expansion (v74)
+
+24 new owner-supplied voice files (12 lines × EN/HE) are integrated into Bramm's existing reaction table. There's no second mapping system. Files were copied **unmodified** from `Runes Card Game/Bramm/` into `dist/assets/bramm/voice/`.
+
+**Result lines now follow the real match state** (`session.phase` after `finishRound`, never UI text or timers). Exactly one result line per hand:
+
+| Situation | Trigger | Pool |
+|---|---|---|
+| Bramm wins a round, match continues | `round_win` | `round_win_01–04` (new) |
+| Bramm loses a round, match continues | `round_loss` | `loss_01` ("…Again."). If that was among his last 3 lines, an excuse (`excuse_01/02`, "That doesn't count." / "House rule.") instead, so a losing streak doesn't repeat the same line. |
+| Bramm wins the match | `win` | existing `win_01–10` (unchanged) |
+| Bramm loses the match | `match_loss` | `match_loss_01–03` (new); `loss_01` is no longer used here |
+
+- Sudden-death hands count as rounds until the match is actually decided.
+- Ordinary Bramm reactions are suppressed on the move that ends a hand, so a result line never stacks on a move line.
+- Before this change, Bramm said nothing at all when a non-final round ended.
+
+**Player reaches one card.**
+- One immediate line, chosen from `01, 02, 05, 06, 07`, weighted by context:
+  - first scare of the match → mostly "…No.";
+  - later scares → denial, the audience line or talking himself down;
+  - Bramm holding 5+ cards → "Nobody panic";
+  - Bramm was ahead → "How did we get here?"
+- The existing 3-voice anti-repeat applies (tested: no back-to-back repeats; all five occur).
+- `03` ("Come on. Curse…") is now contextual. It plays only while you're still on one card and Bramm draws, or after about 9.5 s of you sitting on one card. It's no longer an instant reaction.
+- `player_one_card_04` doesn't exist anywhere.
+
+**Idle lines** `idle_01/02`:
+- LOW priority, probability .35, ≥ 18 s since his last line, at least 2 game events since he last spoke.
+- Only when you're not on one card, nothing is animating, he isn't already speaking and no bubble is up.
+- Budget: at most one per round, and a second only in a very long round (≥ 45 events).
+- Measured: in a 170 s stalled turn, one idle line in Hebrew and none in English.
+
+**Expressions** (existing art only):
+
+| Line | Expression |
+|---|---|
+| one-card 05 | `22_fake_calm_after_panic` |
+| one-card 06 | `29_defeated_disbelief` |
+| one-card 07 | `32_angry_at_spectators` |
+| round win 01 / 02 / 03 / 04 | `10_satisfied_good_move` / `27_smug_unbeaten` / `03_calling_to_tavern` / `34_drinking_relaxed` |
+| match loss 01 / 02 / 03 | `29_defeated_disbelief` / `30_defeated_sulk` / `32_angry_at_spectators` |
+| idle 01 / 02 | `33_muttering` / `34_drinking_relaxed` |
+
+**Captions.** Hebrew captions are added to `BRAMM_HE_CAPTIONS`; English text is in each reaction. Acting directions are removed. Bubble timing still follows the actual voice length, and Hebrew bubbles render RTL. All voice goes through the same Web Audio voice channel (no `<audio>` / media session).
+
+**Playtested** in 2 full Bramm duels per language at phone size (20 hands). Every hand produced exactly one correct result line, with no match-win line after a round win and no `loss_01` on a match loss. 24 one-card events covered all five variants.
+
+Files:
+- `dist/duel/bramm.js`: reactions, captions, `ONE_CARD_WEIGHTS`, idle budget, round-loss variation;
+- `dist/app.js`: result routing, one-card context, contextual `03`, idle gate, `BrammDebug.simulateRoundWin/RoundLoss/Idle`;
+- `dist/assets/bramm/voice/` (24 new files);
+- `dist/index.html`, `dist/sw.js` (v74);
+- `tests/bramm.test.js` (6 new tests).
+
+`Runes Card Game/Bramm/Bramm Script.txt` now lists all the new lines and marks `loss_01` as round-only.
+
+---
+
+# Fine-Tuning Pass (v75, the "director pass"; published together with the §13 Bramm voice update)
+
+Rules and mechanics are untouched. This pass works only on presentation, feel and small bugs. Verified by screenshots at 320×568, 360×740, 375×667, 393×852, 390×844, 852×393, 844×390, 820×1180, 1180×820, 1366×768, 1920×1080 and 2560×1080 in HE and EN, an automated overlap checker (piles vs. notes, hand clipping, plate/fan collisions, header collisions, horizontal scroll) across 13 viewports × 6 table states × 2 languages, a misuse script, and full played matches.
+
+**Cards as a system.**
+- The printed name (Shield, Curse…) was struck through by the inner frame line, and in Hebrew it sat on the border. It now sits on a soft parchment band inside the frame.
+- Label colour is darkened from the suit colour, so Turnabout's gold label is now readable.
+- "Curse" was the only lower-case label; now all labels match.
+- Below about 88 px card width (phone hand, revealed hands, piles on small phones), the printed name hides via a container query. At that size it was unreadable 6 px noise, and the art and corner carry the card.
+- Removed the two faint tally strokes under the Curse art. They read as a stray mark at large sizes and were invisible at play size. The printed "+2" art and the rules line ("Curse takes the place of the Two") carry the idea.
+
+· `dist/styles.css`, `dist/ui/card.js` · verified on a QA sheet at 150/102/78/40 px in HE and EN.
+
+**Main menu.** The desktop and ultrawide menu was a small cluster in a big empty table. The three objects, labels, logo and Rules/Settings now scale with window height (`vh` clamps), so 1366×768, 1920×1080 and 2560×1440 frame the same shot. Hover lifts the object 3 px and tightens its shadow; pressing sets it down. On tablet portrait the menu was undersized (31 px titles, 120 px objects). Bramm's cameo no longer pushes the Duel row's text out of line with the other rows. On phone landscape the menu sits on the table. A Resume or Bramm tap acknowledges instantly (dimmed, busy) while Bramm's art decodes, and can't be double-fired. · `dist/styles.css`, `dist/app.js`.
+
+**Duel select.**
+- 320 px EN: the heading overlapped the back button and ran into Bramm's card (flex children were shrinking). Fixed by reserving the button's space and setting `flex-shrink:0`.
+- Bramm's card hugs its content (no empty half on desktop).
+- The regulars wrap as centred rows of three (3+2) on phones and tablets, five across on wide screens.
+- Desktop type scales with height.
+- Under 420 px, the third descriptor line hides so cards stay even.
+
+· `dist/styles.css`.
+
+**Table composition.**
+- Piles are larger on phones (up to 110 px) and desktops (up to 15 vh), so the eye rests in the centre instead of on empty wood.
+- On 6-player phones the five fans merged into one band of backs. They're now smaller, and the name plates stack name over count consistently.
+- An opponent with no stake shows nothing instead of a lone "0" token.
+- Desktop seat plates, scores, round marker and menu button scale with height.
+- Your tankard and stake on desktop are larger.
+- The hand keeps clear of your stake corner. A layout bug measured the frame including its padding, so 12 cards overflowed at 1366 px.
+- On laptop heights (≤ 820 px), the figure band and piles trim so the Crossbow panel never sits on the discard pile (it did at 1366×768).
+- In short landscape, the notes panel is width-limited so it can't reach the piles.
+
+· `dist/styles.css`, `dist/app.js`.
+
+**Round results.**
+- On phones, revealed hands show at most 4 cards plus "+N" (the edge seats' hands ran off-screen).
+- The winner's pile glow plays once, not on every re-render.
+
+· `dist/app.js`, `dist/styles.css`.
+
+**Pause.** The backdrop is lighter (less dim, 1.5 px blur instead of 3), so the table is visibly *waiting* behind the menu. · `dist/styles.css`.
+
+**Feedback.**
+- Desktop: legal cards lift 12 px on hover with a tightened raised shadow, and press down on click.
+- Unplayable cards use the default cursor.
+- Regulars lift 2 px on hover.
+- Touch devices get no hover rules, so nothing sticks.
+
+· `dist/styles.css`.
+
+**Small bugs found and fixed.**
+- Toggling any setting re-ran the sheet's slide-in animation and jumped the sheet back to the top. Sheets now animate only when they open, and keep their scroll position across re-renders.
+- The colour picker re-faded every time a quip timer re-rendered the table.
+- A newly drawn card restarted its arrival animation if the table re-rendered mid-arrival. It now resumes mid-motion.
+- Card-face SVGs could paint blank for a frame the first time a card type appeared (seen as empty parchment cards in a Bramm hand). All 16 faces now warm at boot.
+- Double-tapping an opponent, or Continue, could start two sessions while Bramm's art preloaded. Both are now guarded.
+
+Verified with a misuse script: rules open/close ×8, duel in/out ×5, player-count spam ×24, double-click Bramm, draw spam ×10, language switching inside Pause → Settings, resizing during animation, keyboard input mid-animation, leave and resume, audio toggle spam. No console errors; the table always settled (`motionLocked` false, the correct player's turn).
+
+**Removed.** The Curse tally strokes, printed card names at tiny sizes, the lone zero-stake tokens, and the re-running entry animations on sheets, colour picker and score glow.
+
+**Final director playtest** (played as a player, no code inspection):
+- Quick Play 1v1 (phone, HE), 4 players (phone, EN) and 6 players (desktop, HE);
+- full Tavern Match on phone HE and desktop EN;
+- full Duels vs Bramm (phone EN, desktop HE), Aila (desktop EN) and Kesh (phone HE).
+
+Every match ran to its final slip with zero console errors. Punch-list fix from this playtest: Quick Play strangers Myra, Leva, Alva and Runa got masculine Hebrew verbs ("מירא ניצח ביד") → now feminine.
+
+Versioning: `index.html` and `sw.js` are at **v75**. v74 was never published, so v75 includes §13. The `__qa_cards.html` test sheet was removed before handoff.
+
+## 14. Install icons and share image (v76)
+
+**Problem.** The manifest had `"icons": []`, so "Add to Home Screen" showed a blank or generic icon. The favicon was the 571 KB seal SVG. There was no link-preview image, so links shared in WhatsApp or social media appeared without a picture. The manifest locked installed apps to portrait, which broke the supported tablet-landscape layout.
+
+**Change.** Generated from existing art only: the wax-seal mark on the table wood with a warm centre light, and a share card made from the tavern room, table rim, white RUNES logo, the cut deck, the coin stack and Bramm's cameo.
+
+New files in `dist/assets/brand/icons/`:
+- `icon-192.png` and `icon-512.png` (`purpose:any`);
+- `icon-maskable-512.png` (seal at 66 %, inside the Android safe zone);
+- `apple-touch-icon.png` (180 px);
+- `favicon-32.png` and `favicon-48.png` (transparent).
+
+Also new: `dist/assets/brand/share.jpg` (1200×630, 147 KB).
+
+The 512 px icons are quantized to 256 colours, visually identical (≈200 KB instead of 350 KB).
+
+`index.html` now has:
+- PNG favicons, the Apple touch icon and `apple-mobile-web-app-title`;
+- `og:` title, description, URL and image (absolute URL to the published site);
+- `twitter:card=summary_large_image`.
+
+`manifest.webmanifest` lists the three icons, and `orientation` changed `portrait` → `any`. `dist/favicon.svg` is deleted; it was a byte-identical copy of `assets/brand/runes-seal.svg`, which remains. `sw.js` precaches the new icons and no longer lists `favicon.svg`. The version is bumped to **v76**.
+
+Files:
+- `dist/index.html`, `dist/manifest.webmanifest`, `dist/sw.js`;
+- `dist/assets/brand/icons/*` (new), `dist/assets/brand/share.jpg` (new), `dist/favicon.svg` (deleted);
+- `tests/responsive.test.js` (new test: icons, favicons and share image exist and are declared).
+
+Verified: 111 tests pass, no 404s on load, and the precache list resolves.
+
+Note: `og:image` uses the absolute URL `https://runes-tavern-game.dexelrod.chatgpt.site/assets/brand/share.jpg`. If the site ever moves domain, update it.
+
+## 15. New sounds and five new regulars (v77)
+
+**Sounds (owner-supplied, unmodified).**
+- `king-play.wav` → `kingPlay`. Plays whenever a King is played, on top of the normal card-placement sound.
+- `quickstep-play.wav` → `quickstepPlay`. Plays on the Quickstep "play again" event.
+- `tavern-loop-5.wav` joins the ambience rotation, which now has 5 loops.
+
+Both cues are on the sfx channel with `maxVoices:1` and a 220 ms cooldown, and use the same `effectDelay` as the other special-card cues.
+
+**Characters.** Roderic, Lio, Mograth, Harrow and Rusk come from the owner's second sprite sheet, `dist/assets/duel-opponents-2.webp`. It is the delivered PNG saved as WebP q90 with no edits.
+- Same 5×5 layout and column order as the first sheet: drink, pleased, idle, annoyed, surprised.
+- Each character has a Hebrew and English name and descriptor, an AI style, and in-character pleased, annoyed, surprised and drink lines in both languages.
+
+| Character | Archetype | AI style | House |
+|---|---|---|---|
+| Roderic / רודריק | mercenary | aggressive | red |
+| Lio / ליאו | bard | playful | yellow |
+| Mograth / מוגרת׳ | mercenary | aggressive | green |
+| Harrow / הארו | hunter | conservative | blue |
+| Rusk / ראסק | mysterious | balanced | yellow |
+
+- **Duel.** The select screen now lists 10 regulars plus Bramm:
+  - 4 columns on phones and 5 on tablet and desktop;
+  - the champion card is slimmer and attitude lines are hidden on laptop-height screens, so the whole screen fits without scrolling on desktop, laptop and tablet.
+- **Tavern Match.** The regulars pool grew from 5 to 10, and each evening still seats 3. The five new characters sit as their idle sprite, because no seated art exists for them yet. If seated webps are delivered later, add the keys to `TAVERN_FIGURES`.
+- **Hebrew gender.** Opponents carry `gender`, and `isFeminine()` uses a per-character map before the old archetype and name heuristic. This was needed because Harrow is a `hunter` and is male. Aila and Sela are `f`; all others are `m`.
+- **Sprite sheet selection.** `duelSpriteStyle()` emits `--sprite-sheet` for sheet b, and CSS uses `var(--sprite-sheet, url(sheet a))`.
+
+**Corrected sheet b (same pass).** The owner sent a corrected sheet: figures no longer overlap, but the grid is uneven (columns 239–275 px wide) and the sheet is still 1254 px.
+- I re-gridded it without retouching any figure. Each figure was cut out along the empty separator lines, specks under 2 % of the figure's size were dropped, and near-zero alpha haze was cleared.
+- Each figure was placed into a uniform 280 px cell (1400×1400): bottom-aligned on the same table line and centred on the head.
+- The earlier bottom fade on select portraits is removed; it's no longer needed.
+- The source PNG is kept in the conversation, not the repo.
+
+
+Files:
+- `dist/platform/audio.js`, `dist/app.js`, `dist/styles.css`, `dist/duel/opponents.js`, `dist/game-engine/match.js`, `dist/sw.js` (precaches sheet b), `dist/index.html`;
+- new assets: `dist/assets/duel-opponents-2.webp` and the 3 WAVs;
+- tests: `tests/audio.test.js`, `tests/engine.test.js` (new test for the second sheet and the 10-regular pool), `tests/localization.test.js` (every opponent has full English).
+
+Verified:
+- 112 tests and the smoke test pass;
+- duel rounds played against Harrow (Hebrew: "הארו ניצח") and Mograth (English) with no console errors;
+- Tavern evenings checked with mixed and all-new seatings on desktop, tablet and phone.
+
+## 16. Ron and Bran use feminine Hebrew (v77, owner request)
+
+Their art reads as female, so their Hebrew grammar now matches:
+- `gender:'f'` in `opponents.js` and in `CHARACTER_GENDER`;
+- descriptors: הפייטנית · שובבה ומשעשעת, and שכירת החרב · ישירה ותחרותית;
+- their own lines: "אני צריכה עוד משקה." and "את זה אני מחזירה לך.".
+
+All "won" and "keeps playing" texts follow automatically. Names (Hebrew and English) are unchanged; English needed no change.
+
+Bug fixed along the way: the shared tavern banter and archetype lines were masculine for every speaker, including Aila and Sela. `showQuip` now runs lines through `voicedLine()`, which turns אני צריך / אני חושב / אני מחזיר into feminine forms when the speaker is female.
