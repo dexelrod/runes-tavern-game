@@ -1,4 +1,4 @@
-const expressionAsset=name=>new URL(`../assets/bramm/expressions/bramm_${name}.png`,import.meta.url).href;
+const expressionAsset=name=>new URL(`../assets/bramm/expressions/bramm_${name}.webp`,import.meta.url).href;
 const voiceAsset=name=>new URL(`../assets/bramm/voice/${name}.mp3`,import.meta.url).href;
 
 const BRAMM_HE_CAPTIONS=Object.freeze({

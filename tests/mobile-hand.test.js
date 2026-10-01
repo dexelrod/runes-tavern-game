@@ -2,15 +2,21 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { calculateHandLayout } from '../dist/ui/hand-layout.js';
 
-for(const count of [1,2,5,8,10,12,15,20,25,30])test(`portrait hand keeps ${count} cards identifiable and reachable`,()=>{
-  const layout=calculateHandLayout({count,cardWidth:86,available:366,portrait:true});
-  if(count>1)assert.ok(layout.step>=96,'each portrait card must be fully visible');
-  assert.equal(layout.scale,1,'portrait cards must not collapse as the hand grows');
-  if(count>=5){assert.equal(layout.browse,true);assert.ok(layout.contentWidth>366,'large hand must overflow for browsing');}
-  else{assert.equal(layout.browse,false);assert.ok(layout.contentWidth<=390,'small hand should remain a compact fan');}
+// Phone portrait: 78px cards in a ~358px row.
+for(const count of [1,3,5,7,10,15,20,26])test(`phone hand of ${count} keeps every card identifiable and reachable`,()=>{
+  const cardWidth=78,available=358,layout=calculateHandLayout({count,cardWidth,available,compact:true});
+  assert.equal(layout.tilt,0,'compact hands stay flat so taps land where the eye expects');
+  if(count>1)assert.ok(layout.step>=29,`visible strip ${layout.step}px must keep the corner index readable and tappable`);
+  if(count<=10){assert.equal(layout.browse,false,'up to ten cards fit without scrolling');assert.ok(layout.contentWidth<=available+0.01);}
+  else{assert.equal(layout.browse,true,'larger hands scroll instead of shrinking cards');assert.ok(layout.contentWidth>available);}
 });
 
-test('desktop and tablet hands keep their existing measured fan behavior',()=>{
-  const layout=calculateHandLayout({count:15,cardWidth:102,available:850,portrait:false});
-  assert.equal(layout.browse,false);assert.equal(layout.scale,.93);assert.ok(layout.overlap<0);
+test('roomy hands fan gently and never overlap below the readable strip',()=>{
+  for(const count of [5,10,20,30]){
+    const layout=calculateHandLayout({count,cardWidth:130,available:1500,compact:false});
+    assert.ok(layout.step>=130*.42||layout.browse);
+    assert.ok(layout.tilt*((count-1)/2)<=7.5,'outermost card turns at most ~7°');
+  }
+  const small=calculateHandLayout({count:4,cardWidth:120,available:1400,compact:false});
+  assert.equal(small.overlap,12,'small hands are spaced, not overlapped');
 });

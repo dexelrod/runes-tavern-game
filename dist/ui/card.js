@@ -4,7 +4,7 @@ const EN_TYPE_LABEL={number:'',stop:'Shield',plus2:'Curse',reverse:'Turnabout',p
 const ART={
   [TYPES.STOP]:'shield.svg',
   [TYPES.PLUS2]:'curse-plus-2.svg',
-  [TYPES.REVERSE]:'riposte.svg',
+  [TYPES.REVERSE]:'turnabout.svg',
   [TYPES.PLUS]:'quickstep.svg',
   [TYPES.TAKI]:'crossbow.svg',
   [TYPES.CHANGE_COLOR]:'rune.svg',

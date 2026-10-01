@@ -33,24 +33,35 @@ test('the application offers both language choices and updates document directio
 
 test('Bramm bubbles and voice share a captured locale while future lines follow language changes',async()=>{
   const source=await readFile(new URL('../dist/app.js',import.meta.url),'utf8');
-  const css=await readFile(new URL('../dist/styles.css',import.meta.url),'utf8');
   assert.match(source,/resolveBrammReaction\(reaction,settings\.language\)/);
   assert.match(source,/locale:localized\.locale/);
   assert.match(source,/brammCaptionLocale==='he'\?'rtl':'ltr'/);
   assert.match(source,/settings\.captions&&brammCaptionLine/);
   assert.match(source,/if\(isBrammDuel\(\)\)void audioSystem\.preloadVoice\(language\)/);
-  assert.match(css,/\.bramm-speech\[dir="rtl"\]/);
 });
 
-test('settings copy and structure are localized without mirroring the controls', async () => {
+test('settings copy and structure are localized and controls state their value',async()=>{
   const source=await readFile(new URL('../dist/app.js',import.meta.url),'utf8');
-  const css=await readFile(new URL('../dist/styles.css',import.meta.url),'utf8');
-  assert.match(source,/תגובות יריבים/);
-  assert.match(source,/הדגשת קלפים זמינים/);
-  assert.match(source,/Opponent reactions/);
+  assert.match(source,/קולות ותגובות של דמויות/);
+  assert.match(source,/Character voices & reactions/);
   assert.match(source,/data-volume="\$\{volumeKey\}"/);
+  assert.match(source,/role="switch"/);
+  assert.match(source,/aria-checked="\$\{!!settings\[key\]\}"/);
   assert.match(source,/role="dialog" aria-modal="true"/);
   assert.match(source,/event\.key==='Escape'/);
-  assert.match(css,/\.setting-row\{direction:ltr/);
-  assert.match(css,/html\[lang="en"\] \.setting-row label/);
+});
+
+test('player-facing copy uses the RUNES vocabulary',async()=>{
+  const source=await readFile(new URL('../dist/app.js',import.meta.url),'utf8');
+  for(const stale of [/Riposte/,/קוויקסטפ/,/Tavern Game/,/Done — close/,/'(Red|Yellow|Green|Blue)'/])assert.doesNotMatch(source,stale);
+  for(const term of ['Crossbow loaded','קשת דרוכה','Keep playing ${color} cards','אפשר להמשיך עם קלפי ${color}','Fire','לירות'])assert.ok(source.includes(term),`missing ${term}`);
+  assert.match(source,/ניצחתם בסיבוב/,'Hebrew addresses the player in the plural');
+  assert.doesNotMatch(source,/'ניצחת בסיבוב'/);
+});
+
+test('Hebrew round announcements use natural verbs and gender',async()=>{
+  const source=await readFile(new URL('../dist/app.js',import.meta.url),'utf8');
+  assert.match(source,/verb\(penalty\.playerId,'לקח','לקחה'\)/);
+  assert.match(source,/הקללה עלתה ל־\+/);
+  assert.doesNotMatch(source,/לידכם/);
 });

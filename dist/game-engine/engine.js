@@ -8,7 +8,7 @@ export const topCard = state => state.discardPile.at(-1);
 export const effectiveTopCard = state => state.discardPile[state.effectiveTopIndex ?? state.discardPile.length - 1];
 const playerById = (state, id) => state.players.find(p => p.id === id);
 
-export function createInitialState({ playerCount = 3, humanPlayers = 1, seed = Date.now(), players } = {}) {
+export function createInitialState({ playerCount = 3, humanPlayers = 1, seed = Date.now(), players, firstPlayerIndex = 0 } = {}) {
   const count = Math.max(2, Math.min(10, playerCount));
   const roster = players || Array.from({length:count}, (_, i) => ({ id:`p${i}`, name:i < humanPlayers ? (i ? `שחקן ${i+1}` : 'אתם') : ['אדרן','מירא','טורן','ליבה','סיג','אלבה','האל','רונה','דריק'][i-1] || `אורח ${i}`, nameKey:i < humanPlayers ? null : ['adren','myra','toren','leva','sig','alva','hal','runa','derik'][i-1], kind:i < humanPlayers ? 'human' : 'ai' }));
   const deck = shuffled(createDeck(), seed); const dealt = roster.map(p => ({...p, hand:[]}));
@@ -16,7 +16,7 @@ export function createInitialState({ playerCount = 3, humanPlayers = 1, seed = D
   // The opening card is always a number. Command cards stay in the draw pile.
   const openingIndex = deck.findLastIndex(card => card.type === TYPES.NUMBER);
   const [opening] = deck.splice(openingIndex, 1);
-  return { version:6, seed, phase:'playing', players:dealt, drawPile:deck, discardPile:[opening], effectiveTopIndex:0, currentPlayerIndex:0, direction:1, activeColor:opening.color, activePenalty:null, taki:null, freePlay:false, mustPlayAgain:false, awaitingColor:null, winnerId:null, turn:1, log:[{type:'start', cardId:opening.id}] };
+  return { version:6, seed, phase:'playing', players:dealt, drawPile:deck, discardPile:[opening], effectiveTopIndex:0, currentPlayerIndex:((firstPlayerIndex % dealt.length) + dealt.length) % dealt.length, direction:1, activeColor:opening.color, activePenalty:null, taki:null, freePlay:false, mustPlayAgain:false, awaitingColor:null, winnerId:null, turn:1, log:[{type:'start', cardId:opening.id}] };
 }
 
 export function serializeState(state) { return JSON.stringify(state); }
@@ -146,6 +146,9 @@ function playCard(state, action) {
 
 function drawAction(state, action) {
   if (state.phase!=='playing'||state.awaitingColor||currentPlayer(state).id!==action.playerId) throw new Error('Cannot draw');
+  // A loaded Crossbow is resolved by firing it (END_TURN), never by drawing;
+  // drawing here would pass the turn while the sequence stayed loaded.
+  if (state.taki?.open) throw new Error('Cannot draw while a Crossbow is loaded');
   const p=currentPlayer(state);
   if (state.activePenalty?.kind==='plus2') { const amount=state.activePenalty.amount; drawCards(state,p.id,amount); state.activePenalty=null; state.log.push({type:'drawPenalty',playerId:p.id,amount}); }
   else { drawCards(state,p.id,1); state.log.push({type:'draw',playerId:p.id,amount:1}); }

@@ -1,221 +1,76 @@
-import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+// Structural guards for the rebuilt presentation layer. These assert the
+// layout contract (single stylesheet, shared variables, safe touch handling)
+// rather than pinning individual pixel values.
 import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync, existsSync } from 'node:fs';
+import vm from 'node:vm';
+const read=path=>readFileSync(new URL(`../dist/${path}`,import.meta.url),'utf8');
+const css=read('styles.css'),app=read('app.js'),html=read('index.html'),sw=read('sw.js');
 
-const css=await readFile(new URL('../dist/styles.css',import.meta.url),'utf8');
-const app=await readFile(new URL('../dist/app.js',import.meta.url),'utf8');
-const card=await readFile(new URL('../dist/ui/card.js',import.meta.url),'utf8');
-
-test('presentation defines compact-safe roomy portrait, landscape, wide, and short-window layouts',()=>{
-  for(const condition of ['(min-width:600px) and (orientation:portrait)','(min-width:760px) and (min-aspect-ratio:11/10)','(min-width:1180px) and (min-aspect-ratio:13/10)','(min-width:760px) and (max-height:590px)']){
-    assert.ok(css.includes(condition),`missing responsive condition ${condition}`);
-  }
-  assert.match(css,/\.app-shell\{max-width:none;container-type:inline-size/);
+test('one stylesheet, versioned identically in index.html and the service worker',()=>{
+  const version=html.match(/styles\.css\?v=(\d+)/)?.[1];
+  assert.ok(version,'styles.css must be versioned');
+  assert.match(html,new RegExp(`app\\.js\\?v=${version}`));
+  assert.match(sw,new RegExp(`ASSET_VERSION = '${version}'`));
+  assert.match(sw,new RegExp(`CACHE = 'runes-v${version}'`));
+  assert.doesNotMatch(html,/audio\.css/);
+  assert.equal((sw.match(/addEventListener\('install'/g)||[]).length,1,'a single install handler');
 });
 
-test('hand spacing is measured from the live container and recalculated after resize',()=>{
-  assert.match(app,/function layoutHand\(\)/);
-  assert.match(app,/hand\.clientWidth/);
-  assert.match(app,/cards\[0\]\.offsetWidth/);
-  assert.doesNotMatch(app,/card\.scrollIntoView/);
-  assert.match(app,/window\.addEventListener\('resize'/);
-  assert.doesNotMatch(card,/Math\.min\(432/);
+test('every asset the service worker precaches exists',()=>{
+  const context={self:{addEventListener(){},location:{origin:''}},caches:{},fetch(){}};vm.createContext(context);
+  vm.runInContext(`${sw};globalThis.__CORE=CORE;`,context);
+  assert.ok(context.__CORE.length>40);
+  for(const path of context.__CORE){const clean=path.replace(/\?.*$/,'').replace(/^\.\//,'');if(!clean)continue;assert.ok(existsSync(new URL(`../dist/${clean}`,import.meta.url)),`missing ${clean}`);}
 });
 
-test('QA interaction safeguards keep the table fixed and game state visible',()=>{
+test('layout is driven by shared table variables, not per-screen magic offsets',()=>{
+  for(const variable of ['--rim','--fig-h','--seat-h','--card-w','--pile-w','--hand-lift'])assert.match(css,new RegExp(`${variable}:`),variable);
+  assert.match(css,/\.table-body\{[^}]*top:var\(--rim/);
+  assert.match(css,/@media \(orientation:landscape\) and \(max-height:500px\)/,'short landscape phones have their own layout');
+  assert.match(css,/@media \(min-width:600px\) and \(orientation:portrait\)/,'tablet portrait has its own layout');
+  assert.ok((css.match(/@media/g)||[]).length<=14,'breakpoints stay few and named');
+  assert.ok(css.length<80000,'stylesheet stays a single readable system');
+});
+
+test('cards scale as one object and stay opaque when unplayable',()=>{
+  assert.match(css,/\.card\{--cw:102px;[^}]*font-size:calc\(var\(--cw\) \/ 6\.375\)/);
+  const quiet=css.match(/\.card\.quiet\{([^}]*)\}/)[1];
+  assert.doesNotMatch(quiet,/opacity/,'unplayable cards must not ghost the card underneath');
+});
+
+test('hand gestures: native horizontal scrolling, deliberate upward play, stable selection',()=>{
+  assert.match(css,/\.hand \.card\{[^}]*touch-action:pan-x/);
+  assert.doesNotMatch(css,/\.selected\+\.card/,'selecting a card must not shift its neighbours');
+  assert.match(app,/if\(dy>-12\|\|Math\.abs\(dx\)>Math\.abs\(dy\)\)return;/);
+  assert.match(app,/hand-frame/);
+});
+
+test('figures sit behind the table rim and seats are one shared component',()=>{
+  assert.match(app,/function seatHTML\(player,position\)/);
+  assert.doesNotMatch(app,/function quickOpponentHTML|function duelOpponentHTML|function opponentHTML/);
+  assert.match(css,/\.seat-figure\{[^}]*overflow:hidden/);
+  assert.match(app,/-seated\.webp/);
+});
+
+test('results stay on the table with a quick continue control',()=>{
+  assert.match(app,/class="result-slip/);
+  assert.match(app,/data-next/);
+  assert.match(app,/animateCoinsToWinner/);
+  assert.doesNotMatch(app,/class="result-wrap/);
+});
+
+test('pause stops the table and is a short action menu',()=>{
   assert.match(app,/const isPaused=\(\)=>view==='game'&&\(Boolean\(sheet\)\|\|document\.hidden\)/);
-  assert.match(app,/if\(isPaused\(\)\|\|!state/);
-  assert.match(app,/document\.addEventListener\('visibilitychange'/);
-  assert.match(app,/function actionStripHTML\(\)/);
-  assert.doesNotMatch(app,/No match — draw a card|אין התאמה — משכו קלף/);
-  assert.match(app,/drawSuggested=isHumanTurn&&!state\.taki\?\.open&&legal\.size===0/);
-  assert.match(app,/drawSuggested\?'draw-suggested':''/);
-  assert.match(css,/\.draw-pile\.draw-suggested\{animation:draw-warm-glow/);
-  assert.match(app,/Free play — any card/);
-  assert.match(app,/has one card left/);
-  assert.doesNotMatch(app,/card\.scrollIntoView/);
-  assert.match(css,/\.card\.quiet[^}]*opacity:1!important/);
-  assert.match(css,/\.hand-overflow\.visible\{opacity:1\}/);
-  assert.match(css,/@media \(max-height:500px\) and \(orientation:landscape\)/);
+  assert.match(app,/if\(isPaused\(\)\|\|!state\|\|session\.phase!=='round'\|\|state\.phase==='finished'\)return;/);
+  const pause=app.slice(app.indexOf('function pauseHTML()'),app.indexOf('function rulesHTML()'));
+  assert.match(pause,/data-close-sheet/);assert.match(pause,/data-pause-nav="rules"/);assert.match(pause,/data-pause-nav="settings"/);assert.match(pause,/data-home/);
+  assert.doesNotMatch(pause,/data-toggle|data-volume/,'pause is not settings with another title');
 });
 
-test('the live hand always renders every card and compresses them to fit',()=>{
-  assert.match(app,/shown=human\.hand,top=topCard\(state\)/);
-  assert.doesNotMatch(app,/human\.hand\.slice\(0,10\)/);
-  assert.doesNotMatch(app,/data-show-all/);
-  assert.match(app,/calculateHandLayout\(\{count,cardWidth,available,portrait\}\)/);
-});
-
-test('card travel resolves source and destination anchors from the live DOM',()=>{
-  assert.match(app,/source\.getBoundingClientRect\(\),to=destination\.getBoundingClientRect\(\)/);
-  assert.match(app,/data-draw-anchor/);
-  assert.match(app,/data-discard-anchor/);
-  assert.match(app,/data-hand-anchor/);
-  assert.match(app,/root\.querySelector\(`\.hand \[data-card-id="\$\{action\.cardId\}"\]`\)/);
-});
-
-test('mobile cards support a velocity-aware upward flick',()=>{
-  assert.match(app,/upwardFlick=dy<-22&&velocity>\.28/);
-  assert.match(app,/card\.onpointercancel=/);
-  assert.match(css,/\.hand \.card\{touch-action:none\}/);
-});
-
-test('scene uses independent world, seat and viewport coordinate layers',()=>{
-  for(const layer of ['tavern-environment','table-body','table-surface','table-engraving','scene-lighting','environment-props','seat-layer','gameplay-anchors','viewport-space']){
-    assert.ok(app.includes(layer)||css.includes(layer),`missing scene layer ${layer}`);
-  }
-  for(const space of ['data-space="world"','data-space="seat"','data-space="viewport"'])assert.ok(app.includes(space),`missing ${space}`);
-  assert.match(css,/tavern-environment-v37\.jpg/);
-  assert.match(css,/table-wood-v37\.jpg/);
-  assert.doesNotMatch(css,/elder-tavern-table\.jpg/);
-});
-
-test('decorative opponent layer cannot intercept draw pile taps',()=>{
-  assert.match(css,/\.seat-layer\{z-index:20;pointer-events:none\}/);
-  assert.match(app,/<button class="pile draw-pile [^`]*data-draw data-draw-anchor/);
-});
-
-test('landscape camera crops the table as furniture instead of framing a board',()=>{
-  assert.match(css,/camera-over-furniture composition/);
-  assert.match(css,/\.table-body\{\s*border:0;/);
-  assert.match(css,/--table-left:-12%;--table-right:-12%;--table-top:18%;--table-bottom:-72%/);
-  assert.match(css,/\.scene-home\{--table-left:-10%;--table-right:-10%;--table-top:32%;--table-bottom:-58%\}/);
-});
-
-test('duel character is composited behind a physical far rim',()=>{
-  assert.match(app,/class="duel-depth-rim"/);
-  assert.match(css,/\.duel-depth-rim\{/);
-  assert.match(css,/\.duel-presence \.duel-sprite\{[\s\S]*mask-image:radial-gradient/);
-});
-
-test('Bramm keeps one fixed single-image stage across game renders',()=>{
-  assert.match(app,/data-bramm-stage-placeholder/);
-  assert.match(app,/placeholder\.replaceWith\(brammStage\)/);
-  assert.match(app,/function syncBrammStage\(stage\)/);
-  assert.match(css,/\.bramm-art-stage \.bramm-art-current/);
-  assert.doesNotMatch(app,/bramm-art-previous/);
-  assert.doesNotMatch(css,/bramm-swap-in/);
-  assert.match(css,/\.opponent-bramm \.bramm-art-stage\{[^}]*overflow:hidden;[^}]*clip-path:inset\(0 0 17% 0\)/);
-  assert.match(css,/\.opponent-bramm \.duel-depth-rim\{z-index:6/);
-});
-
-test('draw and discard piles rely on their physical forms without redundant labels',()=>{
-  assert.doesNotMatch(app,/<span class="pile-name">/);
-  assert.doesNotMatch(app,/<span class="deck-count"><small>/);
-  assert.match(app,/<span class="deck-count"><bdi>\$\{state\.drawPile\.length\}<\/bdi><\/span>/);
-});
-
-test('compact art direction stays layered, deterministic, and safe-area aware',()=>{
-  for(const variable of ['--scene-density','--engraving-opacity','--ambient-light-strength','--seat-spacing','--prop-scale','--mobile-hand-zone'])assert.ok(css.includes(variable),`missing ${variable}`);
-  assert.match(css,/@media \(max-width:599px\)/);
-  assert.match(css,/height:100dvh/);
-  assert.match(css,/min-height:100svh/);
-  assert.match(css,/env\(safe-area-inset-bottom\)/);
-  assert.match(app,/class="seat-object prop-\$\{index\+1\} object-\$\{item\}"/);
-  assert.match(app,/const seatPropStories=Object\.freeze/);
-  assert.match(css,/\.seat-props \.seat-object/);
-});
-
-test('finish pass shares one physical depth language without restoring turn narration',()=>{
-  for(const token of ['--physical-shadow-card','--physical-shadow-raised','--physical-shadow-prop','--physical-shadow-plaque']){
-    assert.ok(css.includes(token),`missing physical depth token ${token}`);
-  }
-  assert.match(css,/\.opponent\.active:after,\.duel-opponent\.active:after\{content:none\}/);
-  assert.match(css,/\.hand \.card\.selected\{[^}]*scale\(1\.015\)/);
-  assert.match(app,/cardBackStackHTML\('resume-game-token'\)/);
-});
-
-test('resume play indicator uses an optically centered drawn triangle',()=>{
-  assert.match(css,/\.resume-marker \.resume-seal\{[^}]*position:relative;[^}]*font-size:0/);
-  assert.match(css,/\.resume-marker \.resume-seal:after\{[^}]*left:50%;top:50%;[^}]*translate\(-42%,-50%\)/);
-});
-
-test('card corner artwork is unframed and number corners use SVG glyphs',()=>{
-  assert.match(css,/\.corner\{[^}]*border:0;[^}]*background:none;[^}]*box-shadow:none/);
-  assert.match(css,/\.number-corner-asset\{width:22px;height:22px\}/);
-  assert.doesNotMatch(css,/\.corner-short\{/);
-  assert.match(card,/number-\$\{card\.value\}\.svg`,'corner-asset number-corner-asset'/);
-});
-
-test('environmental refinement uses real cards and removes the old generic mug and coins',()=>{
-  assert.match(app,/cardBackStackHTML\('mode-token menu-card-stack quick-card-stack'\)/);
-  assert.match(app,/cardBackStackHTML\('abandoned-cards'\)/);
-  assert.match(css,/\.card\.card-back\{background:var\(--oxblood\)/);
-  assert.doesNotMatch(app,/stylized_beer_mug|world-mug|world-coins|coin-prop/);
-  assert.doesNotMatch(app,/<model-viewer/);
-  assert.match(app,/\.\/assets\/props\//);
-  assert.match(css,/radial-gradient\(circle at 8px 50%/);
-});
-
-test('mode-specific framing refines mobile and portrait tablet compositions',()=>{
-  assert.match(app,/session\.mode==='tavern'\?'tavern-table'/);
-  assert.match(css,/\.tavern-table \.center\{scale:\.93/);
-  assert.match(css,/@media \(min-width:600px\) and \(max-width:899px\) and \(orientation:portrait\)/);
-  assert.match(css,/\.quick-opponent \.physical-fan\{translate:-50% 0/);
-});
-
-test('refinement pass communicates state through table objects and motion',()=>{
-  assert.match(app,/function colorRuneHTML/);
-  assert.match(app,/active-color-rune/);
-  assert.match(app,/gem-rune/);
-  assert.match(app,/trajectory==='draw'\?drawFrames:playFrames/);
-  assert.match(app,/classList\.add\('receiving-card'\)/);
-  assert.doesNotMatch(app,/class="extra-turn-token"/);
-  assert.match(app,/\{browse,overlap,spread,lift,scale\}=calculateHandLayout/);
-  assert.match(app,/resultScoreHTML\(winner\)/);
-  assert.match(css,/\.result-wrap\.table-result\{inset:0/);
-  assert.match(css,/\.waiting \.hand\{filter:saturate\(\.94\) brightness\(\.96\);transform:none\}/);
-});
-
-test('direction engraving stays full-size, quiet at rest, and surges only for Reverse',()=>{
-  assert.match(css,/v47: quiet direction engraving at rest/);
-  assert.match(css,/\.direction-engraving\{[\s\S]*?opacity:\.34;[\s\S]*?filter:saturate\(\.58\) blur\(\.12px\)/);
-  assert.match(css,/\.direction-engraving\.lit\{[\s\S]*?opacity:\.96;[\s\S]*?drop-shadow/);
-  assert.match(css,/@keyframes direction-surge/);
-  assert.doesNotMatch(css,/v47:[\s\S]*?\.direction-engraving\{[^}]*width:/);
-});
-
-test('seat props use a deterministic curated story with one to three objects',()=>{
-  for(const theme of ['casual','practical','gambler','tidy','mystical','rustic'])assert.ok(app.includes(`theme:'${theme}'`));
-  for(const object of ['woodenTankard','pewterGoblet','scatteredCoins','dice','snack','pouch','parchment','rune','darkBottle','cork'])assert.ok(app.includes(`'${object}'`));
-  assert.match(app,/data-prop-count="\$\{items\.length\}"/);
-  assert.match(app,/items\.map\(seatPropItemHTML\)/);
-  assert.match(app,/\['duel','tavern'\]\.includes\(session\?\.mode\)\?fullItems\.slice\(0,2\):fullItems/);
-  assert.match(app,/session\?\.seed/);
-  assert.doesNotMatch(app,/Math\.random\(\).*seatProp/);
-  assert.match(css,/Curated seat stories: supplied PNG assets only/);
-  assert.match(css,/\.seat-props \.prop-3\{display:none\}/);
-  assert.match(css,/\.tavern-table \.seat-props \.prop-2,\.tavern-table \.seat-props \.prop-3\{display:none\}/);
-  assert.match(css,/\.duel-opponent \.duel-props \.prop-2,\.duel-opponent \.duel-props \.prop-3\{display:none\}/);
-  assert.match(app,/propsHTML\(opponent,`duel-props duel-\$\{opponent\.id\}`\)/);
-});
-
-test('Tavern props emphasize one signature and one subordinate seat-owned object',()=>{
-  assert.match(css,/v51: Tavern props read as seat-owned signatures/);
-  assert.match(css,/\.tavern-table \.seat-props\{width:122px;height:94px;scale:1\.18/);
-  assert.match(css,/\.tavern-table \.seat-props \.prop-1\{width:78px;height:88px/);
-  assert.match(css,/\.tavern-table \.seat-props \.prop-2\{width:54px;height:43px/);
-  assert.match(css,/\.tavern-table \.seat-props \.prop-2\{display:none\}/);
-});
-
-test('mobile polish keeps the table calm while improving seat identity and scanability',()=>{
-  assert.match(app,/archetype-\$\{archetype\}/);
-  assert.match(app,/data-archetype="\$\{archetype\}"/);
-  assert.match(css,/v48: mobile polish without reopening the established table composition/);
-  assert.match(css,/\.direction-engraving\{opacity:\.27;filter:saturate\(\.5\) blur\(\.18px\)\}/);
-  assert.match(css,/\.turn-whisper span\{min-width:92px;padding:4px 13px 5px;font-size:13px/);
-  for(const archetype of ['hunter','bard','mercenary','scholar','mysterious'])assert.match(css,new RegExp(`archetype-${archetype} \\.opponent-fan`));
-  assert.match(css,/\.table-shell:not\(\.duel-table\) \.score-slate\{[^}]*width:98px/);
-  assert.match(css,/\.deck-count:after\{content:"";[^}]*height:10px/);
-  assert.match(css,/\.elder-home \.duel-invite\{width:94%;min-height:62px/);
-  assert.match(css,/\.elder-home \.table-tools button\{min-width:82px;min-height:44px/);
-});
-
-test('opponent turn motion is a slow micro-tilt and central play state wins overlaps',()=>{
-  assert.match(css,/\.gameplay-anchors\{z-index:24\}/);
-  assert.match(css,/animation:opponent-presence-sway 3\.8s ease-in-out infinite alternate/);
-  assert.match(css,/@keyframes opponent-presence-sway\{from\{rotate:-\.65deg\}to\{rotate:\.65deg\}\}/);
-  assert.doesNotMatch(css,/@keyframes opponent-presence-sway[^}]*transform:/);
-  assert.match(css,/\.tavern-table \.seat-right \.opponent-fan,[^{]*\{translate:16px 0\}/);
-  assert.match(css,/\.taki-panel\{position:relative;z-index:36\}/);
+test('entry animations only run when content is new, so re-renders never flicker',()=>{
+  assert.doesNotMatch(css,/\.action-strip,\.table-caption\{[^}]*animation/);
+  assert.match(css,/\.speech\.enter\{animation/);
+  assert.match(css,/\.result-slip\.enter\{animation/);
 });

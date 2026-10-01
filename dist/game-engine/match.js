@@ -7,27 +7,18 @@ export const TAVERN_ROSTER=Object.freeze([
   {id:'p2',name:'רון',nameKey:'ron',kind:'ai',archetype:'bard',house:'red'},
   {id:'p3',name:'בראן',nameKey:'bran',kind:'ai',archetype:'mercenary',house:'blue'}
 ]);
-export const NPC_EASTER_EGGS=Object.freeze(['לוסיאן','איניגו','לידיה','וירן','סורן','ויילין']);
-
-function tavernGuests(roster,seed){
-  return roster.map((player,index)=>{
-    if(player.kind!=='ai')return {...player};
-    const roll=Math.imul(((seed>>>0)+index*0x9e3779b9)>>>0,0x85ebca6b)>>>0;
-    return roll%31===0?{...player,name:NPC_EASTER_EGGS[Math.floor(roll/31)%NPC_EASTER_EGGS.length],nameKey:null}:{...player};
-  });
-}
 
 const freshRoster=roster=>roster.map(({hand,...player})=>({...player}));
 const scoreMap=roster=>Object.fromEntries(roster.map(p=>[p.id,0]));
 
 export function createTavernMatch({seed=Date.now(),roster=TAVERN_ROSTER}={}){
-  const players=freshRoster(tavernGuests(roster,seed));
+  const players=freshRoster(roster);
   return {version:MATCH_VERSION,mode:'tavern',phase:'round',round:1,totalRounds:5,suddenDeath:false,seed,scores:scoreMap(players),roster:players,results:[],championId:null,game:createInitialState({playerCount:4,players,seed})};
 }
 
 export function createQuickSession({playerCount=3,seed=Date.now()}={}){
   const supportedCount=Math.max(2,Math.min(6,playerCount));
-  return {version:MATCH_VERSION,mode:'quick',phase:'round',round:1,totalRounds:1,suddenDeath:false,seed,scores:{},roster:null,results:[],championId:null,game:createInitialState({playerCount:supportedCount,seed})};
+  return {version:MATCH_VERSION,mode:'quick',phase:'round',round:1,totalRounds:1,suddenDeath:false,seed,scores:{},roster:null,results:[],championId:null,game:createInitialState({playerCount:supportedCount,seed,firstPlayerIndex:Math.abs(Math.floor(seed/7))%supportedCount})};
 }
 
 export function createDuelSession({seed=Date.now(),opponent}={}){
@@ -53,10 +44,14 @@ export function finishRound(input){
   return match;
 }
 
+// The opening lead rotates around the table each round (and alternates in a
+// Duel) so the human does not always move first.
+export function roundLeader(match){return match.results.length%Math.max(1,match.roster?.length||1);}
+
 export function startNextRound(input){
   const match=structuredClone(input); if(!['tavern','duel'].includes(match.mode)||match.phase!=='betweenRounds')throw new Error('No next round');
   if(!match.suddenDeath)match.round++;
-  match.phase='round';match.game=createInitialState({playerCount:match.roster.length,players:freshRoster(match.roster),seed:match.seed+match.results.length*9973});return match;
+  match.phase='round';match.game=createInitialState({playerCount:match.roster.length,players:freshRoster(match.roster),seed:match.seed+match.results.length*9973,firstPlayerIndex:roundLeader(match)});return match;
 }
 
 export function standings(match){return match.roster.map(player=>({...player,score:match.scores[player.id]||0})).toSorted((a,b)=>b.score-a.score||a.name.localeCompare(b.name,'he'));}
