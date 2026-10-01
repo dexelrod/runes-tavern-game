@@ -207,8 +207,11 @@
 .hand .card{transform:translateY(var(--rise)) rotate(var(--tilt)) scale(var(--hand-scale,1))}
 .hand.receiving-card{animation:hand-open .58s ease}
 .draw-pile.drawing{animation:deck-release .42s ease}
+.draw-pile.draw-suggested{animation:draw-warm-glow 1.8s ease-in-out infinite}
 @keyframes hand-open{45%{filter:drop-shadow(0 0 10px #e1b75c88);transform:translateY(-3px)}}
 @keyframes deck-release{35%{transform:translateY(-5px) rotate(-1deg);filter:brightness(1.14) drop-shadow(0 13px 9px #000a)}}
+@keyframes draw-warm-glow{0%,100%{filter:drop-shadow(0 10px 7px #0009) drop-shadow(0 0 3px #e4933b55)}50%{filter:brightness(1.06) drop-shadow(0 10px 7px #0009) drop-shadow(0 0 13px #f0a345aa)}}
+.reduced-motion .draw-pile.draw-suggested{animation:none;filter:brightness(1.04) drop-shadow(0 10px 7px #0009) drop-shadow(0 0 9px #e9a04b88)}
 .gem{width:70px;height:70px;border:0;background:transparent;box-shadow:none}
 .gem:before{content:"";position:absolute;inset:7px;border:2px solid #c7a15d;background:#2a1710;transform:rotate(45deg);box-shadow:0 5px 12px #000,inset 0 0 12px currentColor}
 .gem i{inset:13px;z-index:1;display:grid;place-items:center;background:color-mix(in srgb,currentColor 72%,#21130d);transform:rotate(45deg);box-shadow:inset 4px 4px #fff2}

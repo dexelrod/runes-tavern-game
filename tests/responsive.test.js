@@ -27,7 +27,10 @@ test('QA interaction safeguards keep the table fixed and game state visible',()=
   assert.match(app,/if\(isPaused\(\)\|\|!state/);
   assert.match(app,/document\.addEventListener\('visibilitychange'/);
   assert.match(app,/function actionStripHTML\(\)/);
-  assert.match(app,/No match — draw a card/);
+  assert.doesNotMatch(app,/No match — draw a card|אין התאמה — משכו קלף/);
+  assert.match(app,/drawSuggested=isHumanTurn&&!state\.taki\?\.open&&legal\.size===0/);
+  assert.match(app,/drawSuggested\?'draw-suggested':''/);
+  assert.match(css,/\.draw-pile\.draw-suggested\{animation:draw-warm-glow/);
   assert.match(app,/Free play — any card/);
   assert.match(app,/has one card left/);
   assert.doesNotMatch(app,/card\.scrollIntoView/);
