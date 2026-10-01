@@ -1516,3 +1516,83 @@ html[lang="en"] .setting-row label{direction:ltr;text-align:left}
 .duel-select .regulars{width:100%;max-width:980px}
 .rules{width:min(720px,94vw)}.rule-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:16px 0}.rule-grid section{display:grid;grid-template-columns:52px 1fr;align-items:center;gap:9px;padding:8px;border:1px solid #825d342e;border-radius:3px;background:#6b47260d}.rule-grid img{width:48px;height:58px;object-fit:contain;filter:sepia(.2) contrast(1.1)}.rule-grid h3{margin:0;padding:0;border:0;font-size:16px}.rule-grid p{margin:3px 0 0;font-size:12px;line-height:1.3}.rules details{margin:12px 0 16px;padding:10px;border-block:1px solid #8b63373d}.rules summary{cursor:pointer;font-weight:700}.rules details p{font-size:13px;line-height:1.5}
 @media(max-width:520px){.rule-grid{grid-template-columns:1fr}.rule-grid section{grid-template-columns:44px 1fr;padding:6px}.rule-grid img{width:41px;height:49px}.rule-grid h3{font-size:14px}.rule-grid p{font-size:11px}}
+
+/* Responsive seat composition: portraits above, hands below, props outside. */
+:root{--seat-art-width:clamp(130px,14vw,205px);--seat-art-height:calc(var(--seat-art-width)*.78)}
+.tavern-table .opponent{isolation:isolate}
+.tavern-table .tavern-presence{display:block;z-index:1;bottom:calc(100% + 8px);width:var(--seat-art-width);height:var(--seat-art-height);rotate:0}
+.tavern-table .seat-marker{z-index:3;height:40px;grid-template-rows:21px 14px}
+.tavern-table .seat-marker>span{font-size:14px}
+.tavern-table .seat-marker>small{font-size:12px}
+.tavern-table .opponent-fan{z-index:2;margin-top:12px}
+.tavern-table .seat-props{position:absolute;z-index:1;pointer-events:none;top:78px}
+.tavern-table .seat-left .seat-props,.tavern-table .seat-far-left .seat-props{left:0;right:auto}
+.tavern-table .seat-right .seat-props,.tavern-table .seat-far-right .seat-props{right:0;left:auto}
+.tavern-table .seat-top .seat-props{left:calc(100% + 18px);top:54px}
+.tavern-table .seat-top{top:clamp(104px,16vh,150px)}
+.quick-opponent .seat-props{left:12%;right:auto;top:calc(100% + 28px);scale:.85;pointer-events:none}
+.card.quiet,.hand[data-layout="browse"] .card.quiet,.hand.taki-active .card.quiet{filter:saturate(.83) brightness(.83)}
+.hand .card.selected+.card{margin-left:calc(var(--overlap) + 18px)}
+.direction-engraving{opacity:.42;filter:saturate(.7)}
+.direction-engraving.lit{opacity:.94}
+.deck-count{font-size:14px;min-width:34px;border-radius:3px;background:linear-gradient(#aa8146,#79552e);border-color:#4a2c18;color:#ffebba}
+.draw-pile{rotate:-2deg}
+.round-marker{background:#21170eb0;border:0;border-bottom:1px solid #a17b43;font-size:14px;box-shadow:none}
+.rule-grid p,.rules details p{font-size:14px;line-height:1.5}
+.rule-grid img{filter:none}
+.rule-grid section{padding:12px;gap:12px}
+.table-tools button{min-height:48px;min-width:88px;padding:8px 12px}
+.table-tools span{font-size:14px}
+.duel-select .regular{overflow:hidden;border:1px solid #8a663b;transition:transform .18s,border-color .18s,filter .18s}
+.duel-select .regular-copy{background:linear-gradient(#21170fe8,#17100bf5);padding:10px 6px;gap:5px}
+.duel-select .regular-copy>small{font-size:14px;line-height:1.3}
+.duel-select .regular-portrait{overflow:hidden}
+.duel-select .opponent-bramm .regular-portrait .bramm-art-stage{height:100%;transform:scale(1.65);transform-origin:50% 24%}
+.duel-select .regular.chosen{border-color:#edc77b;box-shadow:0 0 0 2px #d4aa6266}
+.regular:focus-visible,.mode-plaque:focus-visible,.duel-invite:focus-visible,.table-tools button:focus-visible{outline:3px solid #edc77b;outline-offset:4px}
+@media(hover:hover){.duel-select .regular:hover{transform:translateY(-5px);filter:brightness(1.1);border-color:#edc77b}}
+[dir="rtl"] .rune-menu.back{left:auto;right:12px;transform:scaleX(-1)}
+@media(min-width:900px) and (min-aspect-ratio:11/10){
+ .elder-home .table-choices{margin-top:clamp(30px,6vh,70px);margin-bottom:24px;align-content:center}
+ .elder-home .primary-modes .mode-plaque,.elder-home .duel-invite{min-height:200px;grid-template-rows:100px auto;padding:16px;border:1px solid #95713f;background:linear-gradient(145deg,#171d19ed,#292119e9)}
+ .elder-home .duel-invite{grid-template-columns:1fr;width:100%}
+ .elder-home .duel-invite .duel-cameo{width:92px;height:92px;border-radius:50%;overflow:hidden;background:#20150b}
+ .elder-home .duel-invite>span:nth-child(2){border:0;background:none}
+ .elder-home .mode-copy strong,.elder-home .duel-invite strong{font-size:24px}
+ .elder-home .mode-copy small,.elder-home .duel-invite small{font-size:14px}
+ .table-shell .center,.table-shell .direction-engraving{top:65%}
+}
+@media(max-width:599px){
+ :root{--seat-art-width:104px;--seat-art-height:80px}
+ .tavern-table .opponent{width:104px;scale:1}
+ .tavern-table .seat-top{top:88px}
+ .tavern-table .seat-left{left:8px;top:48%}
+ .tavern-table .seat-right{right:8px;top:48%}
+ .tavern-table .seat-far-left{left:8px;top:27%}
+ .tavern-table .seat-far-right{right:8px;top:27%}
+ .tavern-table .tavern-presence{display:block;bottom:calc(100% + 5px);left:50%}
+ .tavern-table .opponent-fan{height:40px;margin-top:9px;transform:none}
+ .tavern-table .opponent-fan>i{width:24px;height:34px}
+ .tavern-table .seat-marker>small{display:none}
+ .tavern-table .seat-marker{height:32px;grid-template-rows:1fr}
+ .tavern-table .seat-score{right:-14px;top:22px}
+ .tavern-table .seat-props{top:72px;width:55px;height:46px;scale:.8}
+ .tavern-table .seat-top .seat-props{left:calc(100% + 6px);top:48px}
+ .tavern-table .seat-props .prop-1{width:48px;height:50px}
+ .tavern-table .center,.tavern-table .direction-engraving{top:72%;scale:.8}
+ .elder-home .table-choices{margin-top:clamp(28px,6dvh,56px)}
+ .elder-home .mode-copy small,.elder-home .duel-invite small{font-size:13px}
+ .elder-home .duel-invite{min-height:80px}
+ .duel-select .regular{grid-template-rows:114px auto;min-height:190px}
+ .duel-select .regular-copy>small{font-size:12px}
+ .rule-grid{grid-template-columns:1fr}
+ .turn-whisper span{font-size:14px}
+ .table-shell .rune-menu{width:44px;height:44px}
+ .round-marker{font-size:12px}
+}
+@media(max-height:500px) and (orientation:landscape){
+ :root{--seat-art-width:90px;--seat-art-height:65px}
+ .tavern-table .seat-top{top:48px}
+ .elder-home .table-choices{margin-top:8px}
+ .elder-home .primary-modes .mode-plaque,.elder-home .duel-invite{min-height:90px}
+}
