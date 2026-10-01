@@ -166,7 +166,7 @@ export function createBrammController({random=Math.random,now=()=>Date.now(),ini
   }
   return Object.freeze({
     react:pick,
-    observe(trigger){eventsSinceSpoken++;const visual={player_good_move:'08_dismissive_lucky',player_good_move_callback:'09_irritated_lucky',bramm_good_move:'10_satisfied_good_move',player_draw:'12_mock_generous',bramm_draw:'14_blame_the_deck',bramm_draw_callback:'13_dont_say_anything',setback:'15_defensive_excuse',player_neutral_move:'06_mocking_disbelief',slow_player:'05_impatient',one_card_persist:'20_one_card_panic'}[trigger];return visual?{expression:visual,duration:1200}:null;},
+    observe(trigger,context={}){eventsSinceSpoken++;if(trigger==='bramm_draw'&&(context.amount||0)>=4)return {expression:'32_angry_at_spectators',duration:1800};const visual={player_good_move:'08_dismissive_lucky',player_good_move_callback:'09_irritated_lucky',bramm_good_move:'10_satisfied_good_move',player_draw:'12_mock_generous',bramm_draw:'14_blame_the_deck',bramm_draw_callback:'13_dont_say_anything',setback:'15_defensive_excuse',player_neutral_move:'06_mocking_disbelief',slow_player:'05_impatient',one_card_persist:'20_one_card_panic'}[trigger];return visual?{expression:visual,duration:1200}:null;},
     beginRound(){nonCriticalThisRound=0;eventsSinceSpoken=0;},
     force(id){const reaction=byId[id];if(!reaction)return null;remember(reaction);return {...reaction,state};},
     setState(next){if(BRAMM_STATES.includes(next))state=next;return state;},

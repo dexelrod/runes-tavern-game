@@ -156,3 +156,36 @@ The Duel entry is now labelled **Duel / דו־קרב**, with Bramm as its face (
 
 - `npm test`: engine (new: Crossbow draw guard, leader rotation, Quick leader, regulars keep portraits), Bramm (WebP), localisation (rewritten for current copy), mobile hand (rewritten), responsive (rewritten as structural guards: versions, precache, layout variables, opaque cards, gestures, seats, results, pause, no re-render flicker).
 - New optional `npm run smoke` (`tests/e2e/smoke.mjs`, Playwright). It plays real rounds and checks: pause freezes the table; the table fits after resizing across 5 viewports; reload resumes the exact turn; Tavern scores add up and persist; Bramm round completes; no console errors. It isn't part of `npm test` because it needs a browser.
+
+## 12. Follow-up (owner request, same pass): unused assets, Bramm intro, table-message setting
+
+**Tavern Match rotates its regulars.** Kesh's and Sela's seated portraits shipped but were never shown, because Tavern always seated Aila, Ron and Bran. → Each evening seats 3 of the 5 regulars (Aila, Ron, Bran, Sela, Kesh). The choice is seeded from the match seed, so a saved match always restores the same table. Kesh (`mysterious`) gets tavern quips in Hebrew and English; until now that archetype had none. · `dist/game-engine/match.js` (`TAVERN_REGULARS`, `tavernGuestsFor`), `dist/app.js` (dialogue) · publish: yes · engine test: three distinct regulars, all five appear across seeds, and the same seed gives the same table.
+
+**Bramm's four unused expressions are wired in.**
+- `36_mug_stops_midair`: the instant you reach your last card, a 0.7 s beat before his "…No." line.
+- `34_drinking_relaxed` / `35_drinking_nervous`: his idle moments when he isn't taunting. Relaxed when he has the same number of cards as you or fewer, nervous when he has more.
+- `32_angry_at_spectators`: when he's forced to take 4 or more cards.
+
+His idle timer went from 44 s to 26 s (+ up to 9 s jitter), so he visibly lives at the table. · `dist/app.js` (`runBramm`, `scheduleDuelIdle`), `dist/duel/bramm.js` (`observe(trigger,context)`), `dist/duel/opponents.js` · publish: yes · test: every expression in the manifest is reachable.
+
+**Bramm intro every match.** The voiced intro played only on the very first Bramm duel ever (`duelRecords.bramm.played===0`), so returning players never heard it. → Every **new** match against Bramm opens with `intro_01` or `intro_02`, voiced in the current language 1.25 s after the deal. Resuming a saved match doesn't repeat it. Verified in the browser: the intro voice buffer starts in both EN and HE for a player with 3 prior Bramm duels. · `dist/app.js` · publish: yes · test.
+
+**Bramm's seat drops the tankard prop.** He drinks from his own mug in the art. · `dist/styles.css`.
+
+**New setting: "Hide table messages" / "הסתרת הודעות שולחן" (ON by default).** It hides the play-by-play line ("Nothing matches — draw a card", "Bramm is down to the last card", skip/reverse/colour notes) and the caption announcements ("Bramm takes 2", "You played Gold 7").
+
+These stay visible because they're controls or state:
+- the Crossbow panel with its Fire button;
+- the +N Curse token on the pile;
+- the glowing deck when you must draw;
+- the "why can't I play this" hint when you tap an unplayable card;
+- character speech bubbles;
+- Bramm's spoken-line captions (still controlled by "Captions").
+
+The screen-reader live region still announces everything. · `dist/platform/storage.js` (`hideTableMessages:true`), `dist/app.js` · publish: yes · test.
+
+**Smoke test made race-free.** The test now pauses before reading the turn for the reload check. Before, a bot could move between the read and the reload. · `tests/e2e/smoke.mjs`.
+
+Still unused on purpose: the Halden pack (owner: unfinished, not voiced) and `assets/brand/runes-wordmark.svg` (alternate logo; harmless). `bramm_intro_03` is scripted but never recorded, and the Hebrew `bramm_win_05` doesn't exist (the caption shows without audio).
+
+**Versioning for the follow-up.** Codex published the main pass as v70, then v72 (commit `43392f1`, which also added a harmless `round-complete` class to the game shell; it's preserved). This follow-up bumps `index.html` and `sw.js` to **v73**. · `dist/index.html`, `dist/sw.js`, `dist/app.js`.

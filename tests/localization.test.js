@@ -65,3 +65,11 @@ test('Hebrew round announcements use natural verbs and gender',async()=>{
   assert.match(source,/הקללה עלתה ל־\+/);
   assert.doesNotMatch(source,/לידכם/);
 });
+
+test('table play-by-play messages are optional and hidden by default',async()=>{
+  const source=await readFile(new URL('../dist/app.js',import.meta.url),'utf8');
+  assert.equal(defaults.hideTableMessages,true);
+  assert.match(source,/const strip=settings\.hideTableMessages\?'':actionStripText\(\);/);
+  assert.match(source,/settings\.captions&&!settings\.hideTableMessages&&captionLine/);
+  assert.match(source,/Hide table messages/);assert.match(source,/הסתרת הודעות שולחן/);
+});

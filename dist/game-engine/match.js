@@ -1,18 +1,28 @@
 import { createInitialState, restoreState, serializeState } from './engine.js';
 
 export const MATCH_VERSION=1;
-export const TAVERN_ROSTER=Object.freeze([
-  {id:'p0',name:'אתם',nameKey:'you',kind:'human',archetype:'wanderer',house:'yellow'},
-  {id:'p1',name:'איילה',nameKey:'aila',kind:'ai',archetype:'hunter',house:'green'},
-  {id:'p2',name:'רון',nameKey:'ron',kind:'ai',archetype:'bard',house:'red'},
-  {id:'p3',name:'בראן',nameKey:'bran',kind:'ai',archetype:'mercenary',house:'blue'}
+// The five regulars who can sit at a Tavern Match. Each evening three of them
+// take the seats (seeded, so a saved match always restores the same table).
+export const TAVERN_REGULARS=Object.freeze([
+  {name:'איילה',nameKey:'aila',kind:'ai',archetype:'hunter',house:'green'},
+  {name:'רון',nameKey:'ron',kind:'ai',archetype:'bard',house:'red'},
+  {name:'בראן',nameKey:'bran',kind:'ai',archetype:'mercenary',house:'blue'},
+  {name:'סֶלָה',nameKey:'sela',kind:'ai',archetype:'scholar',house:'yellow'},
+  {name:'קֶשׁ',nameKey:'kesh',kind:'ai',archetype:'mysterious',house:'blue'}
 ]);
+const HUMAN_SEAT=Object.freeze({id:'p0',name:'אתם',nameKey:'you',kind:'human',archetype:'wanderer',house:'yellow'});
+export function tavernGuestsFor(seed){
+  const pool=[...TAVERN_REGULARS],guests=[];let value=(seed>>>0)||1;
+  while(guests.length<3){value=Math.imul(value^(value>>>15),0x2c1b3c6d)>>>0;value=(value+0x9e3779b9)>>>0;guests.push(pool.splice(value%pool.length,1)[0]);}
+  return guests;
+}
+export const TAVERN_ROSTER=Object.freeze([HUMAN_SEAT,...TAVERN_REGULARS.slice(0,3)].map((player,index)=>Object.freeze({...player,id:`p${index}`})));
 
 const freshRoster=roster=>roster.map(({hand,...player})=>({...player}));
 const scoreMap=roster=>Object.fromEntries(roster.map(p=>[p.id,0]));
 
-export function createTavernMatch({seed=Date.now(),roster=TAVERN_ROSTER}={}){
-  const players=freshRoster(roster);
+export function createTavernMatch({seed=Date.now(),roster=null}={}){
+  const players=freshRoster(roster||[HUMAN_SEAT,...tavernGuestsFor(seed)].map((player,index)=>({...player,id:`p${index}`})));
   return {version:MATCH_VERSION,mode:'tavern',phase:'round',round:1,totalRounds:5,suddenDeath:false,seed,scores:scoreMap(players),roster:players,results:[],championId:null,game:createInitialState({playerCount:4,players,seed})};
 }
 

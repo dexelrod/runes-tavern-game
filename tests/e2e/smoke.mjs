@@ -53,8 +53,8 @@ console.log('Quick Play: pause, resize, reload');
   await page.click('.pause-sheet .primary-button');await page.waitForTimeout(3500);
   const snap=await snapshot(page);check(snap.sheet===null&&((await saved(page)).game.turn!==before||snap.current==='p0'),'play resumes after closing pause');
   for(const size of [{width:1366,height:768},{width:820,height:1180},{width:844,height:390},{width:320,height:568},{width:1920,height:1080}]){await page.setViewportSize(size);await page.waitForTimeout(300);const fit=await fitsViewport(page);check(fit.ok,`table fits ${size.width}×${size.height} after resize ${fit.out.join(',')}`);}
-  const turn=(await saved(page)).game.turn;await page.reload();await page.waitForTimeout(500);await page.click('[data-resume]');await page.waitForTimeout(300);
-  check((await saved(page)).game.turn===turn,'reload resumes the exact turn');
+  await page.click('[data-open="pause"]');await page.waitForTimeout(300);const turn=(await saved(page)).game.turn;await page.reload();await page.waitForTimeout(500);check((await saved(page)).game.turn===turn,'the save survives a reload');await page.click('[data-resume]');
+  check((await snapshot(page)).turn===turn,'reload resumes the exact turn');
   check(errors.length===0,`no console errors (${errors.join(' | ')})`);await context.close();}
 
 console.log('Tavern Match: two scored rounds');

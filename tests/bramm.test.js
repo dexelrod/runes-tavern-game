@@ -101,3 +101,16 @@ test('recent queue prevents an immediate repeated line and round budget resets e
   bramm.beginRound();
   assert.equal(bramm.snapshot().counters.nonCriticalThisRound,0);
 });
+
+test('every Bramm expression is reachable in play',()=>{
+  const app=fs.readFileSync(new URL('../dist/app.js',import.meta.url),'utf8'),bramm=fs.readFileSync(new URL('../dist/duel/bramm.js',import.meta.url),'utf8');
+  const manifest=bramm.slice(bramm.indexOf('export const BRAMM_EXPRESSIONS'),bramm.indexOf(']);',bramm.indexOf('export const BRAMM_EXPRESSIONS')));
+  const rest=bramm.replace(manifest,'')+app;
+  for(const expression of BRAMM_EXPRESSIONS)assert.ok(rest.includes(`'${expression}'`),`${expression} is never shown`);
+});
+test('every new match against Bramm opens with his voiced introduction',()=>{
+  const app=fs.readFileSync(new URL('../dist/app.js',import.meta.url),'utf8');
+  assert.doesNotMatch(app,/firstEncounter/);
+  assert.match(app,/if\(!saved\)\{const epoch=sessionEpoch;const timer=setTimeout\(\(\)=>\{if\(epoch===sessionEpoch\)runBramm\('intro',\{\},true\);/);
+  const bramm=createBrammController({random:()=>0});assert.ok(bramm.react('intro',{},true).voice.startsWith('bramm_intro_'));
+});

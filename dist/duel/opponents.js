@@ -22,7 +22,7 @@ export const DUEL_OPPONENTS=Object.freeze([
   opponent('kesh','קֶשׁ','mysterious','הנוסע · שקט ומסתורי',4,{drink:'ספל חרס',snack:'קמע',token:'אבן חרוטה'},'balanced','quiet',{
     pleased:['כך נפל הסימן.','הדרך מתקצרת.','יפה.'],annoyed:['הרוח השתנתה.','אני אזכור את זה.','באמת?'],surprised:['הסימן לא הראה זאת.','בחירה אמיצה.','מעניין.'],drink:['הלילה עוד צעיר.','האש יודעת.']
   }),
-  Object.freeze({id:'bramm',name:'בראם',archetype:'mercenary',descriptor:'הבלתי־מנוצח · רברבן, תחרותי וקולני',row:2,props:{drink:'ספל כבד',snack:'לחם',token:'אסימון ברזל'},aiStyle:'aggressive',cardPlayStyle:'thunk',artMode:'expressions',sprites:{},dialoguePools:Object.freeze({pleased:[],annoyed:[],surprised:[],drink:[]}),reactionWeights:Object.freeze({pleased:0,annoyed:0,surprised:0,drink:0}),idleFrequency:44000})
+  Object.freeze({id:'bramm',name:'בראם',archetype:'mercenary',descriptor:'הבלתי־מנוצח · רברבן, תחרותי וקולני',row:2,props:{drink:'ספל כבד',snack:'לחם',token:'אסימון ברזל'},aiStyle:'aggressive',cardPlayStyle:'thunk',artMode:'expressions',sprites:{},dialoguePools:Object.freeze({pleased:[],annoyed:[],surprised:[],drink:[]}),reactionWeights:Object.freeze({pleased:0,annoyed:0,surprised:0,drink:0}),idleFrequency:26000})
 ]);
 
 export function getDuelOpponent(id){return DUEL_OPPONENTS.find(item=>item.id===id)||DUEL_OPPONENTS[0];}
