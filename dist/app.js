@@ -6,6 +6,7 @@ import { clearMatch, feedback, loadMatch, loadSettings, saveMatch, saveSettings 
 import { audioSystem } from './platform/audio.js';
 import { chooseBotAction, chooseColor } from './game-ai/bot.js';
 import { cardHTML, cardLabel, sigilHTML } from './ui/card.js';
+import { runeSVG } from './ui/runes.js';
 import { calculateHandLayout } from './ui/hand-layout.js';
 import { DUEL_OPPONENTS, duelSpriteStyle, getDuelOpponent, localizeDuelOpponent } from './duel/opponents.js';
 import { AUTHORED_CHARACTERS, authoredCharacter } from './duel/characters.js';
@@ -23,10 +24,8 @@ const colorNames={he:{red:'בורדו',blue:'צפחה',green:'יער',yellow:'ז
 const archetypeNames={he:{hunter:'הציידת',bard:'הפייטן',mercenary:'שכיר החרב',wanderer:'הנודד',scholar:'המלומד',mysterious:'הנוסע'},en:{hunter:'The Hunter',bard:'The Bard',mercenary:'The Mercenary',wanderer:'The Wanderer',scholar:'The Scholar',mysterious:'The Traveler'}};
 const playerNames={you:'You',aila:'Aila',ron:'Ron',bran:'Bran',sela:'Sela',kesh:'Kesh',roderic:'Roderic',lio:'Lio',mograth:'Mograth',harrow:'Harrow',rusk:'Rusk',bramm:'Bramm',adren:'Adren',myra:'Myra',toren:'Toren',leva:'Leva',sig:'Sig',alva:'Alva',hal:'Hal',runa:'Runa',derik:'Derik',אתם:'You',איילה:'Aila',רון:'Ron',בראן:'Bran',אדרן:'Adren',מירא:'Myra',טורן:'Toren',ליבה:'Leva',סיג:'Sig',אלבה:'Alva',האל:'Hal',רונה:'Runa',דריק:'Derik',לוסיאן:'Lucien',איניגו:'Inigo',לידיה:'Lydia',וירן:'Viren',סורן:'Soren',ויילין:'Waylin'};
 function colorName(color){return colorNames[settings.language]?.[color]||colorNames.he[color]||'';}
-function colorRuneHTML(color,className='color-rune'){
-  const paths={red:'<path d="M32 7c3 12-8 14-3 24 3-6 8-8 10-14 8 10 12 22 4 33-8 11-28 8-31-5-2-9 4-17 12-23-1 9 2 12 5 14-1-11 7-15 3-29z"/>',blue:'<path d="M8 39c10-13 20-13 30 0s20 13 28 0M8 24c10-13 20-13 30 0s20 13 28 0"/>',green:'<path d="M32 57V28M32 38C18 37 12 27 11 13c10 2 17 7 21 15m0 8c13-2 20-10 21-23-10 2-17 8-21 17"/>',yellow:'<circle cx="32" cy="32" r="12"/><path d="M32 5v11m0 32v11M5 32h11m32 0h11M13 13l8 8m22 22 8 8m0-38-8 8M21 43l-8 8"/>'};
-  return `<svg class="${className}" viewBox="0 0 64 64" aria-hidden="true">${paths[color]||''}</svg>`;
-}
+function colorRuneHTML(color,className='color-rune'){return runeSVG(color,className);}
+
 function displayName(player){if(!player)return'';if(player.id==='p0')return isEnglish()?'You':player.name;if(!isEnglish())return player.name;const key=player.nameKey||player.duelOpponentId;return key?(playerNames[key]||localizeDuelOpponent(getDuelOpponent(key),'en')?.name||player.name):(playerNames[player.name]||player.name);}
 function displayOpponent(opponent){return localizeDuelOpponent(opponent,settings.language);}
 function cardOptions(options={}){return {...options,language:settings.language};}

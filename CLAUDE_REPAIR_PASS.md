@@ -464,3 +464,7 @@ Removed: `.segmented` (iOS segmented control), `.tool-button` pills and their CS
 **Source hygiene.** Obsolete rules removed with their replacements (no override layers): segmented control, tool icons, choice arrows, gem box, old switch/slider, rule-card image sizing, Edrin champion box tint, `.hand-frame-wrap`, `.round-revealed`, three `!important`s. `!important` now appears only in the reduced-motion rules. Still 13 `@media` blocks; stylesheet 75 KB (< 80 KB guard).
 
 **Files:** `dist/styles.css`, `dist/app.js`, `dist/index.html`, `dist/sw.js` (v80). No asset added or changed. Tests unchanged; all UI-contract tests pass.
+
+## v81 — New colour emblems
+
+Owner-supplied silhouettes replace the four stroked colour runes everywhere: Burgundy = flame, Forest = sprout, Gold = sun, Slate = wave. Traced from the owner's PNG into filled 64×64 SVG paths in a new shared module, `dist/ui/runes.js` (`RUNE_PATHS`, `runeSVG`), used by both `ui/card.js` (card corners, number-card watermark) and `app.js` (`colorRuneHTML`: seat place cards, active-colour stone, colour picker stones, Crossbow note, Rules). CSS for those classes switched from stroke to fill. `sw.js` precaches `ui/runes.js`; version v81. No rule change.

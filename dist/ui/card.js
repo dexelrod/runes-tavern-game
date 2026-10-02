@@ -1,4 +1,5 @@
 import { TYPES, TYPE_LABEL, WILD } from '../game-engine/cards.js';
+import { runeSVG } from './runes.js';
 
 const EN_TYPE_LABEL={number:'',stop:'Shield',plus2:'Curse',reverse:'Turnabout',plus:'Quickstep',taki:'Crossbow',changeColor:'Rune',superTaki:'Runed Crossbow',king:'King'};
 const ART={
@@ -34,10 +35,8 @@ function cornerIndex(card,activeColor=null){
   const resolved=(card.type===TYPES.SUPER_TAKI&&card.inheritedColor)||(card.type===TYPES.CHANGE_COLOR&&activeColor);
   return asset(name,'corner-asset',!!resolved);
 }
-function suitRune(color,className='card-suit-rune'){
-  const paths={red:'<path d="M32 7c3 12-8 14-3 24 3-6 8-8 10-14 8 10 12 22 4 33-8 11-28 8-31-5-2-9 4-17 12-23-1 9 2 12 5 14-1-11 7-15 3-29z"/>',blue:'<path d="M8 39c10-13 20-13 30 0s20 13 28 0M8 24c10-13 20-13 30 0s20 13 28 0"/>',green:'<path d="M32 57V28M32 38C18 37 12 27 11 13c10 2 17 7 21 15m0 8c13-2 20-10 21-23-10 2-17 8-21 17"/>',yellow:'<circle cx="32" cy="32" r="12"/><path d="M32 5v11m0 32v11M5 32h11m32 0h11M13 13l8 8m22 22 8 8m0-38-8 8M21 43l-8 8"/>'};
-  return paths[color]?`<svg class="${className}" viewBox="0 0 64 64" aria-hidden="true">${paths[color]}</svg>`:'';
-}
+function suitRune(color,className='card-suit-rune'){return runeSVG(color,className);}
+
 export function cardHTML(card,{small=false,hidden=false,legal=true,highlight=true,selected=false,incoming=false,arrivalDelay=0,index=0,total=1,activeColor=null,language='he'}={}){
   if(hidden) return `<div class="card card-back ${small?'small':''}" aria-label="${language==='en'?'Face-down RUNES card':'קלף רונות הפוך'}"><span class="back-sigil">${sigilHTML()}</span></div>`;
   const inherited=card.type===TYPES.SUPER_TAKI&&card.inheritedColor;
