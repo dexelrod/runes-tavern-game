@@ -503,3 +503,7 @@ Version v85.
 ## v86 — English is the default language
 
 Owner decision. `defaults.language` is now `'en'`; `index.html` starts as `lang="en" dir="ltr"` with an English description (no Hebrew flash before the app renders). Players who already chose a language keep it (it's stored in their settings). Hebrew is unchanged and one tap away in Settings. Test updated: "English is the default language". iPhone haptics (v84–v85) remain in place but the owner confirmed iOS doesn't deliver them; Android vibration is unaffected. Version v86.
+
+## v87 — Bramm's "You've got two" retired
+
+Owner decision. Reaction `one_card_02` ("You've got two. You've definitely got two." / "קלף אחרון! צריך להגיד קלף אחרון!") is removed from `BRAMM_REACTIONS`, its Hebrew caption and its `ONE_CARD_WEIGHTS` entry. When you reach one card, Bramm now picks from `01` ("…No."), `05`, `06` and `07`, with the same context weights and anti-repeat. Its expression `18_one_card_denial` would have become unused, so it now goes with `06` ("Oh, come on. How did we get here?"). The audio files stay on disk but are no longer referenced. Tests: 40 registered Bramm voices; the one-card variety test asserts 02 never plays. Version v87.

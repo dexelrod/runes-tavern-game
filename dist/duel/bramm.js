@@ -18,7 +18,6 @@ const BRAMM_HE_CAPTIONS=Object.freeze({
   bramm_excuse_01:'זה לא נחשב.',
   bramm_excuse_02:'זה.. חוק חדש. לא הרבה מכירים.',
   bramm_player_one_card_01:'אוי לא..',
-  bramm_player_one_card_02:'קלף אחרון! צריך להגיד קלף אחרון!',
   bramm_player_one_card_03:'חייב פלוס שתיים.. או קשת.. או מלך.. כל דבר.',
   bramm_loss_01:'לא נחשב.. עוד פעם.',
   bramm_win_01:'הנה זה! בראם הבלתי מנוצח!',
@@ -107,9 +106,8 @@ export const BRAMM_REACTIONS=Object.freeze([
   // Player reaches one card. One immediate reaction, chosen by context weight
   // (see ONE_CARD_WEIGHTS) and the shared recent-voice anti-repeat.
   line('one_card_01','player_one_card','bramm_player_one_card_01','...No.','17_one_card_sober_shock','CRITICAL',{category:'one_card',cooldown:0,nextState:'panic',setFlags:['bramm_has_seen_player_one_card'],duration:3000}),
-  line('one_card_02','player_one_card','bramm_player_one_card_02',"You've got two. You've definitely got two.",'18_one_card_denial','CRITICAL',{category:'one_card',cooldown:0,nextState:'panic',setFlags:['bramm_has_seen_player_one_card'],duration:3200}),
   line('one_card_05','player_one_card','bramm_player_one_card_05','Right. Nobody panic. Especially me.','22_fake_calm_after_panic','CRITICAL',{category:'one_card',cooldown:0,nextState:'panic',setFlags:['bramm_has_seen_player_one_card'],duration:4500}),
-  line('one_card_06','player_one_card','bramm_player_one_card_06','Oh, come on. How did we get here?','29_defeated_disbelief','CRITICAL',{category:'one_card',cooldown:0,nextState:'panic',setFlags:['bramm_has_seen_player_one_card'],duration:4100}),
+  line('one_card_06','player_one_card','bramm_player_one_card_06','Oh, come on. How did we get here?','18_one_card_denial','CRITICAL',{category:'one_card',cooldown:0,nextState:'panic',setFlags:['bramm_has_seen_player_one_card'],duration:4100}),
   line('one_card_07','player_one_card','bramm_player_one_card_07',"Stop looking over here! I've got this!",'32_angry_at_spectators','CRITICAL',{category:'one_card',cooldown:0,nextState:'panic',setFlags:['bramm_has_seen_player_one_card','bramm_has_addressed_tavern'],duration:4100}),
   // Later, while the player is still on one card and Bramm is hunting for an answer.
   line('one_card_03','one_card_persist','bramm_player_one_card_03','Come on. Curse. Curse. Give me something horrible.','19_one_card_desperate','MEDIUM',{category:'one_card',probability:.6,cooldown:8000,nextState:'panic',duration:3800}),
@@ -159,11 +157,10 @@ export function resolveBrammVoice(name,locale='en'){
 const byId=Object.freeze(Object.fromEntries(BRAMM_REACTIONS.map(item=>[item.id,item])));
 
 // Context weights for the immediate one-card reaction. First scare of the
-// match favours the quiet shock; later scares lean on denial, the audience and
-// talking himself down. Anti-repeat still removes his last three voices.
+// match favours the quiet shock; later scares lean on the audience and talking
+// himself down. (one_card_02, "You've got two…", is retired at the owner's request.) Anti-repeat still removes his last three voices.
 const ONE_CARD_WEIGHTS=Object.freeze({
   one_card_01:({oneCardScares})=>oneCardScares===0?3:1,
-  one_card_02:({oneCardScares})=>oneCardScares===0?1:1.6,
   one_card_05:({brammCards=0})=>brammCards>=5?2:1,
   one_card_06:({flags})=>flags.bramm_was_previously_ahead?2:1,
   one_card_07:({flags,oneCardScares})=>flags.bramm_has_addressed_tavern||oneCardScares>0?2:1

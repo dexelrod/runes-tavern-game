@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { BRAMM_EXPRESSIONS, BRAMM_REACTIONS, BRAMM_VOICE_LIBRARY, brammExpressionURL, brammExpressionsReady, createBrammController, preloadBrammExpressions, resolveBrammReaction, resolveBrammVoice } from '../dist/duel/bramm.js';
 
 test('Bramm pack registers every supplied voice and expression asset',()=>{
-  assert.equal(Object.keys(BRAMM_VOICE_LIBRARY).length,41);
+  assert.equal(Object.keys(BRAMM_VOICE_LIBRARY).length,40,'41 recorded lines, one_card_02 retired by the owner');
   assert.equal(BRAMM_EXPRESSIONS.length,36);
   for(const definition of Object.values(BRAMM_VOICE_LIBRARY)){const bytes=fs.readFileSync(fileURLToPath(definition.src));assert.ok(bytes.length>128);}
   for(const reaction of BRAMM_REACTIONS){
@@ -77,7 +77,7 @@ test('result selection uses one context-appropriate critical line',()=>{
 
 test('reaction metadata stays data-driven and complete',()=>{
   for(const reaction of BRAMM_REACTIONS){for(const key of ['id','trigger','priority','voice','expression','duration'])assert.ok(reaction[key]);}
-  assert.equal(new Set(BRAMM_REACTIONS.map(item=>item.voice)).size,41);
+  assert.equal(new Set(BRAMM_REACTIONS.map(item=>item.voice)).size,40);
 });
 
 test('short-term character memory survives a saved-match restore',()=>{
@@ -131,7 +131,8 @@ test('player one-card reactions vary, never repeat back-to-back, and 04 does not
   const seen=new Set();
   for(let seed=0;seed<200;seed++){let n=seed;const random=()=>((n=(n*9301+49297)%233280)/233280);const c=createBrammController({random});let last=null;
     for(let scare=0;scare<4;scare++){const r=c.react('player_one_card',{brammCards:scare*2},true);seen.add(r.voice);assert.notEqual(r.voice,last);last=r.voice;c.oneCardRecovered();}}
-  for(const id of ['01','02','05','06','07'])assert.ok(seen.has(`bramm_player_one_card_${id}`),`one-card ${id} never chosen`);
+  for(const id of ['01','05','06','07'])assert.ok(seen.has(`bramm_player_one_card_${id}`),`one-card ${id} never chosen`);
+  assert.ok(!seen.has('bramm_player_one_card_02'),'02 ("You\'ve got two") is retired');
   assert.ok(!seen.has('bramm_player_one_card_03'),'03 is not an instant reaction');
 });
 test('idle lines are rare: gated by cooldown, recent speech and a per-round budget',()=>{
