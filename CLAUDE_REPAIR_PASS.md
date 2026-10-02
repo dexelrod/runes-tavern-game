@@ -468,3 +468,7 @@ Removed: `.segmented` (iOS segmented control), `.tool-button` pills and their CS
 ## v81 — New colour emblems
 
 Owner-supplied silhouettes replace the four stroked colour runes everywhere: Burgundy = flame, Forest = sprout, Gold = sun, Slate = wave. Traced from the owner's PNG into filled 64×64 SVG paths in a new shared module, `dist/ui/runes.js` (`RUNE_PATHS`, `runeSVG`), used by both `ui/card.js` (card corners, number-card watermark) and `app.js` (`colorRuneHTML`: seat place cards, active-colour stone, colour picker stones, Crossbow note, Rules). CSS for those classes switched from stroke to fill. `sw.js` precaches `ui/runes.js`; version v81. No rule change.
+
+## v82 — New action-card art: Quickstep, Turnabout, Shield, Curse
+
+Owner-drawn charcoal sketches replace the four card illustrations. Cut from the owner's transparent sheet, trimmed, scaled to 440 px, stroke density lifted slightly (alpha gamma 0.55) so they hold up at play size next to Crossbow and King, and alpha quantized to 16 levels (keeps the pencil grain, ~35 KB each). Stored under the same names (`assets/cards/{quickstep,turnabout,shield,curse-plus-2}.svg`) as SVG wrappers around the PNG, so the card mask system, corner indices, Rules and the Shield seal pick them up with no code change. Crossbow, Runed Crossbow, Rune and King keep their existing art. Version v82.
