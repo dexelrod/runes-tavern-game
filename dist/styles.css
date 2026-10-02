@@ -761,9 +761,16 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
   border-image-slice:0 60 fill;
   border-image-width:0 24px;
   border-image-repeat:stretch;
-  box-shadow:0 2px 0 #1d0c04,0 6px 10px -2px #000a;
+  border-radius:0;
+  /* Shadows follow the painted plank, never the button's rectangle (no box-shadow in any state). */
+  box-shadow:none;filter:drop-shadow(0 2px 0 #1d0c04) drop-shadow(0 5px 6px #000a);
 }
-.icon-button{background:transparent url('./assets/ui-brass-plate.webp') center/100% 100% no-repeat;box-shadow:0 2px 0 #1a0d05,0 4px 6px #0009}
+.primary-button:hover,.primary-button:active,.primary-button:focus{box-shadow:none}
+.primary-button:hover{filter:drop-shadow(0 2px 0 #1d0c04) drop-shadow(0 5px 6px #000a) brightness(1.08)}
+.primary-button:active{filter:drop-shadow(0 1px 0 #1d0c04) drop-shadow(0 2px 3px #0009) brightness(.94)}
+.primary-button:focus-visible{outline:none;filter:drop-shadow(0 0 1.5px #f3dfb2) drop-shadow(0 0 1.5px #f3dfb2) drop-shadow(0 5px 6px #000a)}
+@media (hover:none){.primary-button:hover{filter:drop-shadow(0 2px 0 #1d0c04) drop-shadow(0 5px 6px #000a)}}
+.icon-button,.icon-button:hover,.icon-button:active{background:transparent url('./assets/ui-brass-plate.webp') center/100% 100% no-repeat;box-shadow:none;filter:drop-shadow(0 2px 0 #1a0d05) drop-shadow(0 3px 4px #0009)}
 .result-slip,.tavern-sheet,.turn-whisper,.human-quip,.action-strip,.table-caption,.crossbow-panel,.speech{
   background-color:var(--parchment);
   background-image:linear-gradient(172deg,#f4e6c012,transparent 46%,#8a5f2a0a),url('./assets/ui-parchment.webp');
