@@ -2,7 +2,7 @@ import { ACTIONS, crossbowAwaitsPickup, currentPlayer, getLegalCards, topCard } 
 import { COLORS, TYPES } from './game-engine/cards.js';
 import { createDuelSession, createQuickSession, createTavernMatch, finishRound, restoreSession, standings, startNextRound } from './game-engine/match.js';
 import { LocalGameTransport } from './platform/transport.js';
-import { clearMatch, feedback, loadMatch, loadSettings, saveMatch, saveSettings } from './platform/storage.js';
+import { clearMatch, feedback, loadMatch, loadSettings, saveMatch, saveSettings, tapFeedback } from './platform/storage.js';
 import { audioSystem } from './platform/audio.js';
 import { chooseBotAction, chooseColor } from './game-ai/bot.js';
 import { cardHTML, cardLabel, sigilHTML } from './ui/card.js';
@@ -13,6 +13,7 @@ import { AUTHORED_CHARACTERS, authoredCharacter } from './duel/characters.js';
 import { debugMarkEdrinVoiceMissing, edrinEventFor } from './duel/edrin.js';
 
 const root=document.querySelector('#app');
+const APP_VERSION=new URL(import.meta.url).searchParams.get('v')||'dev';
 // Player-facing order of the four colours: Burgundy, Forest, Gold, Slate.
 const DISPLAY_COLORS=Object.freeze(['red','green','yellow','blue']);
 const colorHex={red:'#7f2635',blue:'#465f76',green:'#36583c',yellow:'#b0832f'};
@@ -229,6 +230,9 @@ const FEMININE_HE=[['אני צריך','אני צריכה'],['אני חושב','�
 function voicedLine(playerId,text){if(!text||isEnglish()||!isFeminine(state?.players?.find(p=>p.id===playerId)))return text;return FEMININE_HE.reduce((line,[m,f])=>line.replace(m,f),text);}
 function showQuip(player,text,force=false){text=voicedLine(player,text);if(!settings.dialogue||!text||(!force&&Date.now()-lastQuipAt<7800))return;lastQuipAt=Date.now();clearTimeout(quipTimer);quip={player,text};quipTimer=setTimeout(()=>{quip=null;render();},Math.min(2800,1500+text.length*42));}
 function botLine(playerId,trigger){const player=state.players.find(p=>p.id===playerId),pool=(isEnglish()?dialogueEn:dialogueHe)[player?.archetype]?.[trigger]||[];return pool[Math.floor(Math.random()*pool.length)];}
+// Game-event haptics use the full vibration pattern where the browser has one (Android).
+// iPhone haptics come only from the player's own taps (tapFeedback), the one moment iOS allows.
+function eventFeedback(kind){if(typeof navigator.vibrate==='function')feedback(kind,settings);}
 function cardCountLabel(count){return isEnglish()?(count===0?'No cards':count===1?'1 card':`${count} cards`):(count===0?'אין קלפים':count===1?'קלף אחד':`${count} קלפים`);}
 function cardCountHTML(count){return isEnglish()?(count===0?'No cards':count===1?'<bdi>1</bdi> card':`<bdi>${count}</bdi> cards`):(count===0?'אין קלפים':count===1?'קלף אחד':`<bdi>${count}</bdi> קלפים`);}
 function announce(entries){
@@ -299,7 +303,7 @@ function onState(action){
   else audioSystem.duckMusic(1,620);
   const winnerId=entries.find(entry=>entry.type==='win')?.playerId||(state.phase==='finished'?state.winnerId:null);
   if(winnerId)audioSystem.play(winnerId==='p0'?'winHand':'loseHand',{delay:(stop||reverse||stack||opened||closed)?280:90});
-  if(closed||opened)feedback('takiOpen',settings);else if(stop)feedback('stop',settings);else if(reverse)feedback('reverse',settings);else if(stack||penalty)feedback('penalty',settings);else if(playedCard?.type===TYPES.KING)feedback('king',settings);else if(again)feedback('plus',settings);else if(draw||action.type===ACTIONS.DRAW)feedback('draw',settings);else if(color)feedback('color',settings);else if(entries.length)feedback('play',settings);
+  if(closed||opened)eventFeedback('takiOpen',settings);else if(stop)eventFeedback('stop',settings);else if(reverse)eventFeedback('reverse',settings);else if(stack||penalty)eventFeedback('penalty',settings);else if(playedCard?.type===TYPES.KING)eventFeedback('king',settings);else if(again)eventFeedback('plus',settings);else if(draw||action.type===ACTIONS.DRAW)eventFeedback('draw',settings);else if(color)eventFeedback('color',settings);else if(entries.length)eventFeedback('play',settings);
   if(penalty?.amount>=6){propRattled.add(penalty.playerId);const epoch=sessionEpoch;setTimeout(()=>{if(epoch!==sessionEpoch)return;propRattled.delete(penalty.playerId);root.querySelector(`[data-player-id="${penalty.playerId}"]`)?.classList.remove('rattled');},520);}
   if(state.taki?.open)takiRun++;const crossbowRun=takiRun;if(closed){if(takiRun>=3&&!isAuthoredDuel()){const watcher=state.players.find(p=>p.kind==='ai'&&p.id!==closed.playerId);showQuip(watcher?.id,botLine(watcher?.id,'penalty'));}takiRun=0;}
   // Generic table banter never plays over an authored character.
@@ -640,7 +644,7 @@ function settingsHTML(){
   const toggle=(label,key)=>`<div class="setting-row toggle-row"><span class="setting-label" id="setting-${key}">${label}</span><button class="switch ${settings[key]?'on':''}" role="switch" data-toggle="${key}" aria-labelledby="setting-${key}" aria-checked="${!!settings[key]}"><i aria-hidden="true"></i><span class="switch-state">${settings[key]?c.on:c.off}</span></button></div>`;
   const audio=(label,key,volumeKey)=>{const value=Math.round((settings[volumeKey]??0)*100);return `<div class="setting-row audio-row ${settings[key]?'':'muted'}"><span class="setting-label" id="setting-${key}">${label}</span><div class="audio-controls"><input id="volume-${volumeKey}" type="range" min="0" max="100" step="5" value="${value}" style="--value:${value}%" data-volume="${volumeKey}" data-channel="${key}" aria-labelledby="setting-${key}" aria-valuetext="${value}%"><output for="volume-${volumeKey}"><bdi>${value}%</bdi></output><button class="switch ${settings[key]?'on':''}" role="switch" data-toggle="${key}" aria-labelledby="setting-${key}" aria-checked="${!!settings[key]}"><i aria-hidden="true"></i><span class="switch-state">${settings[key]?c.on:c.off}</span></button></div></div>`;};
   const fromPause=view==='game';
-  const body=`<div class="setting-row language-row"><span class="setting-label" id="setting-language">${c.language}</span><div class="ink-choice" role="radiogroup" aria-labelledby="setting-language"><button role="radio" data-language="he" aria-checked="${settings.language==='he'}" class="${settings.language==='he'?'on':''}" lang="he">עברית</button><i aria-hidden="true">·</i><button role="radio" data-language="en" aria-checked="${settings.language==='en'}" class="${settings.language==='en'?'on':''}" lang="en">English</button></div></div><section class="settings-section"><h3>${c.sound}</h3>${audio(c.gameSounds,'sound','sfxVolume')}${audio(c.music,'music','musicVolume')}${audio(c.ambience,'ambience','ambienceVolume')}</section><section class="settings-section"><h3>${c.gameplay}</h3>${toggle(c.dialogue,'dialogue')}${toggle(c.captions,'captions')}${toggle(c.hints,'playableHints')}${toggle(c.tableMessages,'hideTableMessages')}</section><section class="settings-section"><h3>${c.accessibility}</h3>${toggle(c.haptics,'haptics')}${toggle(c.motion,'reducedMotion')}</section><div class="sheet-actions"><button class="secondary-button" data-close-sheet>${fromPause?(en?'Back to the pause menu':'חזרה לתפריט'):c.close}</button></div>`;
+  const body=`<div class="setting-row language-row"><span class="setting-label" id="setting-language">${c.language}</span><div class="ink-choice" role="radiogroup" aria-labelledby="setting-language"><button role="radio" data-language="he" aria-checked="${settings.language==='he'}" class="${settings.language==='he'?'on':''}" lang="he">עברית</button><i aria-hidden="true">·</i><button role="radio" data-language="en" aria-checked="${settings.language==='en'}" class="${settings.language==='en'?'on':''}" lang="en">English</button></div></div><section class="settings-section"><h3>${c.sound}</h3>${audio(c.gameSounds,'sound','sfxVolume')}${audio(c.music,'music','musicVolume')}${audio(c.ambience,'ambience','ambienceVolume')}</section><section class="settings-section"><h3>${c.gameplay}</h3>${toggle(c.dialogue,'dialogue')}${toggle(c.captions,'captions')}${toggle(c.hints,'playableHints')}${toggle(c.tableMessages,'hideTableMessages')}</section><section class="settings-section"><h3>${c.accessibility}</h3>${toggle(c.haptics,'haptics')}${toggle(c.motion,'reducedMotion')}</section><p class="build-mark">RUNES v${APP_VERSION}</p><div class="sheet-actions"><button class="secondary-button" data-close-sheet>${fromPause?(en?'Back to the pause menu':'חזרה לתפריט'):c.close}</button></div>`;
   return sheetFrame('settings','settings-title',c.title,body,{closeLabel:en?'Close settings':'לסגור את ההגדרות'});
 }
 
@@ -734,10 +738,10 @@ function bind(){
   root.querySelector('[data-rematch]')?.addEventListener('click',()=>{clearMatch();startSession('duel');});
   root.querySelector('[data-choose-opponent]')?.addEventListener('click',()=>{clearMatch();goHome();view='duelSelect';render();});
   root.querySelectorAll('[data-home]').forEach(b=>b.onclick=goHome);
-  root.querySelector('[data-draw]')?.addEventListener('click',()=>{if(state?.phase==='playing'&&currentPlayer(state).id==='p0'&&(!state.taki?.open||crossbowAwaitsPickup(state)))submit({type:ACTIONS.DRAW,playerId:'p0'});else if(state?.taki?.open&&currentPlayer(state).id==='p0'){hint=isEnglish()?'Fire the Crossbow to end your turn':'כדי לסיים את התור — לירות בקשת';render();setTimeout(()=>{hint='';render();},1400);}});
-  root.querySelector('[data-close-taki]')?.addEventListener('click',()=>submit({type:ACTIONS.END_TURN,playerId:'p0'}));
+  root.querySelector('[data-draw]')?.addEventListener('click',()=>{if(state?.phase==='playing'&&currentPlayer(state).id==='p0'&&(!state.taki?.open||crossbowAwaitsPickup(state))){tapFeedback('draw',settings);submit({type:ACTIONS.DRAW,playerId:'p0'});}else if(state?.taki?.open&&currentPlayer(state).id==='p0'){hint=isEnglish()?'Fire the Crossbow to end your turn':'כדי לסיים את התור — לירות בקשת';render();setTimeout(()=>{hint='';render();},1400);}});
+  root.querySelector('[data-close-taki]')?.addEventListener('click',()=>{tapFeedback('takiOpen',settings);submit({type:ACTIONS.END_TURN,playerId:'p0'});});
   root.querySelector('[data-speed-bots]')?.addEventListener('pointerdown',event=>{if(!pendingBotTurn||event.target.closest('button,.card,[role="dialog"]'))return;clearTimeout(botTimer);const pending=pendingBotTurn;runBotTurn(pending.playerId,pending.epoch,pending.scheduledTurn);});
-  root.querySelectorAll('[data-color]').forEach(b=>b.onclick=()=>submit({type:ACTIONS.CHOOSE_COLOR,playerId:'p0',color:b.dataset.color}));
+  root.querySelectorAll('[data-color]').forEach(b=>b.onclick=()=>{tapFeedback('color',settings);submit({type:ACTIONS.CHOOSE_COLOR,playerId:'p0',color:b.dataset.color});});
   bindHand();
   const firstGem=root.querySelector('.color-choice .gem');if(firstGem&&!root.contains(document.activeElement)||firstGem&&document.activeElement===document.body)firstGem.focus({preventScroll:true});
   layoutHand();
@@ -747,7 +751,7 @@ function bindHand(){
   let hintTimer=0;
   const rejectCard=card=>{hint=rejectReason(state.players[0].hand.find(c=>c.id===card.dataset.cardId));feedback('invalid',settings);render();clearTimeout(hintTimer);hintTimer=setTimeout(()=>{hint='';render();},1300);};
   root.querySelectorAll('.hand .card').forEach(card=>{
-    const legal=card.classList.contains('legal'),play=()=>{if(legal)submit({type:ACTIONS.PLAY,playerId:'p0',cardId:card.dataset.cardId});};
+    const legal=card.classList.contains('legal'),play=()=>{if(legal&&!motionLocked){tapFeedback('play',settings);submit({type:ACTIONS.PLAY,playerId:'p0',cardId:card.dataset.cardId});}};
     let startX=0,startY=0,lastY=0,lastTime=0,velocity=0,dragging=false,suppressClick=false;
     card.onclick=e=>{if(suppressClick){suppressClick=false;e.preventDefault();return;}if(!legal){rejectCard(card);return;}play();};
     card.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();card.click();}};

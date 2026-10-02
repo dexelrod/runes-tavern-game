@@ -489,3 +489,13 @@ Version v83.
 - **Tap to play.** On touch screens one tap on a playable card plays it (was: tap to select, tap again, or swipe up). The upward swipe still works. Tapping an unplayable card still shows why. The legal card dips under the finger on press. The select-then-confirm state (`twoStepPlay`, `selectCard`, the outside-tap deselect and the `.selected` style) is removed.
 - **Haptics on iPhone.** iOS Safari has no Vibration API, so `navigator.vibrate` silently did nothing on iPhones. `triggerHaptic` now falls back on iOS to a hidden native switch control (`<input type="checkbox" switch>`, iOS 17.4+), whose toggle produces a system haptic tick. Patterns become one tick per pulse (max 3) at the same offsets. iOS only allows this during or right after a user gesture, so on iPhone you feel your own moves (plays, draws, colour choice, Fire, invalid taps), not the bots'. Android keeps the full vibration patterns. The "Vibration" setting still switches it all off.
 Version v84.
+
+## v85 — iPhone haptics fired inside the tap; version mark
+
+Owner: still no haptics on iPhone after v84. v84 fired the iOS switch tick from the game-state callback, ~340 ms after the tap (after the card's travel animation), outside the tap that iOS requires. Now:
+- `tapFeedback(kind)` (storage.js) fires synchronously inside the tap handlers — play (tap or swipe), draw, colour stone, Fire. It only acts where there's no Vibration API (iPhone); Android keeps the event-driven patterns.
+- The iOS tick mirrors the known working approach: a fresh hidden `<label><input type=checkbox switch></label>` (display:none) appended to `<head>`, clicked, removed.
+- Game-event haptics (`eventFeedback`) run only where `navigator.vibrate` exists, so iPhones never get a delayed second tick.
+- Invalid-card taps and the Settings "Vibration" toggle were already synchronous and also tick on iPhone.
+- Settings shows a small "RUNES vNN" mark at the bottom (read from `app.js?v=`), so the owner can see which build a device is running.
+Version v85.
