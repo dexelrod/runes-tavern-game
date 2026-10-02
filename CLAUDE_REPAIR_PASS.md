@@ -483,3 +483,9 @@ Owner report: "Highlight playable cards" looked the same on and off, because unp
 - Pause: removed the "Nothing moves until you return." line.
 - Long-press no longer starts a text selection anywhere in the game (`user-select:none` + `-webkit-touch-callout:none` on `.app-shell`), seen in the owner's iPhone screenshots.
 Version v83.
+
+## v84 — Tap to play; haptics on iPhone
+
+- **Tap to play.** On touch screens one tap on a playable card plays it (was: tap to select, tap again, or swipe up). The upward swipe still works. Tapping an unplayable card still shows why. The legal card dips under the finger on press. The select-then-confirm state (`twoStepPlay`, `selectCard`, the outside-tap deselect and the `.selected` style) is removed.
+- **Haptics on iPhone.** iOS Safari has no Vibration API, so `navigator.vibrate` silently did nothing on iPhones. `triggerHaptic` now falls back on iOS to a hidden native switch control (`<input type="checkbox" switch>`, iOS 17.4+), whose toggle produces a system haptic tick. Patterns become one tick per pulse (max 3) at the same offsets. iOS only allows this during or right after a user gesture, so on iPhone you feel your own moves (plays, draws, colour choice, Fire, invalid taps), not the bots'. Android keeps the full vibration patterns. The "Vibration" setting still switches it all off.
+Version v84.

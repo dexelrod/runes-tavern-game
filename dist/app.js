@@ -739,20 +739,17 @@ function bind(){
   root.querySelector('[data-speed-bots]')?.addEventListener('pointerdown',event=>{if(!pendingBotTurn||event.target.closest('button,.card,[role="dialog"]'))return;clearTimeout(botTimer);const pending=pendingBotTurn;runBotTurn(pending.playerId,pending.epoch,pending.scheduledTurn);});
   root.querySelectorAll('[data-color]').forEach(b=>b.onclick=()=>submit({type:ACTIONS.CHOOSE_COLOR,playerId:'p0',color:b.dataset.color}));
   bindHand();
-  root.onclick=event=>{if(selected&&!event.target.closest('.hand .card')){selected=null;root.querySelectorAll('.hand .card.selected').forEach(card=>{card.classList.remove('selected');card.setAttribute('aria-pressed','false');});}};
   const firstGem=root.querySelector('.color-choice .gem');if(firstGem&&!root.contains(document.activeElement)||firstGem&&document.activeElement===document.body)firstGem.focus({preventScroll:true});
   layoutHand();
   if(view==='game'&&roundResultVisible&&session?.phase!=='round'){animateCoinsToWinner();const slip=root.querySelector('.result-slip.enter .primary-button');if(slip&&!sheet)slip.focus({preventScroll:true});}
 }
 function bindHand(){
-  const twoStepPlay=matchMedia('(hover:none) and (pointer:coarse)').matches;
   let hintTimer=0;
   const rejectCard=card=>{hint=rejectReason(state.players[0].hand.find(c=>c.id===card.dataset.cardId));feedback('invalid',settings);render();clearTimeout(hintTimer);hintTimer=setTimeout(()=>{hint='';render();},1300);};
-  const selectCard=card=>{selected=card.dataset.cardId;root.querySelectorAll('.hand .card.selected').forEach(node=>{node.classList.remove('selected');node.setAttribute('aria-pressed','false');});card.classList.add('selected');card.setAttribute('aria-pressed','true');};
   root.querySelectorAll('.hand .card').forEach(card=>{
     const legal=card.classList.contains('legal'),play=()=>{if(legal)submit({type:ACTIONS.PLAY,playerId:'p0',cardId:card.dataset.cardId});};
     let startX=0,startY=0,lastY=0,lastTime=0,velocity=0,dragging=false,suppressClick=false;
-    card.onclick=e=>{if(suppressClick){suppressClick=false;e.preventDefault();return;}if(!legal){rejectCard(card);return;}if(!twoStepPlay||selected===card.dataset.cardId)play();else selectCard(card);};
+    card.onclick=e=>{if(suppressClick){suppressClick=false;e.preventDefault();return;}if(!legal){rejectCard(card);return;}play();};
     card.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();card.click();}};
     if(!legal)return;
     // Cards allow native horizontal panning (touch-action:pan-x) so the hand

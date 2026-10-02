@@ -287,8 +287,9 @@ html[lang=he] :is(.sheet-lede,.setting-label,.rule-card p,.rule-scoring p,.stand
 /* "Highlight playable cards": on your turn the cards you can play carry a soft
    warm glow. Off, every card looks the same and you judge for yourself. */
 .human-turn .hand.hints .card.legal{box-shadow:inset 0 0 0 1px #f2c46faa,inset 0 0 14px #f2b45e66,0 3px 0 #2a170e8c,0 10px 14px #000a,0 0 18px 3px #f2b45e99}
-.hand .card.selected,.human-turn .hand .card.selected{z-index:60;transform:translateY(calc(var(--hand-lift) * -.85 + var(--drag,0px))) rotate(0deg);box-shadow:0 6px 0 #24120855,0 18px 22px #000b;filter:brightness(1.08)}
 .hand .card.dragging{transition:none;z-index:70}
+/* One tap plays: the card dips under the finger as it is pressed. */
+.human-turn .hand .card.legal:active{transform:translateY(calc(var(--rise,0px) - 10px)) rotate(var(--tilt,0deg));transition-duration:.05s}
 .hand .card.motion-source{visibility:hidden}
 .human-turn .hand.hints.taki-active .card.quiet{filter:saturate(.7) brightness(.8)}
 .hand-overflow{position:absolute;z-index:22;bottom:calc(8px + var(--safe-bottom));width:34px;height:calc(var(--card-w) * 1.4 + 6px);display:grid;place-items:center;opacity:0;pointer-events:none;transition:opacity .2s ease}
