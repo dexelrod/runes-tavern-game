@@ -499,3 +499,7 @@ Owner: still no haptics on iPhone after v84. v84 fired the iOS switch tick from 
 - Invalid-card taps and the Settings "Vibration" toggle were already synchronous and also tick on iPhone.
 - Settings shows a small "RUNES vNN" mark at the bottom (read from `app.js?v=`), so the owner can see which build a device is running.
 Version v85.
+
+## v86 — English is the default language
+
+Owner decision. `defaults.language` is now `'en'`; `index.html` starts as `lang="en" dir="ltr"` with an English description (no Hebrew flash before the app renders). Players who already chose a language keep it (it's stored in their settings). Hebrew is unchanged and one tap away in Settings. Test updated: "English is the default language". iPhone haptics (v84–v85) remain in place but the owner confirmed iOS doesn't deliver them; Android vibration is unaffected. Version v86.

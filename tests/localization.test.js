@@ -6,8 +6,8 @@ import { makeCard, TYPES } from '../dist/game-engine/cards.js';
 import { cardHTML, cardLabel } from '../dist/ui/card.js';
 import { DUEL_OPPONENTS, getDuelOpponent, localizeDuelOpponent } from '../dist/duel/opponents.js';
 
-test('Hebrew remains the default language', () => {
-  assert.equal(defaults.language, 'he');
+test('English is the default language (owner decision, v86)', () => {
+  assert.equal(defaults.language, 'en');
 });
 
 test('card labels and accessibility text localize to English', () => {
