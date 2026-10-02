@@ -75,7 +75,15 @@ console.log('Tavern Match: two scored rounds');
 console.log('Duel vs Bramm: one round, English');
 {const {page,context,errors}=await open({width:390,height:844},{language:'en'},true);
   await page.click('[data-duel]');await page.click('[data-opponent="bramm"]');await page.waitForTimeout(1500);
-  check(await page.locator('.duel-seat.opponent-bramm .bramm-art').isVisible(),'Bramm sits at the table');
+  check(await page.locator('.duel-seat.opponent-bramm .character-art').isVisible(),'Bramm sits at the table');
+  check(await playRound(page),'duel round reaches the result slip');
+  check(errors.length===0,`no console errors (${errors.join(' | ')})`);await context.close();}
+
+console.log('Duel vs Edrin: one round, Hebrew');
+{const {page,context,errors}=await open({width:390,height:844},{language:'he'},true);
+  await page.click('[data-duel]');await page.click('[data-opponent="edrin"]');await page.waitForTimeout(1500);
+  check(await page.locator('.duel-seat.opponent-edrin .character-art').isVisible(),'Edrin sits at the table');
+  check(await page.locator('.duel-seat .speech:not(.character-speech)').count()===0,'no generic bot bubble at Edrin\'s seat');
   check(await playRound(page),'duel round reaches the result slip');
   check(errors.length===0,`no console errors (${errors.join(' | ')})`);await context.close();}
 

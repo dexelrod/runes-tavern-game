@@ -32,13 +32,13 @@ test('the application offers both language choices and updates document directio
   assert.match(source,/document\.documentElement\.dir=direction\(\)/);
 });
 
-test('Bramm bubbles and voice share a captured locale while future lines follow language changes',async()=>{
+test('character bubbles and voice share a captured locale while future lines follow language changes',async()=>{
   const source=await readFile(new URL('../dist/app.js',import.meta.url),'utf8');
-  assert.match(source,/resolveBrammReaction\(reaction,settings\.language\)/);
+  assert.match(source,/pack\.resolveReaction\(reaction,settings\.language\)/);
   assert.match(source,/locale:localized\.locale/);
-  assert.match(source,/brammCaptionLocale==='he'\?'rtl':'ltr'/);
-  assert.match(source,/settings\.captions&&brammCaptionLine/);
-  assert.match(source,/if\(isBrammDuel\(\)\)void audioSystem\.preloadVoice\(language\)/);
+  assert.match(source,/characterCaptionLocale==='he'\?'rtl':'ltr'/);
+  assert.match(source,/settings\.captions&&characterCaptionLine/);
+  assert.match(source,/if\(isAuthoredDuel\(\)\)void audioSystem\.preloadVoice\(language,Object\.keys\(authoredPack\(\)\.voiceLibrary\)\)/);
 });
 
 test('settings copy and structure are localized and controls state their value',async()=>{

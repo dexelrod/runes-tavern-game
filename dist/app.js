@@ -8,7 +8,8 @@ import { chooseBotAction, chooseColor } from './game-ai/bot.js';
 import { cardHTML, cardLabel, sigilHTML } from './ui/card.js';
 import { calculateHandLayout } from './ui/hand-layout.js';
 import { DUEL_OPPONENTS, duelSpriteStyle, getDuelOpponent, localizeDuelOpponent } from './duel/opponents.js';
-import { BRAMM_EXPRESSIONS, BRAMM_REACTIONS, brammExpressionURL, createBrammController, preloadBrammExpressions, resolveBrammReaction } from './duel/bramm.js';
+import { AUTHORED_CHARACTERS, authoredCharacter } from './duel/characters.js';
+import { debugMarkEdrinVoiceMissing, edrinEventFor } from './duel/edrin.js';
 
 const root=document.querySelector('#app');
 // Player-facing order of the four colours: Burgundy, Forest, Gold, Slate.
@@ -29,7 +30,7 @@ function colorRuneHTML(color,className='color-rune'){
 function displayName(player){if(!player)return'';if(player.id==='p0')return isEnglish()?'You':player.name;if(!isEnglish())return player.name;const key=player.nameKey||player.duelOpponentId;return key?(playerNames[key]||localizeDuelOpponent(getDuelOpponent(key),'en')?.name||player.name):(playerNames[player.name]||player.name);}
 function displayOpponent(opponent){return localizeDuelOpponent(opponent,settings.language);}
 function cardOptions(options={}){return {...options,language:settings.language};}
-let botTimer=null,eventTimer=null,quipTimer=null,roundEndTimer=null,duelReactionTimer=null,duelIdleTimer=null,deckAudioTimer=null,brammSlowTimer=null,musicRestoreTimer=null,eventBanner=null,quip=null,duelReaction='idle',lastDuelReactionAt=0,lastLogLength=0,lastCounts={},lastHands={},lastQuipAt=0,takiRun=0,lastRenderedTopId=null,sessionEpoch=0,roundResultVisible=false,incomingCardDelays=new Map(),propRattled=new Set(),screenReaderLine='',captionLine='',brammCaptionLine='',brammCaptionLocale='en',blockAiUntil=0,motionLocked=false,pendingAction=null,deckSettling=false,brammController=null,brammExpression='01_default_smug',brammPreviousExpression='01_default_smug',brammExpressionTimer=null,brammSwapTimer=null,brammSequenceTimers=[],pendingBotTurn=null;
+let botTimer=null,eventTimer=null,quipTimer=null,roundEndTimer=null,duelReactionTimer=null,duelIdleTimer=null,deckAudioTimer=null,characterSlowTimer=null,musicRestoreTimer=null,eventBanner=null,quip=null,duelReaction='idle',lastDuelReactionAt=0,lastLogLength=0,lastCounts={},lastHands={},lastQuipAt=0,takiRun=0,lastRenderedTopId=null,sessionEpoch=0,roundResultVisible=false,incomingCardDelays=new Map(),propRattled=new Set(),screenReaderLine='',captionLine='',characterCaptionLine='',characterCaptionLocale='en',blockAiUntil=0,motionLocked=false,pendingAction=null,deckSettling=false,characterController=null,characterExpression='01_default_smug',characterPreviousExpression='01_default_smug',characterExpressionTimer=null,characterSwapTimer=null,characterSequenceTimers=[],characterControllerFor=null,edrinConsideredTurn=null,pendingBotTurn=null;
 const dialogueHe={
   hunter:{skip:['אה, לא. תורך.','לאן אתה חושב שאתה הולך?','שב.'],penalty:['ארבעה?!','זה מסלים מהר.','אני רואה שבחרנו באלימות.'],reverse:['חוזר אליך.','הסתובבו השולחנות.'],last:['כולם עליו.','עוד לא ניצחת.'],king:['הכתר החליט.','טוב. זה משנה דברים.']},
   bard:{skip:['בחייך.','זה היה מיותר לחלוטין.'],penalty:['אה. נפלא.','בשלב הזה פשוט תן לי את הקופה.'],reverse:['תרתי משמע.','שינוי בתוכניות.'],last:['זה נהיה מעניין.','אל תחייך עדיין.'],king:['קשה להתווכח עם כתר.','בחירה אמיצה.']},
@@ -47,47 +48,77 @@ const dialogueEn={
 const tavernBanterHe=['יפה.','לא רע.','באמת?','כמובן.','ידעתי.','נו באמת.','זה היה אישי.','טעות.','בחירה מפוקפקת.','יש לך מזל.','עוד לא סיימתי.','היית חייב?','אני צריך עוד משקה.','הקלפים שונאים אותי.','מרשים. מעצבן, אבל מרשים.','שקט. אני חושב.','יש לי תוכנית.','לא הייתה לי תוכנית.','בדיוק לפי התוכנית.'];
 const tavernBanterEn=['Nicely done.','Not bad.','Really?','Of course.','I knew it.','Come on.','That was personal.','A mistake.','Questionable choice.','Lucky.','I’m not done.','Did you have to?','I need another drink.','The cards hate me.','Impressive. Annoying, but impressive.','Quiet. I’m thinking.','I’ve got a plan.','I didn’t have a plan.','Exactly as planned.'];
 
-function persist(){if(session){if(isBrammDuel()&&brammController)session.brammPersonality=brammController.snapshot();saveMatch(session);}}
+function persist(){if(session){if(isAuthoredDuel()&&characterController)session.characterPersonality=characterController.snapshot();saveMatch(session);}}
 function currentDuelOpponent(){return displayOpponent(getDuelOpponent(session?.opponentId||settings.duelOpponent));}
-const isBrammDuel=()=>session?.mode==='duel'&&session.opponentId==='bramm';
-function clearBrammTimers(){clearTimeout(brammExpressionTimer);clearTimeout(brammSwapTimer);clearTimeout(brammSlowTimer);for(const timer of brammSequenceTimers)clearTimeout(timer);brammSequenceTimers=[];brammCaptionLine='';}
-function setBrammExpression(expression,duration=0){if(!BRAMM_EXPRESSIONS.includes(expression))expression=brammController?.defaultExpression()||'01_default_smug';brammPreviousExpression=brammExpression;brammExpression=expression;clearTimeout(brammExpressionTimer);clearTimeout(brammSwapTimer);render();brammSwapTimer=setTimeout(()=>{brammPreviousExpression=brammExpression;root.querySelector('.bramm-art-stage.bramm-table')?.classList.remove('is-changing');},settings.reducedMotion?0:150);if(duration>0){const epoch=sessionEpoch;brammExpressionTimer=setTimeout(()=>{if(epoch!==sessionEpoch||!brammController)return;brammPreviousExpression=brammExpression;brammExpression=brammController.defaultExpression();brammCaptionLine='';render();},settings.reducedMotion?Math.min(duration,900):duration);}}
-function performBrammReaction(reaction,{voiceDelay=0}={}){
-  if(!reaction||!isBrammDuel())return null;
-  const localized=resolveBrammReaction(reaction,settings.language);
-  setBrammExpression(localized.expression);brammCaptionLine=localized.caption||'';brammCaptionLocale=localized.locale;render();
-  const epoch=sessionEpoch,finish=()=>{if(epoch!==sessionEpoch)return;const timer=setTimeout(()=>{if(epoch!==sessionEpoch)return;if(!['panic','defeated'].includes(brammController?.snapshot().state)){brammPreviousExpression=brammExpression;brammExpression=brammController?.defaultExpression()||'01_default_smug';}brammCaptionLine='';render();},settings.reducedMotion?180:650);brammSequenceTimers.push(timer);},play=()=>{if(epoch!==sessionEpoch||!isBrammDuel())return;audioSystem.setSettings(settings);if(localized.voice){void audioSystem.playVoice(localized.voice,{locale:localized.locale,priority:localized.priority,locked:localized.category==='result',onEnded:finish}).then(node=>{if(!node){const timer=setTimeout(finish,localized.duration||2400);brammSequenceTimers.push(timer);}});}else{const timer=setTimeout(finish,localized.duration||1800);brammSequenceTimers.push(timer);}render();};
-  if(voiceDelay){const timer=setTimeout(play,settings.reducedMotion?80:voiceDelay);brammSequenceTimers.push(timer);}else play();
+// One framework for every authored duel character (Bramm, Edrin): the pack in
+// duel/characters.js says what differs; staging, bubbles and voice are shared.
+const authoredPack=()=>session?.mode==='duel'?authoredCharacter(session.opponentId):null;
+const isAuthoredDuel=()=>!!authoredPack();
+const isBrammDuel=()=>authoredPack()?.id==='bramm';
+const isEdrinDuel=()=>authoredPack()?.id==='edrin';
+// Gameplay time only: paused sheets and a hidden tab never count as "quiet".
+let activeClockTotal=0,activeClockSince=null;
+const activeNow=()=>activeClockTotal+(activeClockSince===null?0:performance.now()-activeClockSince);
+function runActiveClock(on){if(on&&activeClockSince===null)activeClockSince=performance.now();else if(!on&&activeClockSince!==null){activeClockTotal+=performance.now()-activeClockSince;activeClockSince=null;}}
+let characterSpeaking=null;
+function clearCharacterTimers(){clearTimeout(characterExpressionTimer);clearTimeout(characterSwapTimer);clearTimeout(characterSlowTimer);for(const timer of characterSequenceTimers)clearTimeout(timer);characterSequenceTimers=[];characterCaptionLine='';characterSpeaking=null;}
+function restingExpression(pack=authoredPack()){return characterController?.defaultExpression()||pack?.defaultExpression||'01_default_smug';}
+function setCharacterExpression(expression,duration=0){const pack=authoredPack();if(!pack)return;if(!pack.expressions.includes(expression))expression=restingExpression(pack);characterPreviousExpression=characterExpression;characterExpression=expression;clearTimeout(characterExpressionTimer);clearTimeout(characterSwapTimer);render();characterSwapTimer=setTimeout(()=>{characterPreviousExpression=characterExpression;root.querySelector('.character-art-stage.character-table')?.classList.remove('is-changing');},settings.reducedMotion?0:150);if(duration>0){const epoch=sessionEpoch;characterExpressionTimer=setTimeout(()=>{if(epoch!==sessionEpoch||!characterController||characterSpeaking)return;characterPreviousExpression=characterExpression;characterExpression=restingExpression();characterCaptionLine='';render();},settings.reducedMotion?Math.min(duration,900):duration);}}
+// Shared performance order: localized transcript → mapped expression → voice →
+// bubble → hold through the line → hide bubble → settle back to baseline.
+function performCharacterReaction(reaction,{voiceDelay=0}={}){
+  const pack=authoredPack();if(!reaction||!pack)return null;
+  // A result line owns the stage: nothing lesser replaces its face or bubble, and
+  // a gameplay line still waiting on its lead beat is dropped once the hand is over.
+  if(reaction.priority!=='CRITICAL'&&(characterSpeaking?.priority==='CRITICAL'||session?.phase!=='round'))return null;
+  const localized=pack.resolveReaction(reaction,settings.language);
+  setCharacterExpression(localized.expression);characterCaptionLine=localized.caption||'';characterCaptionLocale=localized.locale;characterSpeaking=localized.caption||localized.voice?{priority:localized.priority,id:localized.id}:null;render();
+  const epoch=sessionEpoch,finish=()=>{if(epoch!==sessionEpoch)return;const timer=setTimeout(()=>{if(epoch!==sessionEpoch)return;characterSpeaking=null;if(!pack.holdsExpression(characterController)){characterPreviousExpression=characterExpression;characterExpression=restingExpression(pack);}characterCaptionLine='';render();},settings.reducedMotion?180:650);characterSequenceTimers.push(timer);},play=()=>{if(epoch!==sessionEpoch||!isAuthoredDuel())return;audioSystem.setSettings(settings);if(localized.voice){void audioSystem.playVoice(localized.voice,{locale:localized.locale,priority:localized.priority,locked:localized.category==='result',onEnded:finish}).then(node=>{if(!node){const timer=setTimeout(finish,localized.duration||2400);characterSequenceTimers.push(timer);}});}else{const timer=setTimeout(finish,localized.duration||1800);characterSequenceTimers.push(timer);}render();};
+  if(voiceDelay){const timer=setTimeout(play,settings.reducedMotion?80:voiceDelay);characterSequenceTimers.push(timer);}else play();
   return localized;
 }
-function runBramm(trigger,context={},force=false){if(view!=='game'||isPaused()||!isBrammDuel()||!brammController)return null;const visual=brammController.observe(trigger,context);if(visual)setBrammExpression(visual.expression,visual.duration);const reaction=brammController.react(trigger,context,force);if(!reaction)return visual;settings.brammRecentVoices=brammController.snapshot().recentVoices;saveSettings(settings);if(trigger==='match_loss'){setBrammExpression('29_defeated_disbelief',Math.max(1800,reaction.duration));const epoch=sessionEpoch,timer=setTimeout(()=>{if(epoch===sessionEpoch)performBrammReaction(reaction);},settings.reducedMotion?120:620);brammSequenceTimers.push(timer);return reaction;}if(trigger==='player_one_card'){setBrammExpression('36_mug_stops_midair');const epoch=sessionEpoch,timer=setTimeout(()=>{if(epoch===sessionEpoch)performBrammReaction(reaction);},settings.reducedMotion?120:700);brammSequenceTimers.push(timer);return reaction;}const delay=trigger==='win'&&reaction.id==='win_04'?260:0;return performBrammReaction(reaction,{voiceDelay:delay});}
-function brammArtHTML(opponent,{context='table'}={}){if(opponent?.id!=='bramm')return `<i class="duel-sprite sheet-${opponent?.sheet||'a'}" style="${duelSpriteStyle(opponent,context==='table'?duelReaction:'idle')}"></i>`;if(context==='table'&&root.querySelector('.bramm-art-stage.bramm-table'))return '<span data-bramm-stage-placeholder></span>';const expression=context==='table'?brammExpression:'01_default_smug';return `<span class="bramm-art-stage bramm-${context}"><img class="bramm-art bramm-art-current" src="${brammExpressionURL(expression)}" alt="" draggable="false" onerror="this.onerror=null;this.src='${brammExpressionURL('01_default_smug')}'"></span>`;}
-function syncBrammStage(stage){if(!stage)return;const current=stage.querySelector('.bramm-art-current'),currentURL=brammExpressionURL(brammExpression);if(current&&current.src!==currentURL)current.src=currentURL;stage.classList.remove('is-changing');}
-function scheduleDuelIdle(){clearTimeout(duelIdleTimer);if(view!=='game'||isPaused()||session?.mode!=='duel'||session.phase!=='round')return;const opponent=currentDuelOpponent(),epoch=sessionEpoch;duelIdleTimer=setTimeout(()=>{if(epoch!==sessionEpoch||view!=='game'||isPaused()||session?.mode!=='duel'||session.phase!=='round'||eventBanner)return scheduleDuelIdle();if(isBrammDuel()){const cards=state.players.map(p=>p.hand.length),ahead=cards[1]<=cards[0],quiet=state.phase==='playing'&&cards[0]!==1&&!motionLocked&&!audioSystem.voiceSource&&!brammCaptionLine;const spoke=quiet&&(runBramm('idle_quiet')?.voice||runBramm('idle_taunt',{ahead})?.voice);if(!spoke)setBrammExpression(ahead?'34_drinking_relaxed':'35_drinking_nervous',settings.reducedMotion?1400:2800);}else setDuelReaction('drink',opponent.dialoguePools.drink.at(Math.floor(Math.random()*opponent.dialoguePools.drink.length)),true);scheduleDuelIdle();},opponent.idleFrequency+Math.random()*9000);}
-function setDuelReaction(kind,text=null,force=false){if(session?.mode!=='duel'||isBrammDuel())return;const opponent=currentDuelOpponent(),weight=opponent.reactionWeights[kind]??1;if(!force&&(Date.now()-lastDuelReactionAt<4200||Math.random()>weight))return;lastDuelReactionAt=Date.now();duelReaction=kind;clearTimeout(duelReactionTimer);if(text)showQuip('p1',text,force);render();const epoch=sessionEpoch;duelReactionTimer=setTimeout(()=>{if(epoch!==sessionEpoch)return;duelReaction='idle';render();scheduleDuelIdle();},settings.reducedMotion?350:1100+Math.random()*1200);}
+const VOICE_RANK=Object.freeze({LOW:1,MEDIUM:2,HIGH:3,CRITICAL:4});
+function runCharacter(trigger,context={},force=false){
+  const pack=authoredPack();if(view!=='game'||isPaused()||!pack||!characterController)return null;
+  const busyRank=Math.max(audioSystem.voiceSource?audioSystem.voicePriority:0,characterSpeaking?VOICE_RANK[characterSpeaking.priority]||1:0);
+  const visual=characterController.observe(trigger,context);
+  // A face may react silently, but never over a line that is still being spoken.
+  if(visual&&!characterSpeaking)setCharacterExpression(visual.expression,visual.duration);
+  const reaction=characterController.react(trigger,{...context,locale:settings.language,busyRank},force);if(!reaction)return visual;
+  settings.characterRecentVoices={...(settings.characterRecentVoices||{}),[pack.id]:characterController.snapshot().recentVoices};if(pack.id==='bramm')settings.brammRecentVoices=settings.characterRecentVoices.bramm;saveSettings(settings);
+  const lead=pack.lead(trigger,reaction);
+  if(lead?.delay){if(lead.expression&&(!characterSpeaking||reaction.priority==='CRITICAL'))setCharacterExpression(lead.expression,lead.hold||0);const epoch=sessionEpoch,timer=setTimeout(()=>{if(epoch===sessionEpoch)performCharacterReaction(reaction);},settings.reducedMotion?120:lead.delay);characterSequenceTimers.push(timer);return reaction;}
+  return performCharacterReaction(reaction,{voiceDelay:lead?.voiceDelay||0});
+}
+function characterArtHTML(opponent,{context='table'}={}){const pack=authoredCharacter(opponent?.id);if(!pack)return `<i class="duel-sprite sheet-${opponent?.sheet||'a'}" style="${duelSpriteStyle(opponent,context==='table'?duelReaction:'idle')}"></i>`;if(context==='table'&&root.querySelector(`.character-art-stage.character-table[data-character="${pack.id}"]`))return '<span data-character-stage-placeholder></span>';const expression=context==='table'&&pack.expressions.includes(characterExpression)?characterExpression:pack.defaultExpression;return `<span class="character-art-stage character-${context} character-${pack.id}" data-character="${pack.id}"><img class="character-art character-art-current" src="${pack.expressionURL(expression)}" alt="" draggable="false" onerror="this.onerror=null;this.src='${pack.expressionURL(pack.defaultExpression)}'"></span>`;}
+function syncCharacterStage(stage){const pack=authoredPack();if(!stage||!pack)return;const current=stage.querySelector('.character-art-current'),currentURL=pack.expressionURL(pack.expressions.includes(characterExpression)?characterExpression:pack.defaultExpression);if(current&&current.src!==currentURL)current.src=currentURL;stage.classList.remove('is-changing');}
+function scheduleDuelIdle(){clearTimeout(duelIdleTimer);if(view!=='game'||isPaused()||session?.mode!=='duel'||session.phase!=='round')return;const opponent=currentDuelOpponent(),epoch=sessionEpoch;duelIdleTimer=setTimeout(()=>{if(epoch!==sessionEpoch||view!=='game'||isPaused()||session?.mode!=='duel'||session.phase!=='round'||eventBanner)return scheduleDuelIdle();const pack=authoredPack();if(pack){const cards=state.players.map(p=>p.hand.length),ahead=cards[1]<=cards[0],concerned=cards[0]===1,quiet=state.phase==='playing'&&!concerned&&!motionLocked&&!audioSystem.voiceSource&&!characterCaptionLine&&!characterSpeaking;let spoke=false;if(quiet)for(const [trigger,context] of pack.idleTriggers({ahead})){if(runCharacter(trigger,{...context,playerOnOneCard:concerned})?.voice){spoke=true;break;}}if(!spoke&&!characterSpeaking){const beat=pack.idleFallback(characterController,{ahead,concerned});if(beat)setCharacterExpression(beat.expression,settings.reducedMotion?Math.min(1400,beat.duration):beat.duration);}}else setDuelReaction('drink',opponent.dialoguePools.drink.at(Math.floor(Math.random()*opponent.dialoguePools.drink.length)),true);scheduleDuelIdle();},opponent.idleFrequency+Math.random()*9000);}
+function setDuelReaction(kind,text=null,force=false){if(session?.mode!=='duel'||isAuthoredDuel())return;const opponent=currentDuelOpponent(),weight=opponent.reactionWeights[kind]??1;if(!force&&(Date.now()-lastDuelReactionAt<4200||Math.random()>weight))return;lastDuelReactionAt=Date.now();duelReaction=kind;clearTimeout(duelReactionTimer);if(text)showQuip('p1',text,force);render();const epoch=sessionEpoch;duelReactionTimer=setTimeout(()=>{if(epoch!==sessionEpoch)return;duelReaction='idle';render();scheduleDuelIdle();},settings.reducedMotion?350:1100+Math.random()*1200);}
 function duelLine(kind){const pool=currentDuelOpponent().dialoguePools[kind]||[];return pool[Math.floor(Math.random()*pool.length)];}
 function recordDuelResult(){if(session?.mode!=='duel'||session.phase!=='matchFinished'||session.recorded)return;const id=session.opponentId,record=settings.duelRecords?.[id]||{played:0,won:0};settings.duelRecords={...(settings.duelRecords||{}),[id]:{played:record.played+1,won:record.won+(session.championId==='p0'?1:0)}};session.recorded=true;saveSettings(settings);}
 function setSession(next){
-  sessionEpoch++;clearTimeout(eventTimer);clearTimeout(quipTimer);clearTimeout(roundEndTimer);clearTimeout(duelReactionTimer);clearTimeout(duelIdleTimer);clearBrammTimers();audioSystem.stopVoice();
+  sessionEpoch++;clearTimeout(eventTimer);clearTimeout(quipTimer);clearTimeout(roundEndTimer);clearTimeout(duelReactionTimer);clearTimeout(duelIdleTimer);clearCharacterTimers();audioSystem.stopVoice();
   quip=null;duelReaction='idle';captionLine='';roundResultVisible=next.phase!=='round';session=next;state=session.game;
-  if(isBrammDuel()){brammController ||= createBrammController({initial:{...(next.brammPersonality||{}),recentVoices:next.brammPersonality?.recentVoices||settings.brammRecentVoices||[]}});brammExpression=brammController.defaultExpression();brammPreviousExpression=brammExpression;}else{brammController=null;brammExpression='01_default_smug';brammPreviousExpression=brammExpression;}
+  const pack=authoredPack();
+  if(pack){if(!characterController||characterControllerFor!==pack.id){characterController=pack.createController({initial:next.characterPersonality||next.brammPersonality||null,settings,now:pack.activeClock?activeNow:undefined});characterControllerFor=pack.id;}characterExpression=characterController.defaultExpression();characterPreviousExpression=characterExpression;}else{characterController=null;characterControllerFor=null;characterExpression='01_default_smug';characterPreviousExpression=characterExpression;}
   transport?.disconnect();transport=new LocalGameTransport(state);lastLogLength=state.log.length;lastCounts=Object.fromEntries(state.players.map(p=>[p.id,p.hand.length]));lastHands=Object.fromEntries(state.players.map(p=>[p.id,p.hand.map(card=>card.id)]));lastRenderedTopId=null;incomingCardDelays.clear();propRattled.clear();eventBanner=null;
   transport.subscribeToState((nextState,action)=>{
     state=nextState;session.game=nextState;
     try{onState(action);}catch(error){console.error('Non-blocking game presentation error',error);screenReaderLine='';captionLine='';}
     if(nextState.phase==='finished'&&session.phase==='round'){
       session=finishRound(session);const opponentWon=session.results.at(-1)?.winnerId==='p1',finalDuel=session.mode==='duel'&&session.phase==='matchFinished';
-      // Bramm speaks exactly one result line, chosen from the real match state:
+      // An authored character speaks exactly one result line, chosen from the real match state:
       // round win / round loss while the match continues, match win / match loss at the end.
       if(isBrammDuel()&&finalDuel){
-        const humanScore=session.scores?.p0||0,brammScore=session.scores?.p1||0,spread=Math.abs(brammScore-humanScore),snapshot=brammController.snapshot();
-        if(opponentWon)runBramm('win',{close:spread<=3,crushing:spread>=12,wasBehind:snapshot.flags.bramm_was_previously_behind,survivedOneCard:snapshot.flags.bramm_survived_one_card_scare},true);
-        else runBramm('match_loss',{},true);
-      }else if(isBrammDuel())runBramm(opponentWon?'round_win':'round_loss',{},true);
+        const humanScore=session.scores?.p0||0,brammScore=session.scores?.p1||0,spread=Math.abs(brammScore-humanScore),snapshot=characterController.snapshot();
+        if(opponentWon)runCharacter('win',{close:spread<=3,crushing:spread>=12,wasBehind:snapshot.flags.bramm_was_previously_behind,survivedOneCard:snapshot.flags.bramm_survived_one_card_scare},true);
+        else runCharacter('match_loss',{},true);
+      }else if(isBrammDuel())runCharacter(opponentWon?'round_win':'round_loss',{},true);
+      else if(isEdrinDuel())runCharacter(finalDuel?(opponentWon?'match_win':'match_loss'):(opponentWon?'round_win':'round_loss'),{},true);
       else if(session.mode==='duel'){setDuelReaction(opponentWon?'pleased':'annoyed',duelLine(opponentWon?'pleased':'annoyed'),true);}
-      roundResultVisible=false;const epoch=sessionEpoch,authoredBeat=isBrammDuel()&&finalDuel;
+      roundResultVisible=false;const epoch=sessionEpoch,authoredBeat=isAuthoredDuel()&&finalDuel?authoredPack().finalResultBeat:0;
       audioSystem.duckMusic(.08,240);
-      roundEndTimer=setTimeout(()=>{if(epoch!==sessionEpoch)return;revealRoundResult();},settings.reducedMotion?(authoredBeat?900:120):(authoredBeat?1850:1050));
+      roundEndTimer=setTimeout(()=>{if(epoch!==sessionEpoch)return;revealRoundResult();},settings.reducedMotion?(authoredBeat?900:120):(authoredBeat||1050));
     }
     persist();render();scheduleGame();
   });scheduleDuelIdle();
@@ -95,7 +126,7 @@ function setSession(next){
 let coinsAnimatedFor=-1;
 function revealRoundResult(){roundResultVisible=true;recordDuelResult();feedback('round',settings);persist();render();}
 function startNextHand(){
-  feedback('shuffle',settings);deckSettling=true;if(isBrammDuel())brammController?.beginRound();
+  feedback('shuffle',settings);deckSettling=true;if(isAuthoredDuel())characterController?.beginRound();
   setSession(startNextRound(session));blockAiUntil=Date.now()+1300;
   if(session.mode==='duel')setDuelReaction('drink',duelLine('drink'),true);
   if(settings.music)audioSystem.startMusic({newRound:true});
@@ -109,20 +140,23 @@ function animateCoinsToWinner(){
   const to=target.getBoundingClientRect(),epoch=sessionEpoch;
   const sources=session.roster.filter(p=>p.id!==result.winnerId).map(p=>p.id==='p0'?root.querySelector('.hand-frame'):root.querySelector(`.seat[data-player-id="${p.id}"] .seat-plate`)).filter(Boolean);
   sources.forEach((source,seatIndex)=>{const from=source.getBoundingClientRect();for(let i=0;i<3;i++){const coin=document.createElement('i');coin.className='flying-coin';coin.setAttribute('aria-hidden','true');const sx=from.left+from.width/2+(i-1)*8,sy=from.top+from.height/2;Object.assign(coin.style,{left:`${sx}px`,top:`${sy}px`});document.body.append(coin);const dx=to.left+to.width/2-sx,dy=to.top+to.height/2-sy;coin.animate([{transform:'translate(-50%,-50%) scale(.9)',opacity:0},{transform:'translate(-50%,-50%) scale(1)',opacity:1,offset:.12},{transform:`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px)) scale(.8)`,opacity:1}],{duration:620,delay:seatIndex*110+i*70,easing:'cubic-bezier(.35,.05,.25,1)',fill:'both'}).finished.catch(()=>{}).finally(()=>coin.remove());}});
-  const timer=setTimeout(()=>{if(epoch===sessionEpoch)feedback('coin',settings);},620+sources.length*110);brammSequenceTimers.push(timer);
+  const timer=setTimeout(()=>{if(epoch===sessionEpoch)feedback('coin',settings);},620+sources.length*110);characterSequenceTimers.push(timer);
 }
 function beginDeckArrival(){
   audioSystem.setSettings(settings);audioSystem.play('shuffle');clearTimeout(deckAudioTimer);
   deckAudioTimer=setTimeout(()=>{audioSystem.play('deckPutDown');deckSettling=false;root.querySelector('[data-draw-anchor]')?.classList.remove('deck-settling');},1050);
 }
 async function startSession(mode='tavern',saved=null){
-  brammController=null;clearBrammTimers();
+  characterController=null;clearCharacterTimers();
   const fresh=()=>mode==='tavern'?createTavernMatch({seed:Date.now()}):mode==='duel'?createDuelSession({seed:Date.now(),opponent:getDuelOpponent(settings.duelOpponent)}):createQuickSession({playerCount:settings.playerCount,seed:Date.now()});
   let next;try{next=saved?restoreSession(saved):fresh();}catch{clearMatch();next=fresh();}
-  if(next.mode==='duel'&&next.opponentId==='bramm')await preloadBrammExpressions();
+  // Expressions decode before the character sits down; voices warm in the background.
+  if(next.mode==='duel'&&authoredCharacter(next.opponentId))await authoredCharacter(next.opponentId).preload();
   setSession(next);if(!saved)blockAiUntil=Date.now()+1300;
-  view='game';sheet=null;eventBanner=null;audioSystem.setSettings(settings);if(settings.ambience)audioSystem.startAmbience();if(settings.music)audioSystem.startMusic({newRound:true});deckSettling=!saved;render();if(!saved)beginDeckArrival();if(isBrammDuel()){void audioSystem.preloadVoice(settings.language);// Every new match against Bramm opens with his voiced introduction.
-if(!saved){const epoch=sessionEpoch;const timer=setTimeout(()=>{if(epoch===sessionEpoch)runBramm('intro',{},true);},settings.reducedMotion?350:1250);brammSequenceTimers.push(timer);}}scheduleGame();scheduleDuelIdle();
+  view='game';sheet=null;eventBanner=null;audioSystem.setSettings(settings);if(settings.ambience)audioSystem.startAmbience();if(settings.music)audioSystem.startMusic({newRound:true});deckSettling=!saved;render();if(!saved)beginDeckArrival();runActiveClock(true);const pack=authoredPack();if(pack){void audioSystem.preloadVoice(settings.language,Object.keys(pack.voiceLibrary));
+// Every new match against Bramm opens with his voiced introduction. Edrin says one
+// line the first time you meet him; after that he may just glance up, or not.
+if(!saved){const epoch=sessionEpoch,firstEncounter=!settings.charactersMet?.[pack.id];const timer=setTimeout(()=>{if(epoch!==sessionEpoch)return;if(isBrammDuel())runCharacter('intro',{},true);else{runCharacter('intro',{firstEncounter},true);settings.charactersMet={...(settings.charactersMet||{}),[pack.id]:true};saveSettings(settings);}},settings.reducedMotion?350:pack.introDelay);characterSequenceTimers.push(timer);}}scheduleGame();scheduleDuelIdle();
 }
 function commitAction(action){const beforeTurn=state?.turn,beforeTop=state?topCard(state)?.id:null;if(action.type===ACTIONS.DRAW&&action.playerId==='p0')blockAiUntil=Date.now()+500;try{transport.submitAction(action);selected=null;}catch(error){const advanced=!!state&&(state.turn!==beforeTurn||topCard(state)?.id!==beforeTop);console.error('Game action or update failed',error);hint=advanced?'':(isEnglish()?'You cannot play that card now':'אי אפשר לשחק את הקלף הזה עכשיו');if(!advanced)feedback('invalid',settings);render();if(advanced)scheduleGame();else setTimeout(()=>{hint='';render();},850);}}
 function submit(action){
@@ -264,8 +298,9 @@ function onState(action){
   if(winnerId)audioSystem.play(winnerId==='p0'?'winHand':'loseHand',{delay:(stop||reverse||stack||opened||closed)?280:90});
   if(closed||opened)feedback('takiOpen',settings);else if(stop)feedback('stop',settings);else if(reverse)feedback('reverse',settings);else if(stack||penalty)feedback('penalty',settings);else if(playedCard?.type===TYPES.KING)feedback('king',settings);else if(again)feedback('plus',settings);else if(draw||action.type===ACTIONS.DRAW)feedback('draw',settings);else if(color)feedback('color',settings);else if(entries.length)feedback('play',settings);
   if(penalty?.amount>=6){propRattled.add(penalty.playerId);const epoch=sessionEpoch;setTimeout(()=>{if(epoch!==sessionEpoch)return;propRattled.delete(penalty.playerId);root.querySelector(`[data-player-id="${penalty.playerId}"]`)?.classList.remove('rattled');},520);}
-  if(state.taki?.open)takiRun++;if(closed){if(takiRun>=3&&!isBrammDuel()){const watcher=state.players.find(p=>p.kind==='ai'&&p.id!==closed.playerId);showQuip(watcher?.id,botLine(watcher?.id,'penalty'));}takiRun=0;}
-  if(!isBrammDuel()){
+  if(state.taki?.open)takiRun++;const crossbowRun=takiRun;if(closed){if(takiRun>=3&&!isAuthoredDuel()){const watcher=state.players.find(p=>p.kind==='ai'&&p.id!==closed.playerId);showQuip(watcher?.id,botLine(watcher?.id,'penalty'));}takiRun=0;}
+  // Generic table banter never plays over an authored character.
+  if(!isAuthoredDuel()){
     if(stop)showQuip(stop.skipped,botLine(stop.skipped,'skip'));
     else if(penalty&&penalty.amount>=4)showQuip(penalty.playerId,botLine(penalty.playerId,'penalty'));
     else if(reverse){const speaker=state.players.find(p=>p.kind==='ai');showQuip(speaker?.id,botLine(speaker?.id,'reverse'));}
@@ -276,19 +311,27 @@ function onState(action){
     const humanMove=played?.playerId==='p0',opponentMove=played?.playerId==='p1';
     if(isBrammDuel()&&state.phase!=='finished'){
       const humanCount=state.players[0].hand.length,brammCount=state.players[1].hand.length,oldHuman=previousCounts.p0??humanCount;
-      if(humanCount<brammCount)brammController.setFlag('bramm_was_previously_behind');else if(brammCount<humanCount)brammController.setFlag('bramm_was_previously_ahead');
+      if(humanCount<brammCount)characterController.setFlag('bramm_was_previously_behind');else if(brammCount<humanCount)characterController.setFlag('bramm_was_previously_ahead');
       if(oldHuman>1&&humanCount===1){
-        runBramm('player_one_card',{brammCards:brammCount},true);const epoch=sessionEpoch;
-        for(const wait of [9500]){const timer=setTimeout(()=>{if(epoch===sessionEpoch&&state?.phase==='playing'&&state.players[0]?.hand.length===1)runBramm('one_card_persist');},settings.reducedMotion?Math.min(wait,1800):wait);brammSequenceTimers.push(timer);}
-      }else if(oldHuman===1&&humanCount>1){const relief=brammController.oneCardRecovered();if(relief)performBrammReaction(relief);}
-      else if((penalty?.playerId==='p1'&&penalty.amount>=4)||stop?.skipped==='p1')runBramm('setback');
-      else if((draw?.playerId==='p1'||penalty?.playerId==='p1')&&humanCount===1)runBramm('one_card_persist');
-      else if((draw?.playerId==='p1'||penalty?.playerId==='p1'))runBramm('bramm_draw',{amount:(draw||penalty)?.amount||1});
-      else if(draw?.playerId==='p0'||penalty?.playerId==='p0')runBramm('player_draw',{amount:(draw||penalty)?.amount||1});
-      else if(humanMove&&(reverse||opened||stack||stop||playedCard?.type===TYPES.KING))runBramm('player_good_move');
-      else if(opponentMove&&(reverse||opened||stack||stop||playedCard?.type===TYPES.KING||brammCount===1))runBramm('bramm_good_move');
-      else if(humanMove)runBramm('player_neutral_move');
-    }else if((penalty?.playerId==='p1'&&penalty.amount>=4)||stop?.skipped==='p1')setDuelReaction('annoyed',duelLine('annoyed'));
+        runCharacter('player_one_card',{brammCards:brammCount},true);const epoch=sessionEpoch;
+        for(const wait of [9500]){const timer=setTimeout(()=>{if(epoch===sessionEpoch&&state?.phase==='playing'&&state.players[0]?.hand.length===1)runCharacter('one_card_persist');},settings.reducedMotion?Math.min(wait,1800):wait);characterSequenceTimers.push(timer);}
+      }else if(oldHuman===1&&humanCount>1){const relief=characterController.oneCardRecovered();if(relief)performCharacterReaction(relief);}
+      else if((penalty?.playerId==='p1'&&penalty.amount>=4)||stop?.skipped==='p1')runCharacter('setback');
+      else if((draw?.playerId==='p1'||penalty?.playerId==='p1')&&humanCount===1)runCharacter('one_card_persist');
+      else if((draw?.playerId==='p1'||penalty?.playerId==='p1'))runCharacter('bramm_draw',{amount:(draw||penalty)?.amount||1});
+      else if(draw?.playerId==='p0'||penalty?.playerId==='p0')runCharacter('player_draw',{amount:(draw||penalty)?.amount||1});
+      else if(humanMove&&(reverse||opened||stack||stop||playedCard?.type===TYPES.KING))runCharacter('player_good_move');
+      else if(opponentMove&&(reverse||opened||stack||stop||playedCard?.type===TYPES.KING||brammCount===1))runCharacter('bramm_good_move');
+      else if(humanMove)runCharacter('player_neutral_move');
+    }else if(isEdrinDuel()&&state.phase!=='finished'){
+      // Edrin: one trigger per table update. His face carries most of it; the
+      // controller decides (rarely) whether he also says something.
+      const humanCount=state.players[0].hand.length,edrinCount=state.players[1].hand.length,oldHuman=previousCounts.p0??humanCount,oldEdrin=previousCounts.p1??edrinCount;
+      if(oldHuman===1&&humanCount>1){const settle=characterController.oneCardRecovered();if(settle&&!characterSpeaking)setCharacterExpression(settle.expression,settle.duration);}
+      const event=edrinEventFor({played,playedCard,stop,stack,penalty,draw,closed,crossbowRun,humanCount,edrinCount,oldHuman,oldEdrin});
+      if(event)runCharacter(event[0],{...event[1],playerOnOneCard:humanCount===1,ownTurn:currentPlayer(state).id==='p1',playerStillToPlay:currentPlayer(state).id==='p0'});
+    }else if(isAuthoredDuel());
+    else if((penalty?.playerId==='p1'&&penalty.amount>=4)||stop?.skipped==='p1')setDuelReaction('annoyed',duelLine('annoyed'));
     else if(humanMove&&(reverse||opened||playedCard?.type===TYPES.KING||state.players[0].hand.length===1))setDuelReaction('surprised',duelLine('surprised'));
     else if(opponentMove&&(stack||opened||playedCard?.type===TYPES.KING||state.players[1].hand.length===1))setDuelReaction('pleased',duelLine('pleased'));
   }
@@ -307,11 +350,13 @@ function runBotTurn(playerId,epoch,scheduledTurn){
   catch(error){console.error('AI turn action failed',error);if(currentPlayer(state).id===playerId&&state.phase==='playing'){try{submit({type:ACTIONS.DRAW,playerId});}catch(fallbackError){console.error('AI fallback draw failed',fallbackError);}}if(state.phase!=='finished'&&currentPlayer(state).kind==='ai'){try{render();}catch(renderError){console.error('AI recovery render failed',renderError);}scheduleGame();}}
 }
 function scheduleGame(){
-  clearTimeout(botTimer);clearTimeout(brammSlowTimer);
+  clearTimeout(botTimer);clearTimeout(characterSlowTimer);
   if(isPaused()||!state||session.phase!=='round'||state.phase==='finished')return;
   const active=currentPlayer(state);
-  if(active.kind==='human'){if(isBrammDuel()){const epoch=sessionEpoch,turn=state.turn;brammSlowTimer=setTimeout(()=>{if(epoch===sessionEpoch&&state?.turn===turn&&currentPlayer(state)?.id==='p0')runBramm('slow_player');},11000);}return;}
+  if(active.kind==='human'){if(isBrammDuel()){const epoch=sessionEpoch,turn=state.turn;characterSlowTimer=setTimeout(()=>{if(epoch===sessionEpoch&&state?.turn===turn&&currentPlayer(state)?.id==='p0')runCharacter('slow_player');},11000);}return;}
   const playerId=active.id,epoch=sessionEpoch,scheduledTurn=state.turn;
+  // Edrin's eyes sharpen only for decisions that matter, and only now and then.
+  if(isEdrinDuel()&&playerId==='p1'&&edrinConsideredTurn!==scheduledTurn){edrinConsideredTurn=scheduledTurn;const legal=getLegalCards(state,playerId),human=state.players[0].hand.length,mine=active.hand.length,weighty=legal.some(card=>[TYPES.PLUS2,TYPES.KING,TYPES.STOP,TYPES.SUPER_TAKI,TYPES.CHANGE_COLOR].includes(card.type));if(!state.taki?.open&&legal.length>=2&&(human<=2||(mine<=3&&weighty)))runCharacter('edrin_considering');}
   pendingBotTurn={playerId,epoch,scheduledTurn};
   botTimer=setTimeout(()=>runBotTurn(playerId,epoch,scheduledTurn),Math.max(delay(),blockAiUntil-Date.now()));
 }
@@ -346,19 +391,22 @@ function homeHTML(){
     <nav class="home-choices" aria-label="${en?'Ways to play':'דרכי משחק'}">${resume}
       <button class="home-choice quick-choice" data-open="quick"><span class="choice-object">${cardBackStackHTML('object-cards',3)}</span><span class="choice-copy"><strong>${t.quick}</strong><small>${t.quickSub}</small></span><i class="choice-arrow" aria-hidden="true"></i></button>
       <button class="home-choice tavern-choice" data-tavern><span class="choice-object"><img class="object-coins" src="./assets/props/gambling/stacked-coins.png" alt="" draggable="false"></span><span class="choice-copy"><strong>${t.tavern}</strong><small>${t.tavernSub}</small></span><i class="choice-arrow" aria-hidden="true"></i></button>
-      <button class="home-choice duel-choice" data-duel><span class="choice-object duel-cameo">${brammArtHTML(getDuelOpponent('bramm'),{context:'cameo'})}</span><span class="choice-copy"><strong>${t.duel}</strong><small>${t.duelSub}</small><em class="choice-record">${t.record}</em></span><i class="choice-arrow" aria-hidden="true"></i></button>
+      <button class="home-choice duel-choice" data-duel><span class="choice-object duel-cameo">${characterArtHTML(getDuelOpponent('bramm'),{context:'cameo'})}</span><span class="choice-copy"><strong>${t.duel}</strong><small>${t.duelSub}</small><em class="choice-record">${t.record}</em></span><i class="choice-arrow" aria-hidden="true"></i></button>
     </nav>
     <div class="home-tools"><button class="tool-button" data-open="rules"><i class="tool-icon tool-rules" aria-hidden="true"></i><span>${t.rules}</span></button><button class="tool-button" data-open="settings"><i class="tool-icon tool-settings" aria-hidden="true"></i><span>${t.settings}</span></button></div>
   </section>${sheetHTML()}</main>`;
 }
 function duelSelectHTML(){
-  const en=isEnglish(),regulars=DUEL_OPPONENTS.filter(item=>item.id!=='bramm').map(displayOpponent),bramm=displayOpponent(getDuelOpponent('bramm'));
+  const en=isEnglish(),regulars=DUEL_OPPONENTS.filter(item=>!AUTHORED_CHARACTERS[item.id]).map(displayOpponent),bramm=displayOpponent(getDuelOpponent('bramm')),edrin=displayOpponent(getDuelOpponent('edrin'));
   const recordHTML=opponent=>{const {won,lost}=recordText(settings.duelRecords?.[opponent.id]);return `<span class="chalk-record" aria-label="${en?`${won} wins, ${lost} losses`:`${won} ניצחונות, ${lost} הפסדים`}"><bdi>${won}</bdi><i>–</i><bdi>${lost}</bdi></span>`;};
-  const regular=opponent=>{const [title,attitude]=opponent.descriptor.split(' · ');return `<button class="regular opponent-${opponent.id} ${settings.duelOpponent===opponent.id?'chosen':''}" data-opponent="${opponent.id}" aria-label="${en?`Duel ${opponent.name}, ${title}`:`דו־קרב מול ${opponent.name}, ${title}`}"><span class="regular-portrait">${brammArtHTML(opponent,{context:'select'})}</span><span class="regular-copy"><b>${opponent.name}</b><small>${title}</small><em>${attitude||''}</em>${recordHTML(opponent)}</span></button>`;};
-  const [brammTitle,brammAttitude]=bramm.descriptor.split(' · ');
+  const regular=opponent=>{const [title,attitude]=opponent.descriptor.split(' · ');return `<button class="regular opponent-${opponent.id} ${settings.duelOpponent===opponent.id?'chosen':''}" data-opponent="${opponent.id}" aria-label="${en?`Duel ${opponent.name}, ${title}`:`דו־קרב מול ${opponent.name}, ${title}`}"><span class="regular-portrait">${characterArtHTML(opponent,{context:'select'})}</span><span class="regular-copy"><b>${opponent.name}</b><small>${title}</small><em>${attitude||''}</em>${recordHTML(opponent)}</span></button>`;};
+  const [brammTitle,brammAttitude]=bramm.descriptor.split(' · '),[edrinTitle,edrinAttitude]=edrin.descriptor.split(' · ');
   return `<main class="app-shell screen-select ${settings.reducedMotion?'reduced-motion':''}" dir="${direction()}">${worldSceneHTML('select')}<section class="select-layer">
     <header class="select-head"><button class="icon-button back-button" data-home aria-label="${en?'Back':'חזרה'}"><span aria-hidden="true">${en?'‹':'›'}</span></button><div><small>${en?'The regulars have kept a seat':'הקבועים שמרו לכם מקום'}</small><h1>${en?'Choose your opponent':'בחרו יריב לדו־קרב'}</h1></div></header>
-    <button class="regular champion-regular opponent-bramm ${settings.duelOpponent==='bramm'?'chosen':''}" data-opponent="bramm" aria-label="${en?'Duel Bramm, The Unbeaten':'דו־קרב מול בראם, הבלתי־מנוצח'}"><span class="regular-portrait">${brammArtHTML(bramm,{context:'select'})}</span><span class="regular-copy"><small class="champion-kicker">${en?'The house champion':'אלוף הבית'}</small><b>${bramm.name}</b><small>${brammTitle}</small><em>${brammAttitude||''}</em>${recordHTML(bramm)}</span></button>
+    <div class="featured-regulars">
+      <button class="regular champion-regular opponent-bramm ${settings.duelOpponent==='bramm'?'chosen':''}" data-opponent="bramm" aria-label="${en?'Duel Bramm, The Unbeaten':'דו־קרב מול בראם, הבלתי־מנוצח'}"><span class="regular-portrait">${characterArtHTML(bramm,{context:'select'})}</span><span class="regular-copy"><small class="champion-kicker">${en?'The house champion':'אלוף הבית'}</small><b>${bramm.name}</b><small>${brammTitle}</small><em>${brammAttitude||''}</em>${recordHTML(bramm)}</span></button>
+      <button class="regular champion-regular opponent-edrin ${settings.duelOpponent==='edrin'?'chosen':''}" data-opponent="edrin" aria-label="${en?'Duel Edrin, The Old Regular':'דו־קרב מול אדרין, הקבוע הוותיק'}"><span class="regular-portrait">${characterArtHTML(edrin,{context:'select'})}</span><span class="regular-copy"><small class="champion-kicker">${en?'Thirty years at this table':'שלושים שנה ליד השולחן הזה'}</small><b>${edrin.name}</b><small>${edrinTitle}</small><em>${edrinAttitude||''}</em>${recordHTML(edrin)}</span></button>
+    </div>
     <div class="regulars">${regulars.map(regular).join('')}</div>
     <p class="select-note">${en?'Five rounds, one opponent. Every card left in a losing hand is a point.':'חמישה סיבובים מול יריב אחד. כל קלף שנשאר ביד המפסידה שווה נקודה.'}</p>
   </section></main>`;
@@ -397,7 +445,7 @@ function seatScoreHTML(player){
 }
 function revealedHandHTML(player){if(session.phase==='round'||!roundResultVisible||!player.hand.length)return'';const shown=player.hand.slice(0,compactLayout()?4:7),more=player.hand.length-shown.length;return `<span class="revealed-hand" aria-hidden="true">${shown.map((card,index)=>cardHTML(card,cardOptions({small:true,legal:false,highlight:false,index}))).join('')}${more>0?`<b class="revealed-more">+<bdi>${more}</bdi></b>`:''}</span>`;}
 function seatFigureHTML(player){
-  if(session.mode==='duel')return `<div class="seat-figure duel-figure">${brammArtHTML(currentDuelOpponent(),{context:'table'})}<i class="contact-shadow"></i></div>`;
+  if(session.mode==='duel')return `<div class="seat-figure duel-figure">${characterArtHTML(currentDuelOpponent(),{context:'table'})}<i class="contact-shadow"></i></div>`;
   if(session.mode==='tavern'&&TAVERN_FIGURES.has(player.nameKey))return `<div class="seat-figure"><img src="./assets/characters/table/${player.nameKey}-seated.webp" alt="" draggable="false"></div>`;
   if(session.mode==='tavern'&&TAVERN_SPRITES.has(player.nameKey))return `<div class="seat-figure sprite-figure"><i class="duel-sprite sheet-b" style="${duelSpriteStyle(getDuelOpponent(player.nameKey),'idle')}"></i></div>`;
   return'';
@@ -409,8 +457,8 @@ function seatHTML(player,position){
   const fanCount=Math.min(12,count),backs=Array.from({length:fanCount},(_,i)=>`<i style="--offset:${(i-(fanCount-1)/2).toFixed(1)}"></i>`).join('');
   const duelOpponent=session.mode==='duel'?currentDuelOpponent():null,epithet=duelOpponent?duelOpponent.descriptor.split(' · ')[0]:'';
   const house=session.mode!=='quick'&&player.house?`<i class="house-pin ${player.house}">${colorRuneHTML(player.house,'house-rune')}</i>`:'';
-  const speech=duelOpponent?.id==='bramm'
-    ?(settings.captions&&brammCaptionLine?`<div class="speech bramm-speech" lang="${brammCaptionLocale}" dir="${brammCaptionLocale==='he'?'rtl':'ltr'}" role="status" aria-live="polite">${brammCaptionLine}</div>`:'')
+  const speech=duelOpponent&&authoredCharacter(duelOpponent.id)
+    ?(settings.captions&&characterCaptionLine?`<div class="speech character-speech" lang="${characterCaptionLocale}" dir="${characterCaptionLocale==='he'?'rtl':'ltr'}" role="status" aria-live="polite">${characterCaptionLine}</div>`:'')
     :(quip?.player===player.id?`<div class="speech ${freshQuip()}" role="status">${quip.text}</div>`:'');
   const label=active?(en?`${name}'s turn, ${cardCountLabel(count)}`:`התור של ${name}, ${cardCountLabel(count)}`):`${name}, ${cardCountLabel(count)}`;
   return `<div class="seat seat-${position} ${seatFigureHTML(player)?'has-figure':''} ${duelOpponent?`duel-seat opponent-${duelOpponent.id}`:''} ${active?'active':''} ${count===1&&state.phase==='playing'?'last-card':''} ${stopped?'sealed':''} ${propRattled.has(player.id)?'rattled':''} ${winning?'winner-seat':''}" data-player-id="${player.id}" data-seat="${position}" role="group" aria-label="${label}">
@@ -426,7 +474,7 @@ function seatHTML(player,position){
 function seatsHTML(players){const layout=SEAT_LAYOUTS[players.length]||SEAT_LAYOUTS[5];return players.map((player,index)=>seatHTML(player,layout[index]||'n')).join('');}
 function playerPlaceHTML(player){
   const scored=['tavern','duel'].includes(session.mode);
-  return `<div class="player-place" aria-hidden="true">${session.mode==='duel'&&isBrammDuel()?'':`<img class="player-drink" src="./assets/props/drinks/wooden-tankard.png" alt="" draggable="false">`}${scored?seatScoreHTML(player):''}</div>`;
+  return `<div class="player-place" aria-hidden="true">${session.mode==='duel'&&isAuthoredDuel()?'':`<img class="player-drink" src="./assets/props/drinks/wooden-tankard.png" alt="" draggable="false">`}${scored?seatScoreHTML(player):''}</div>`;
 }
 function headScoreHTML(){
   if(!['tavern','duel'].includes(session.mode))return'';
@@ -484,7 +532,7 @@ function gameHTML(){
   // Play-by-play notes ("Bramm takes 2", "Nothing matches — draw a card") are optional; on by default they stay hidden.
   const strip=settings.hideTableMessages?'':actionStripText();
   const arrows=`<svg class="direction-ring ${state.direction<0?'counter':''} ${eventBanner?.kind==='reverse'?'lit':''}" viewBox="0 0 300 300" aria-hidden="true"><path class="ring-route" d="M57 181A105 105 0 0 1 226 74"/><path class="ring-head" d="m219 54 9 22-24 4"/><path class="ring-route" d="M243 119A105 105 0 0 1 74 226"/><path class="ring-head" d="m81 246-9-22 24-4"/></svg>`;
-  const shellClass=['app-shell','screen-game',`mode-${session.mode}`,`seats-${opponents.length}`,figures?'with-figures':'',isBrammDuel()?'bramm-duel':'',session.suddenDeath?'sudden-death':'',state.phase==='playing'&&state.players.some(p=>p.hand.length===1)?'one-card-tension':'',session.phase!=='round'?'round-complete':'',session.phase!=='round'&&roundResultVisible?'round-over':'',settings.reducedMotion?'reduced-motion':''].filter(Boolean).join(' ');
+  const shellClass=['app-shell','screen-game',`mode-${session.mode}`,`seats-${opponents.length}`,figures?'with-figures':'',isAuthoredDuel()?`character-duel ${authoredPack().id}-duel`:'',session.suddenDeath?'sudden-death':'',state.phase==='playing'&&state.players.some(p=>p.hand.length===1)?'one-card-tension':'',session.phase!=='round'?'round-complete':'',session.phase!=='round'&&roundResultVisible?'round-over':'',settings.reducedMotion?'reduced-motion':''].filter(Boolean).join(' ');
   return `<main class="${shellClass}" dir="${direction()}" style="--active:${colorHex[state.activeColor]||'#b78b45'}">${worldSceneHTML(session.mode==='duel'?'duel':'game')}<section class="game ${isHumanTurn?'human-turn':'waiting'}">
     <header class="game-head"><button class="icon-button rune-menu" data-open="pause" aria-label="${en?'Pause and menu':'השהיה ותפריט'}"><i></i><i></i><i></i></button>${roundMarkerHTML()}${headScoreHTML()}</header>
     <div class="board" data-speed-bots>
@@ -591,22 +639,22 @@ const handFrame=()=>root.querySelector('.hand-frame');
 function captureHandLayout(){const frame=handFrame(),hand=root.querySelector('.hand');if(!frame||!hand)return;handScrollLeft=frame.scrollLeft;previousHandRects=new Map([...hand.querySelectorAll(':scope > .card')].map(card=>[card.dataset.cardId,card.getBoundingClientRect()]));}
 function render(){
   captureHandLayout();
-  const brammStage=root.querySelector('.bramm-art-stage.bramm-table');
+  const characterStage=root.querySelector('.character-art-stage.character-table');
   document.documentElement.lang=settings.language;document.documentElement.dir=direction();
   document.querySelector('meta[name="description"]')?.setAttribute('content',isEnglish()?'RUNES — a card game around a tavern table: Quick Play, a five-round Tavern Match, and Duels with the regulars.':'רונות — משחק קלפים סביב שולחן פונדק: משחק מהיר, משחק פונדק בן חמישה סיבובים ודו־קרב מול הקבועים.');
   const openSheet=root.querySelector('.tavern-sheet'),sheetScroll=openSheet?{kind:openSheet.className,top:openSheet.scrollTop}:null;
   root.innerHTML=view==='home'?homeHTML():view==='duelSelect'?duelSelectHTML():gameHTML();
   // Re-rendering while a sheet is open (a toggle, a language switch) keeps its scroll position.
   const reopened=root.querySelector('.tavern-sheet');if(sheetScroll&&reopened&&reopened.className===sheetScroll.kind)reopened.scrollTop=sheetScroll.top;
-  const placeholder=root.querySelector('[data-bramm-stage-placeholder]');if(brammStage&&placeholder){placeholder.replaceWith(brammStage);syncBrammStage(brammStage);}
+  const placeholder=root.querySelector('[data-character-stage-placeholder]');if(characterStage&&placeholder){placeholder.replaceWith(characterStage);syncCharacterStage(characterStage);}
   bind();
 }
-function pauseGameTimers({leaving=false}={}){clearTimeout(botTimer);clearTimeout(brammSlowTimer);clearTimeout(duelIdleTimer);clearTimeout(duelReactionTimer);clearTimeout(eventTimer);clearTimeout(quipTimer);clearTimeout(roundEndTimer);clearBrammTimers();audioSystem.stopVoice({restoreMusic:!leaving});}
+function pauseGameTimers({leaving=false}={}){clearTimeout(botTimer);clearTimeout(characterSlowTimer);clearTimeout(duelIdleTimer);clearTimeout(duelReactionTimer);clearTimeout(eventTimer);clearTimeout(quipTimer);clearTimeout(roundEndTimer);clearCharacterTimers();audioSystem.stopVoice({restoreMusic:!leaving});runActiveClock(false);}
 function resumeGameTimers(){
   if(eventBanner)eventTimer=setTimeout(()=>{eventBanner=null;captionLine='';render();},settings.reducedMotion?200:900);
   if(quip)quipTimer=setTimeout(()=>{quip=null;render();},1800);
   if(session?.phase!=='round'&&!roundResultVisible)roundEndTimer=setTimeout(revealRoundResult,settings.reducedMotion?80:700);
-  scheduleGame();scheduleDuelIdle();
+  runActiveClock(true);scheduleGame();scheduleDuelIdle();
 }
 function goHome(){flushPendingAction();persist();sessionEpoch++;pauseGameTimers({leaving:true});clearTimeout(deckAudioTimer);audioSystem.stopAmbience();audioSystem.stopMusic(true);view='home';sheet=null;selected=null;render();}
 function compactLayout(){return matchMedia('(max-width:599px), (max-height:500px)').matches;}
@@ -650,7 +698,7 @@ function bind(){
   root.querySelectorAll('[data-close-sheet]').forEach(b=>b.onclick=closeSheet);
   root.querySelectorAll('[data-pause-nav]').forEach(b=>b.onclick=()=>{sheet=b.dataset.pauseNav;render();focusSheet();});
   root.querySelector('[data-sheet-backdrop]')?.addEventListener('click',event=>{if(event.target===event.currentTarget)closeSheet();});
-  root.querySelectorAll('[data-language]').forEach(b=>b.onclick=()=>{const language=b.dataset.language;settings.language=language;hint='';screenReaderLine='';captionLine='';saveSettings(settings);if(isBrammDuel())void audioSystem.preloadVoice(language);render();requestAnimationFrame(()=>root.querySelector(`[data-language="${language}"]`)?.focus({preventScroll:true}));});
+  root.querySelectorAll('[data-language]').forEach(b=>b.onclick=()=>{const language=b.dataset.language;settings.language=language;hint='';screenReaderLine='';captionLine='';saveSettings(settings);if(isAuthoredDuel())void audioSystem.preloadVoice(language,Object.keys(authoredPack().voiceLibrary));render();requestAnimationFrame(()=>root.querySelector(`[data-language="${language}"]`)?.focus({preventScroll:true}));});
   root.querySelectorAll('[data-toggle]').forEach(b=>b.onclick=()=>{
     const key=b.dataset.toggle;settings[key]=!settings[key];saveSettings(settings);audioSystem.setSettings(settings);
     if(key==='ambience'){if(settings.ambience)audioSystem.startAmbience();else audioSystem.stopAmbience();}
@@ -665,7 +713,7 @@ function bind(){
     input.onchange=()=>{apply();if(input.dataset.channel==='sound'&&settings.sound)audioSystem.play('cardPlaySoft');};
   });
   root.querySelectorAll('[data-players]').forEach(b=>b.onclick=()=>{settings.playerCount=+b.dataset.players;saveSettings(settings);render();root.querySelector(`[data-players="${b.dataset.players}"]`)?.focus({preventScroll:true});});
-  root.querySelector('[data-duel]')?.addEventListener('click',()=>{view='duelSelect';sheet=null;render();void preloadBrammExpressions();});
+  root.querySelector('[data-duel]')?.addEventListener('click',()=>{view='duelSelect';sheet=null;render();for(const pack of Object.values(AUTHORED_CHARACTERS))void pack.preload();});
   root.querySelectorAll('[data-opponent]').forEach(b=>b.onclick=async()=>{if(root.querySelector('.regular.loading'))return;settings.duelOpponent=b.dataset.opponent;saveSettings(settings);clearMatch();b.classList.add('loading');b.setAttribute('aria-busy','true');try{await startSession('duel');}catch(error){console.error('Unable to prepare duel assets',error);b.classList.remove('loading');b.setAttribute('aria-busy','false');}});
   root.querySelector('[data-tavern]')?.addEventListener('click',()=>{clearMatch();startSession('tavern');});
   root.querySelector('[data-quick]')?.addEventListener('click',()=>{clearMatch();startSession('quick');});
@@ -722,19 +770,36 @@ if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serv
 function registerWebMCP(){const context=document.modelContext;if(!context?.registerTool)return;try{void Promise.resolve(context.registerTool({name:'read_game_state',title:'Read RUNES game',description:'Read the current RUNES match status.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true,untrustedContentHint:false},execute(){return session?{mode:session.mode,phase:session.phase,round:session.round,totalRounds:session.totalRounds,suddenDeath:session.suddenDeath,scores:session.scores,currentPlayer:currentPlayer(state).name,activeColor:state.activeColor,humanCardCount:state.players[0].hand.length,opponents:state.players.slice(1).map(p=>({name:p.name,cardCount:p.hand.length}))}:{phase:'home'};}})).catch(()=>{});}catch{}}
 // Read-only snapshot for automated playtests and support; it exposes no controls.
 window.RunesQA=Object.freeze({snapshot:()=>({view,sheet,motionLocked,pendingAction:!!pendingAction,pendingBotTurn:!!pendingBotTurn,roundResultVisible,selected,hint,sessionPhase:session?.phase||null,turn:state?.turn??null,current:state?currentPlayer(state).id:null,blockAiUntil:Math.max(0,blockAiUntil-Date.now())})});
-window.BrammDebug=Object.freeze({
-  states:()=>brammController?.snapshot()||null,
-  forceState:value=>{if(!brammController)return null;brammController.setState(value);setBrammExpression(brammController.defaultExpression());return brammController.snapshot();},
-  trigger:value=>{if(!brammController)return null;const found=BRAMM_REACTIONS.find(item=>item.id===value||item.voice===value);return found?performBrammReaction(brammController.force(found.id)):null;},
-  expression:value=>{if(!BRAMM_EXPRESSIONS.includes(value))return false;setBrammExpression(value);return true;},
-  simulateOneCard:()=>runBramm('player_one_card',{},true),
-  simulateWin:()=>runBramm('win',{close:true,survivedOneCard:true},true),
-  simulateLoss:()=>runBramm('match_loss',{},true),
-  simulateRoundWin:()=>runBramm('round_win',{},true),
-  simulateRoundLoss:()=>runBramm('round_loss',{},true),
-  simulateIdle:()=>runBramm('idle_quiet'),
-  reactions:BRAMM_REACTIONS,
-  expressions:BRAMM_EXPRESSIONS
+// Developer hooks (console only). Each acts only while that character is at the table.
+function characterDebug(id,extra={}){
+  const pack=AUTHORED_CHARACTERS[id],active=()=>authoredPack()?.id===id&&characterController;
+  return Object.freeze({
+    states:()=>active()?characterController.snapshot():null,
+    forceState:value=>{if(!active())return null;characterController.setState(value);setCharacterExpression(characterController.defaultExpression());return characterController.snapshot();},
+    trigger:value=>{if(!active())return null;const found=pack.reactions.find(item=>item.id===value||item.voice===value);return found?performCharacterReaction(characterController.force(found.id)):null;},
+    expression:value=>{if(!active()||!pack.expressions.includes(value))return false;setCharacterExpression(value);return true;},
+    simulateOneCard:()=>active()?runCharacter('player_one_card',{},true):null,
+    simulateRoundWin:()=>active()?runCharacter('round_win',{},true):null,
+    simulateRoundLoss:()=>active()?runCharacter('round_loss',{},true):null,
+    simulateLoss:()=>active()?runCharacter('match_loss',{},true):null,
+    simulateIdle:()=>active()?runCharacter('idle_quiet'):null,
+    reactions:pack.reactions,
+    expressions:pack.expressions,
+    ...extra
+  });
+}
+window.BrammDebug=characterDebug('bramm',{simulateWin:()=>isBrammDuel()?runCharacter('win',{close:true,survivedOneCard:true},true):null});
+window.EdrinDebug=characterDebug('edrin',{
+  simulateWin:()=>isEdrinDuel()?runCharacter('match_win',{},true):null,
+  simulateEdrinOneCard:()=>isEdrinDuel()?runCharacter('edrin_one_card',{},true):null,
+  simulateBrutal:()=>isEdrinDuel()?runCharacter('brutal_move',{},true):null,
+  // Walk the expression set one at a time (default 1.6 s each) to check anchoring.
+  previewExpressions:(ms=1600)=>{if(!isEdrinDuel())return null;AUTHORED_CHARACTERS.edrin.expressions.forEach((name,index)=>{const timer=setTimeout(()=>setCharacterExpression(name),index*ms);characterSequenceTimers.push(timer);});return AUTHORED_CHARACTERS.edrin.expressions.length;},
+  history:()=>isEdrinDuel()?characterController.snapshot().history:null,
+  cooldown:()=>isEdrinDuel()?characterController.cooldown():null,
+  setLanguage:language=>{settings.language=language==='he'?'he':'en';saveSettings(settings);if(isEdrinDuel())void audioSystem.preloadVoice(settings.language,Object.keys(AUTHORED_CHARACTERS.edrin.voiceLibrary));render();return settings.language;},
+  // Point a voice at a file that does not exist to check the silent fallback.
+  markVoiceMissing:(voice,missing=true)=>debugMarkEdrinVoiceMissing(voice,missing)
 });
 root.addEventListener('pointerdown',()=>audioSystem.prime(),{once:true,capture:true});
 const suspendAudio=()=>audioSystem.stopAll();

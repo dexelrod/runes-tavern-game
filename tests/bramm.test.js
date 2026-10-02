@@ -105,15 +105,16 @@ test('recent queue prevents an immediate repeated line and round budget resets e
 });
 
 test('every Bramm expression is reachable in play',()=>{
-  const app=fs.readFileSync(new URL('../dist/app.js',import.meta.url),'utf8'),bramm=fs.readFileSync(new URL('../dist/duel/bramm.js',import.meta.url),'utf8');
+  const app=fs.readFileSync(new URL('../dist/app.js',import.meta.url),'utf8'),bramm=fs.readFileSync(new URL('../dist/duel/bramm.js',import.meta.url),'utf8'),staging=fs.readFileSync(new URL('../dist/duel/characters.js',import.meta.url),'utf8');
   const manifest=bramm.slice(bramm.indexOf('export const BRAMM_EXPRESSIONS'),bramm.indexOf(']);',bramm.indexOf('export const BRAMM_EXPRESSIONS')));
-  const rest=bramm.replace(manifest,'')+app;
+  const rest=bramm.replace(manifest,'')+staging+app;
   for(const expression of BRAMM_EXPRESSIONS)assert.ok(rest.includes(`'${expression}'`),`${expression} is never shown`);
 });
 test('every new match against Bramm opens with his voiced introduction',()=>{
   const app=fs.readFileSync(new URL('../dist/app.js',import.meta.url),'utf8');
-  assert.doesNotMatch(app,/firstEncounter/);
-  assert.match(app,/if\(!saved\)\{const epoch=sessionEpoch;const timer=setTimeout\(\(\)=>\{if\(epoch===sessionEpoch\)runBramm\('intro',\{\},true\);/);
+  // Bramm's intro never depends on whether you have met him before (Edrin's does).
+  assert.match(app,/if\(isBrammDuel\(\)\)runCharacter\('intro',\{\},true\);else/);
+  assert.match(app,/if\(!saved\)\{const epoch=sessionEpoch,firstEncounter=[^;]+;const timer=setTimeout\(\(\)=>\{if\(epoch!==sessionEpoch\)return;if\(isBrammDuel\(\)\)runCharacter\('intro',\{\},true\);/);
   const bramm=createBrammController({random:()=>0});assert.ok(bramm.react('intro',{},true).voice.startsWith('bramm_intro_'));
 });
 
@@ -122,7 +123,7 @@ test('round and match results use separate pools, and the old loss line is round
   for(const [trigger,pattern] of Object.entries(pools))for(let i=0;i<30;i++){const voice=createBrammController().react(trigger,{},true)?.voice;assert.match(voice,pattern,`${trigger} → ${voice}`);}
   assert.ok(!BRAMM_REACTIONS.some(r=>r.trigger==='loss'),'no ambiguous "loss" trigger remains');
   const app=fs.readFileSync(new URL('../dist/app.js',import.meta.url),'utf8');
-  assert.match(app,/else runBramm\('match_loss',\{\},true\);\n      \}else if\(isBrammDuel\(\)\)runBramm\(opponentWon\?'round_win':'round_loss',\{\},true\);/);
+  assert.match(app,/else runCharacter\('match_loss',\{\},true\);\n      \}else if\(isBrammDuel\(\)\)runCharacter\(opponentWon\?'round_win':'round_loss',\{\},true\);/);
 });
 test('player one-card reactions vary, never repeat back-to-back, and 04 does not exist',()=>{
   const app=fs.readFileSync(new URL('../dist/app.js',import.meta.url),'utf8'),bramm=fs.readFileSync(new URL('../dist/duel/bramm.js',import.meta.url),'utf8');

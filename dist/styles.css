@@ -200,9 +200,9 @@ bdi{unicode-bidi:isolate}
 .duel-figure{overflow:hidden}
 .duel-figure .duel-sprite{display:block;width:calc(var(--fig-h) * 1.15);height:calc(var(--fig-h) * 1.15);flex:0 0 auto;background:var(--sprite-sheet,url('./assets/duel-opponents.png')) no-repeat;background-size:500% 500%;background-position:var(--sprite-x) var(--sprite-y);translate:0 8%;filter:brightness(.92) saturate(.92) drop-shadow(0 8px 10px #000a);-webkit-mask-image:radial-gradient(ellipse 50% 92% at 50% 45%,#000 62%,transparent 100%);mask-image:radial-gradient(ellipse 50% 92% at 50% 45%,#000 62%,transparent 100%)}
 .duel-seat.active .duel-figure .duel-sprite{filter:brightness(1.04) drop-shadow(0 8px 10px #000a)}
-.bramm-art-stage{position:relative;display:block;height:100%;aspect-ratio:2/3;flex:0 0 auto}
-.duel-figure .bramm-art-stage{height:calc(var(--fig-h) * 1.85);align-self:flex-start;translate:0 -1%}
-.bramm-art{display:block;width:100%;height:100%;object-fit:contain;object-position:50% 0;animation:bramm-expression-in .2s ease-out both}
+.character-art-stage{position:relative;display:block;height:100%;aspect-ratio:2/3;flex:0 0 auto}
+.duel-figure .character-art-stage{height:calc(var(--fig-h) * 1.85);align-self:flex-start;translate:0 -1%}
+.character-art{display:block;width:100%;height:100%;object-fit:contain;object-position:50% 0;animation:character-expression-in .2s ease-out both}
 .duel-seat .seat-plate{padding:4px 10px}
 .duel-seat .seat-name b{font-size:15px}
 
@@ -406,8 +406,8 @@ input[type=range]::-moz-range-thumb{width:24px;height:24px;border:2px solid #5b3
 .object-cards-resume .card:nth-child(3){rotate:16deg;translate:12px 4px}
 .object-coins{width:78px;height:auto;filter:drop-shadow(0 6px 5px #000b)}
 .duel-cameo{border-radius:50%;overflow:hidden;width:68px;height:68px;margin:0;background:radial-gradient(circle at 50% 35%,#3a2a1a,#140c07);box-shadow:0 0 0 2px #8a6a3e,0 0 0 4px #1a0e07,0 6px 10px #000a}
-.duel-cameo .bramm-art-stage{height:auto;width:100%;aspect-ratio:2/3;align-self:start;translate:0 -2%}
-.duel-cameo .bramm-art{object-fit:cover;object-position:50% 0}
+.duel-cameo .character-art-stage{height:auto;width:100%;aspect-ratio:2/3;align-self:start;translate:0 -2%}
+.duel-cameo .character-art{object-fit:cover;object-position:50% 0}
 .resume-choice .choice-copy strong{color:#f6d68c}
 .home-tools{display:flex;gap:10px;justify-content:center;margin-top:18px}
 .tool-button{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 16px;border:1px solid #7a5a3388;border-radius:22px;background:#0e0b08a6;color:var(--cream);font:600 15px/1 var(--ui)}
@@ -439,7 +439,7 @@ input[type=range]::-moz-range-thumb{width:24px;height:24px;border:2px solid #5b3
 .chalk-record i{opacity:.55;font-style:normal}
 .champion-regular{flex-direction:row;width:fit-content;min-width:min(100%,400px);max-width:100%;min-height:150px;text-align:start;border-color:#a8813f;background:linear-gradient(100deg,#2a2015,#120e0a 70%)}
 .champion-regular .regular-portrait{aspect-ratio:auto;width:42%;max-width:230px;flex:0 0 auto;place-items:start center;background:radial-gradient(ellipse at 50% 60%,#5a3a1c,#16100b 70%)}
-.champion-regular .bramm-art-stage{height:auto;width:100%;aspect-ratio:2/3}
+.champion-regular .character-art-stage{height:auto;width:100%;aspect-ratio:2/3}
 .champion-regular .regular-copy{align-content:center;gap:4px;padding:14px 28px 14px 18px}
 .champion-regular .regular-copy b{font-size:26px}
 .champion-regular .chalk-record{justify-self:start}
@@ -601,7 +601,7 @@ input[type=range]::-moz-range-thumb{width:24px;height:24px;border:2px solid #5b3
   .seat{flex-direction:row;align-items:center;justify-content:center;gap:6px;padding-top:6px!important}
   .seat-figure{display:none}
   .duel-seat .seat-figure{display:flex;width:52px;height:52px;flex:0 0 auto;border-radius:50%;background:radial-gradient(circle at 50% 35%,#3a2a1a,#140c07);box-shadow:0 0 0 2px #8a6a3e,0 4px 8px #000a}
-  .duel-seat .seat-figure .bramm-art-stage{height:auto;width:170%;flex:0 0 auto;align-self:flex-start;translate:0 -4%}
+  .duel-seat .seat-figure .character-art-stage{height:auto;width:170%;flex:0 0 auto;align-self:flex-start;translate:0 -4%}
   .duel-seat .seat-figure .duel-sprite{width:62px;height:62px;translate:0 4%;-webkit-mask-image:none;mask-image:none}
   .duel-seat .contact-shadow{display:none}
   .seat-fan{width:calc(var(--back-w) * 4);margin-top:0;height:calc(var(--back-w) * 1.4 + 8px)}
@@ -654,7 +654,7 @@ input[type=range]::-moz-range-thumb{width:24px;height:24px;border:2px solid #5b3
 @keyframes card-settle{from{translate:0 -6px;scale:1.03}}
 @keyframes hand-receive{from{opacity:0;translate:0 26px}}
 @keyframes rattle{25%{translate:-3px 0;rotate:-4deg}50%{translate:3px 0;rotate:3deg}75%{translate:-1px 0}}
-@keyframes bramm-expression-in{from{opacity:.4}}
+@keyframes character-expression-in{from{opacity:.4}}
 @keyframes deck-settle{0%{translate:0 -16px;rotate:-2deg;opacity:.7}60%{translate:0 -2px;rotate:-.4deg;opacity:1}100%{translate:0 0}}
 .draw-pile.deck-settling{animation:deck-settle .9s cubic-bezier(.18,.78,.2,1) both}
 .draw-pile.drawing .card{translate:0 -3px}
@@ -676,7 +676,7 @@ input[type=range]::-moz-range-thumb{width:24px;height:24px;border:2px solid #5b3
 
 /* A fanned (non-browsing) hand never scrolls: rotation overflow is visual only. */
 .hand-frame:not(.browsing){overflow-x:hidden}
-.duel-seat.opponent-bramm .seat-props{display:none!important}
+.duel-seat.opponent-bramm .seat-props,.duel-seat.opponent-edrin .seat-props{display:none!important}
 
 /* Preparing a table (Bramm's art decodes first): acknowledge the tap at once. */
 .home-choice.loading,.regular.loading{opacity:.72;cursor:progress;pointer-events:none}
@@ -689,3 +689,18 @@ input[type=range]::-moz-range-thumb{width:24px;height:24px;border:2px solid #5b3
 }
 .hand .card.quiet{cursor:default}
 .regular{transition:translate .16s ease,border-color .16s ease,box-shadow .16s ease}
+/* Two authored regulars share the featured row: Bramm, the loud champion, and Edrin, the quiet one. */
+.featured-regulars{display:flex;justify-content:center;gap:var(--featured-gap,10px);width:min(100%,800px)}
+.featured-regulars .champion-regular{flex:1 1 0;width:auto;min-width:0}
+.champion-regular.opponent-edrin{border-color:#7d6a4a;background:linear-gradient(100deg,#221d16,#110e0b 70%)}
+.champion-regular.opponent-edrin .regular-portrait{background:radial-gradient(ellipse at 50% 60%,#4a3a26,#14100c 70%)}
+.champion-regular.opponent-edrin .champion-kicker{color:#cbb48a!important}
+@media (max-width:560px){
+  .featured-regulars{--featured-gap:8px}
+  .featured-regulars .champion-regular{min-height:132px}
+  .featured-regulars .champion-regular .regular-portrait{width:40%}
+  .featured-regulars .champion-regular .regular-copy{padding:10px 10px 10px 6px;gap:2px}
+  .featured-regulars .champion-regular .regular-copy b{font-size:20px}
+  .featured-regulars .champion-regular .regular-copy em{display:none}
+  .featured-regulars .champion-kicker{font-size:9.5px!important;letter-spacing:.03em}
+}

@@ -1,4 +1,6 @@
-import { BRAMM_VOICE_LIBRARY, normalizeBrammLocale, resolveBrammVoice } from '../duel/bramm.js';
+import { BRAMM_VOICE_LIBRARY } from '../duel/bramm.js';
+import { characterForVoice, resolveCharacterVoice } from '../duel/characters.js';
+const normalizeVoiceLocale=locale=>locale==='he'?'he':'en';
 
 const asset=name=>new URL(`../assets/audio/${name}`,import.meta.url).href;
 const clamp=value=>Math.max(0,Math.min(1,value));
@@ -33,7 +35,7 @@ export const AMBIENCE_TRACKS=Object.freeze(['tavern-loop-1.wav','tavern-loop-2.w
 const chunkedTrack=stem=>Object.freeze([1,2,3,4].map(part=>asset(`${stem}-part-${part}.wav`)));
 export const MUSIC_TRACKS=Object.freeze([asset('runes-round.wav'),asset('gambit-by-the-hearth.m4a'),chunkedTrack('soundtrack-3'),chunkedTrack('soundtrack-4')]);
 const CHANNEL_DEFAULTS={sfx:.9,ambience:.18,music:.14,voice:.92};
-const VOICE_PRIORITY=Object.freeze({LOW:1,MEDIUM:2,CRITICAL:3});
+const VOICE_PRIORITY=Object.freeze({LOW:1,MEDIUM:2,HIGH:3,CRITICAL:4});
 
 export class AudioSystem{
   constructor(){
@@ -69,12 +71,13 @@ export class AudioSystem{
   }
   releaseTrack(track){if(!track)return;if(Array.isArray(track)){this.buffers.delete(`track:${track.join('|')}`);for(const url of track)this.buffers.delete(url);}else this.buffers.delete(track);}
   async loadVoice(name,locale='en'){
-    const definition=resolveBrammVoice(name,locale);if(!definition)return null;
+    // Every authored character's voice goes through this one Web Audio path.
+    const definition=resolveCharacterVoice(name,locale);if(!definition)return null;
     const buffer=await this.load(definition.src);
-    if(!buffer&&definition.locale==='he'&&['localhost','127.0.0.1'].includes(globalThis.location?.hostname))console.warn('[Bramm] Missing Hebrew voice asset; keeping the Hebrew caption without audio.',name);
+    if(!buffer&&['localhost','127.0.0.1'].includes(globalThis.location?.hostname))console.warn(`[${characterForVoice(name)?.label||'Voice'}] Missing ${definition.locale==='he'?'Hebrew':'English'} voice asset; keeping the caption without audio.`,name);
     return buffer;
   }
-  preloadVoice(locale='en',names=Object.keys(BRAMM_VOICE_LIBRARY)){const resolved=normalizeBrammLocale(locale);return Promise.allSettled(names.map(name=>this.loadVoice(name,resolved)));}
+  preloadVoice(locale='en',names=Object.keys(BRAMM_VOICE_LIBRARY)){const resolved=normalizeVoiceLocale(locale);return Promise.allSettled(names.map(name=>this.loadVoice(name,resolved)));}
   makeSource(buffer,channel,{volume=1,rate=1,loop=false}={}){const context=this.ensureContext(),channelGain=this.channelGains[channel];if(!context||!channelGain)return null;const source=context.createBufferSource(),gain=context.createGain();source.buffer=buffer;source.loop=loop;source.playbackRate.value=rate;gain.gain.value=clamp(volume);source.connect(gain);gain.connect(channelGain);return {source,gain,buffer,channel,loop,stopped:false,paused:false};}
   async playVoice(name,{priority='LOW',volume=1,onEnded=null,locked=false,locale='en'}={}){
     if(!this.enabled||!this.channelEnabled.voice||this.channels.voice<=0)return null;const rank=VOICE_PRIORITY[priority]||VOICE_PRIORITY.LOW;if(this.voiceSource&&(this.voiceLocked||rank<this.voicePriority))return null;

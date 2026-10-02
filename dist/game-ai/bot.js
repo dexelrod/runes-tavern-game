@@ -1,5 +1,6 @@
 import { ACTIONS, applyAction, currentPlayer, getLegalCards } from '../game-engine/engine.js';
 import { COLORS, TYPES } from '../game-engine/cards.js';
+import { chooseVeteranAction, setRolloutPolicy } from './veteran.js';
 
 export function chooseColor(hand, avoid=null){ const counts=Object.fromEntries(COLORS.map(c=>[c,0])); for(const card of hand) if(counts[card.color]!==undefined) counts[card.color]++; const ranked=COLORS.toSorted((a,b)=>counts[b]-counts[a]);return ranked.find(color=>color!==avoid&&counts[color]>0)||ranked.find(color=>color!==avoid)||ranked[0]; }
 function scoreCard(card, state, hand){
@@ -20,6 +21,8 @@ function scoreCard(card, state, hand){
 }
 export function chooseBotAction(state){
   const player=currentPlayer(state);
+  // Personality profiles that need more than card weights get their own planner.
+  if(player.archetype==='veteran')return chooseVeteranAction(state);
   if(state.awaitingColor?.playerId===player.id) return {type:ACTIONS.CHOOSE_COLOR,playerId:player.id,color:chooseColor(player.hand,state.activeColor)};
   if(state.taki?.open){
     const legal=getLegalCards(state,player.id);
@@ -36,3 +39,6 @@ export function chooseBotAction(state){
 export function runBotStep(state){
   return applyAction(state,chooseBotAction(state));
 }
+
+// The veteran imagines the rest of the hand played out by ordinary tavern bots.
+setRolloutPolicy(chooseBotAction);
