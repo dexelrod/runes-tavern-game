@@ -1,6 +1,6 @@
 // RUNES service worker. Bump CACHE (and the ?v= query in index.html) on every publish.
-const CACHE = 'runes-v79';
-const ASSET_VERSION = '79';
+const CACHE = 'runes-v80';
+const ASSET_VERSION = '80';
 const PROP_ASSETS = ['drinks/ceramic-cup.png','drinks/dark-glass-bottle.png','drinks/medieval-flask.png','drinks/pewter-goblet.png','drinks/pewter-tankard.png','drinks/wooden-tankard.png','gambling/carved-betting-token.png','gambling/dice-pair.png','gambling/stacked-coins.png','food/bread-chunk.png','food/cheese-wedge.png','food/nuts-group.png','personal/iron-key.png','personal/smoking-pipe.png','personal/worn-metal-ring.png','mystical/carved-rune-token.png','mystical/small-amulet.png','bonus/map-scrap.png'].map(name => `./assets/props/${name}`);
 const CARD_ASSETS = ['number-1.svg','number-3.svg','number-4.svg','number-5.svg','number-6.svg','number-7.svg','number-8.svg','number-9.svg','crossbow.svg','runed-crossbow.svg','rune.svg','king.svg','shield.svg','curse-plus-2.svg','quickstep.svg','turnabout.svg'].map(name => `./assets/cards/${name}`);
 const BRAND_ASSETS = ['./assets/brand/runes-white.svg?v=60','./assets/brand/runes-seal.svg',...['favicon-32','favicon-48','apple-touch-icon','icon-192','icon-512','icon-maskable-512'].map(name => `./assets/brand/icons/${name}.png`)];

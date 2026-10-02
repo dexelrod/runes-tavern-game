@@ -408,3 +408,59 @@ Their art reads as female, so their Hebrew grammar now matches:
 All "won" and "keeps playing" texts follow automatically. Names (Hebrew and English) are unchanged; English needed no change.
 
 Bug fixed along the way: the shared tavern banter and archetype lines were masculine for every speaker, including Aila and Sela. `showQuip` now runs lines through `voicedLine()`, which turns אני צריך / אני חושב / אני מחזיר into feminine forms when the speaker is female.
+
+---
+
+# UI Art Direction Pass (v80)
+
+Goal: remove what still read as "themed web app" and make every surface answer *what is this made of?* No rule, engine, AI, audio or character-logic change. Verified with a screenshot harness covering 24 screens/states × up to 8 viewports (320×568 → 2560×1080) in EN and HE, the smoke test, and `npm test`.
+
+**Materials and palette.** `:root` now names the world's materials instead of generic UI colours: ink / ink-soft, parchment, chalk, cream, brass (hi/lo), iron, wood / wood-dark, wax / wax-hi. Dropped the unused `--line`, `--charcoal`, `--charcoal-2` and `--shadow-plaque` (the "dark plaque with a thin gold stroke" material that had no physical answer). Added `--shadow-object` (one overhead lamp, short shadows toward the player), `--engrave` and `--lit` (light text on dark wood). Card colours remain reserved for cards.
+
+**Control families (four, by material).**
+- *Brass plate* — menu, back: a small cast square, no outline, tiny radius.
+- *Plank* — the one primary action on a surface: a cut piece of the table-wood texture, nearly square corners. Replaces the brown gradient pill.
+- *Ink* — every secondary action (House rules, Settings, Leave the table, Another opponent, Done): words with a soft underline, no box. `.secondary-button` and `.text-button` share one rule.
+- *Wax seal* — the Crossbow's Fire. The only pressable seal in the game.
+Removed: `.segmented` (iOS segmented control), `.tool-button` pills and their CSS-drawn gear/book icons, home chevrons, `.field-label`.
+
+**Paper.** One parchment material shared by sheets and the result slip: cut square, edges browned by handling, no double inner border. Sheets are pinned with a brass tack, tilt slightly, drop in from above (no fade+scale), and the backdrop dims the room instead of blurring it. Title underline is a hand-ruled ink line. Close is an ink ×, not a white circle.
+
+**HUD.**
+- Seat plates (dark rectangles + gold border) → folded place cards: house rune inked, name, card count pencilled after a rule. Inactive seats sit in shadow; the active seat is lit by a lamp pool behind it — no gold outline glow. Last card: the count turns wax-red with a drop of wax.
+- Round label box → five chalk notches (played filled, current lit) with an italic line under them; sudden death tints the notches.
+- Score chips/pills → plain lit numerals beside the coin piles. Your score at 0 shows an empty coin ring rather than a lone "0" pill.
+- Deck count plate → chalked number on the wood.
+- Curse token → pressed red wax blob, stamped number; arrives with a stamp (scale down + settle) instead of a pop-in.
+- Table messages, hints, captions, your quips → parchment scraps slid onto the table (were dark rounded pills).
+- Speech bubbles → paper notes, italic serif, no outline.
+- Crossbow panel (dark box with coloured glow) → parchment note in the loaded colour's ink + wax Fire seal; the pile area takes on the loaded colour's light (`.crossbow-armed`).
+- Round results: remaining-hand coins move under the revealed hands so they don't collide with cards; props fade back while hands are shown.
+
+**Cards.** Playable cards no longer get a gold outline + coloured glow: they sit slightly proud with a deeper shadow and catch the light. Selected = lifted higher with a big soft shadow, no ring. Desktop hover = lift without outline. When nothing is playable, the deck rises and the lamp pools under it (was a neon ring).
+
+**Colour choice.** The dark dialog card with four boxed gems is gone. The room dims, and four irregular rune stones are laid on the open wood between the piles and your hand, dropping in one after another. Title "Name the colour".
+
+**Results.** Standings are a ledger (name, dotted leader, score; winner marked with a wax dot) instead of striped rows with rank numbers. Typography is the display serif throughout.
+
+**Main Menu.** No chevrons or row hover-boxes. Objects carry contact shadows. Bramm is now his own portrait card propped on the table (was a circular avatar with a gold ring). Rules/Settings are words burnt into the near edge of the table, separated by a dot. Record reads "You 0 · Bramm 0", chalked.
+
+**Quick Play.** "Select number of players" segmented control → four miniature tables seen from above, one card-back chair per player (yours a brass coin). The chosen table is in full colour and lit; the others are faded. Lede asks "How crowded is the table?". The redundant Back link is gone (× and backdrop remain).
+
+**Duel Select.** Rebuilt from a card-grid marketplace into a bench: no boxes, borders or panel backgrounds. The regulars sit in rows along a wooden rail, dim until you look at them (hover/focus/chosen lights them). Bramm and Edrin sit life-size on the top rail with their names written beside them. Records are chalked `W – L`. Title "Who sits across from you?".
+
+**Settings.** A ruled page: italic section labels with a fading ink rule, labels running into dotted leaders, brass lever switches in a slot (dark when on), faders as engraved grooves with a brass slide, language as two inked words with the chosen one underscored in wax red. Footer is an ink action. Audio rows keep label and control on one line on phones.
+
+**Rules.** Real RUNES cards (rendered by `cardHTML`) instead of loose icon images, slightly tilted like cards laid on the sheet. Colours shown as the same rune stones used by the colour picker. Scoring is a plain section (the `<details>` accordion is removed). Two columns on desktop. Footer reads "Got it" from the menu, "Back to the table" in game.
+
+**Pause.** Centred short menu: plank "Back to the table", then "House rules · Settings" as ink links on one line, then "Save and leave the table".
+
+**Transitions.** Changing screen (home ↔ duel select ↔ table) comes up out of darkness (brightness, .42 s) with the menu layer settling 8 px; no slide or scale.
+
+**Hebrew.** Running copy (ledes, labels, captions, notes) uses the UI face in Hebrew so it doesn't fall back to an unpredictable serif; titles and names keep the display face.
+
+**Microcopy.** "Choose a colour" → "Name the colour"; "Return to the table" → "Back to the table"; "Save and leave" (pause) → "Save and leave the table" / "לשמור ולקום מהשולחן"; Settings footer from Pause → "Back to the pause menu"; home "Rules" → "House rules" / "חוקי הבית".
+
+**Source hygiene.** Obsolete rules removed with their replacements (no override layers): segmented control, tool icons, choice arrows, gem box, old switch/slider, rule-card image sizing, Edrin champion box tint, `.hand-frame-wrap`, `.round-revealed`, three `!important`s. `!important` now appears only in the reduced-motion rules. Still 13 `@media` blocks; stylesheet 75 KB (< 80 KB guard).
+
+**Files:** `dist/styles.css`, `dist/app.js`, `dist/index.html`, `dist/sw.js` (v80). No asset added or changed. Tests unchanged; all UI-contract tests pass.
