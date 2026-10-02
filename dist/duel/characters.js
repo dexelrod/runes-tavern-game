@@ -3,6 +3,7 @@
 // Audio voice channel in app.js. Each entry here describes only what is
 // different about that character's staging; nothing is duplicated per language.
 import { BRAMM_EXPRESSIONS, BRAMM_REACTIONS, BRAMM_VOICE_LIBRARY, brammExpressionURL, createBrammController, preloadBrammExpressions, resolveBrammReaction, resolveBrammVoice } from './bramm.js';
+import { RAGNA_EXPRESSIONS, RAGNA_REACTIONS, RAGNA_VOICE_LIBRARY, createRagnaController, preloadRagnaExpressions, ragnaExpressionURL, resolveRagnaReaction, resolveRagnaVoice } from './ragna.js';
 import { EDRIN_EXPRESSIONS, EDRIN_REACTIONS, EDRIN_VOICE_LIBRARY, createEdrinController, edrinExpressionURL, preloadEdrinExpressions, resolveEdrinReaction, resolveEdrinVoice } from './edrin.js';
 
 const bramm=Object.freeze({
@@ -20,6 +21,7 @@ const bramm=Object.freeze({
   },
   idleTriggers:({ahead})=>[['idle_quiet',{}],['idle_taunt',{ahead}]],
   idleFallback:(controller,{ahead})=>({expression:ahead?'34_drinking_relaxed':'35_drinking_nervous',duration:2800}),
+  slowPlayerAfter:11000,
   finalResultBeat:1850,activeClock:false,
   introDelay:1250
 });
@@ -42,7 +44,29 @@ const edrin=Object.freeze({
   introDelay:1400
 });
 
-export const AUTHORED_CHARACTERS=Object.freeze({bramm,edrin});
+const ragna=Object.freeze({
+  id:'ragna',label:'Ragna',
+  expressions:RAGNA_EXPRESSIONS,defaultExpression:'default_focused',expressionURL:ragnaExpressionURL,preload:preloadRagnaExpressions,
+  reactions:RAGNA_REACTIONS,voiceLibrary:RAGNA_VOICE_LIBRARY,resolveReaction:resolveRagnaReaction,resolveVoice:resolveRagnaVoice,
+  createController:({initial,settings,now})=>createRagnaController({now,initial:{...(initial||{}),recentVoices:initial?.recentVoices||settings?.characterRecentVoices?.ragna||[]}}),
+  holdsExpression:controller=>!!controller?.holdsExpression?.(),
+  lead(trigger){
+    // Her face hits first — a fast flash — and the words land right behind it.
+    if(trigger==='player_one_card')return {delay:480};
+    if(trigger==='ragna_one_card'||trigger==='self_mistake')return {delay:420};
+    return null;
+  },
+  idleTriggers:()=>Math.random()<.5?[['idle_quiet',{}],['tavern_outburst',{}]]:[['tavern_outburst',{}],['idle_quiet',{}]],
+  idleFallback:(controller,{concerned})=>controller?.observe('idle_beat',{concerned}),
+  // A player who sits on a decision gets "Concentrate." / "Eyes on the table." (sometimes just the look).
+  slowPlayerAfter:10000,
+  finalResultBeat:1600,activeClock:true,
+  introDelay:1300
+});
+
+export const AUTHORED_CHARACTERS=Object.freeze({bramm,edrin,ragna});
+// The three voiced opponents offered at the duel table, in their canonical order.
+export const VOICED_OPPONENTS=Object.freeze(['bramm','edrin','ragna']);
 export const authoredCharacter=id=>AUTHORED_CHARACTERS[id]||null;
 export function characterForVoice(name=''){return Object.values(AUTHORED_CHARACTERS).find(pack=>pack.voiceLibrary[name])||null;}
 export function resolveCharacterVoice(name,locale='en'){return characterForVoice(name)?.resolveVoice(name,locale)||null;}

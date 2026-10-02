@@ -23,6 +23,8 @@ export const VETERAN_PROFILE=Object.freeze({
   mistakeRate:.1,          // occasional reasonable second-best choice…
   mistakeWindow:6,         // …only when the two options are genuinely close
   jitter:1.5,
+  actionTempo:0,           // pressure profiles: extra appetite for tempo cards…
+  pressure:0,              // …and for punishing a short hand
   planNodes:0,planDepth:8,shedWeight:10,penaltyWeight:3,endFollow:2,endGap:6,wildKept:3,curseKept:2,strandedQuickstep:12,priorWeight:.2,stuckWeight:12,penaltyStuck:6,dangerStuck:1.5,
   samples:10,minSamples:4,thinkBudgetMs:35,lateHand:5,lateOpp:4,rolloutPlies:14,rolloutScale:8,searchPrior:.004,searchMistakeWindow:.04
 });
@@ -82,16 +84,19 @@ function scoreCard(card,state,me,view,P){
     case TYPES.CHANGE_COLOR:score+=-P.holdWild+(view.danger?10:0)-(n<=2?6:0);break;
     case TYPES.KING:score+=(n<=2&&after.some(c=>c.type!==TYPES.PLUS)?12:-P.holdKing)+(view.danger?6:0);break;
   }
+  // Pressure profiles (Ragna) keep the tempo up and punish a short hand.
+  if(P.actionTempo&&[TYPES.STOP,TYPES.PLUS,TYPES.PLUS2,TYPES.TAKI].includes(card.type)&&canFollow)score+=P.actionTempo;
+  if(P.pressure&&view.opp<=3&&[TYPES.STOP,TYPES.PLUS2,TYPES.TAKI,TYPES.SUPER_TAKI].includes(card.type))score+=P.pressure*(view.opp<=1?1.5:1);
   // Plan the finish: never strand a lone Quickstep, and keep a wild as the closer.
   if(n===1&&after[0].type===TYPES.PLUS)score-=20;
   if(!isWild(card)&&n<=2&&wildsLeft)score+=5;
   return score;
 }
 
-function pickWithJudgement(cards,score,random,P){
+function pickWithJudgement(cards,score,random,P,note){
   const ranked=cards.map(card=>({card,score:score(card)+random()*P.jitter})).toSorted((a,b)=>b.score-a.score);
   // A reasonable human slip: now and then take the close second option.
-  if(ranked.length>1&&ranked[0].score<500&&ranked[0].score-ranked[1].score<P.mistakeWindow&&random()<P.mistakeRate)return ranked[1].card;
+  if(ranked.length>1&&ranked[0].score<500&&ranked[0].score-ranked[1].score<P.mistakeWindow&&random()<P.mistakeRate){if(note)note.slip=true;return ranked[1].card;}
   return ranked[0].card;
 }
 
@@ -150,7 +155,7 @@ function evaluateTurnEnd(state,meId,startCards,P){
   if(me.hand.length===1&&me.hand[0].type===TYPES.PLUS)score-=P.strandedQuickstep;
   return score;
 }
-function planTurn(state,me,P,random){
+function planTurn(state,me,P,random,note){
   const meId=me.id,start=me.hand.length;let nodes=0;
   const options=s=>{
     const player=currentPlayer(s);
@@ -172,7 +177,7 @@ function planTurn(state,me,P,random){
   const scored=first.map(action=>{nodes++;let next;try{next=applyAction(state,action);}catch{return {action,score:-Infinity};}
     const card=me.hand.find(c=>c.id===action.cardId);
     return {action,score:search(next,1)+(card?scoreCard(card,state,me,view,P)*P.priorWeight:0)+random()*P.jitter};}).toSorted((a,b)=>b.score-a.score);
-  if(scored.length>1&&scored[0].score<5000&&scored[0].score-scored[1].score<P.mistakeWindow&&random()<P.mistakeRate)return scored[1].action;
+  if(scored.length>1&&scored[0].score<5000&&scored[0].score-scored[1].score<P.mistakeWindow&&random()<P.mistakeRate){if(note)note.slip=true;return scored[1].action;}
   return scored[0].action;
 }
 
@@ -210,7 +215,7 @@ function rollout(state,meId,random,P){
 }
 let chooseRolloutAction=null;
 export function setRolloutPolicy(policy){chooseRolloutAction=policy;}
-function sampledChoice(state,me,actions,random,P){
+function sampledChoice(state,me,actions,random,P,note){
   if(!chooseRolloutAction||actions.length<2)return null;
   const view=tableView(state,me),totals=actions.map(()=>0);
   const native=globalThis.structuredClone;globalThis.structuredClone=jsonClone;
@@ -229,11 +234,13 @@ function sampledChoice(state,me,actions,random,P){
     }
   }finally{globalThis.structuredClone=native;}
   const ranked=actions.map((action,index)=>{const card=me.hand.find(c=>c.id===action.cardId);return {action,score:totals[index]/Math.max(1,samples)+(card?scoreCard(card,state,me,view,P)*P.searchPrior:0)+random()*.01};}).toSorted((a,b)=>b.score-a.score);
-  if(ranked.length>1&&ranked[0].score-ranked[1].score<P.searchMistakeWindow&&random()<P.mistakeRate)return ranked[1].action;
+  if(ranked.length>1&&ranked[0].score-ranked[1].score<P.searchMistakeWindow&&random()<P.mistakeRate){if(note)note.slip=true;return ranked[1].action;}
   return ranked[0].action;
 }
 
-export function chooseVeteranAction(state,{random=Math.random,profile=VETERAN_PROFILE}={}){
+// `note` (optional) is filled with {slip:true} when the choice was a knowing
+// second-best: the only time a character may honestly blame herself for a card.
+export function chooseVeteranAction(state,{random=Math.random,profile=VETERAN_PROFILE,note=null}={}){
   const me=currentPlayer(state),view=tableView(state,me);
   if(state.awaitingColor?.playerId===me.id)return {type:ACTIONS.CHOOSE_COLOR,playerId:me.id,color:veteranColour(me.hand,state,me,{avoid:state.awaitingColor.next==='openTaki'?null:state.activeColor})};
   const legal=getLegalCards(state,me.id);
@@ -243,7 +250,7 @@ export function chooseVeteranAction(state,{random=Math.random,profile=VETERAN_PR
   if(pickup){const card=crossbowStep(state,me,legal,view,random);if(card&&card.color===state.taki.color)return {type:ACTIONS.PLAY,playerId:me.id,cardId:card.id};}
   if(state.taki?.open&&!pickup){
     if(state.taki.ownerId===me.id){const card=crossbowStep(state,me,legal,view,random);return card?{type:ACTIONS.PLAY,playerId:me.id,cardId:card.id}:{type:ACTIONS.END_TURN,playerId:me.id};}
-    if(legal.length)return {type:ACTIONS.PLAY,playerId:me.id,cardId:pickWithJudgement(legal,card=>scoreCard(card,state,me,view,profile),random,profile).id};
+    if(legal.length)return {type:ACTIONS.PLAY,playerId:me.id,cardId:pickWithJudgement(legal,card=>scoreCard(card,state,me,view,profile),random,profile,note).id};
     return {type:ACTIONS.DRAW,playerId:me.id};
   }
   if(!legal.length)return {type:ACTIONS.DRAW,playerId:me.id};
@@ -254,8 +261,17 @@ export function chooseVeteranAction(state,{random=Math.random,profile=VETERAN_PR
   }
   // Sampled look-ahead only where it matters: the late game, or a real choice between strong cards.
   const lateGame=me.hand.length<=profile.lateHand||view.opp<=profile.lateOpp;
-  if(profile.samples>0&&lateGame){const sampled=sampledChoice(state,me,legal.map(card=>({type:ACTIONS.PLAY,playerId:me.id,cardId:card.id})),random,profile);if(sampled)return sampled;}
-  if(profile.planNodes>0){const planned=planTurn(state,me,profile,random);if(planned)return planned;}
-  const best=pickWithJudgement(legal,card=>scoreCard(card,state,me,view,profile),random,profile);
+  if(profile.samples>0&&lateGame){const sampled=sampledChoice(state,me,legal.map(card=>({type:ACTIONS.PLAY,playerId:me.id,cardId:card.id})),random,profile,note);if(sampled)return sampled;}
+  if(profile.planNodes>0){const planned=planTurn(state,me,profile,random,note);if(planned)return planned;}
+  const best=pickWithJudgement(legal,card=>scoreCard(card,state,me,view,profile),random,profile,note);
   return {type:ACTIONS.PLAY,playerId:me.id,cardId:best.id};
 }
+
+// Ragna: the same fair, public-information planner, tuned for pressure. She
+// spends Curses and Stops to keep the tempo, punishes a short hand hard, and
+// hoards less than Edrin. Fewer slips: she is a disciplined player.
+export const PRESSURE_PROFILE=Object.freeze({
+  ...VETERAN_PROFILE,
+  holdWild:9,holdKing:7,holdCurse:1,curseMidgame:14,curseDanger:32,crossbowPerCard:7,
+  actionTempo:4,pressure:9,mistakeRate:.07,lateOpp:5
+});

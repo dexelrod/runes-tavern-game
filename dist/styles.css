@@ -43,7 +43,7 @@ bdi{unicode-bidi:isolate}
 :focus-visible{outline:3px solid #f3c96e;outline-offset:3px}
 /* Hebrew has no dependable book serif on every device, so running Hebrew copy
    uses the UI face; titles and names keep the display face in both languages. */
-html[lang=he] :is(.sheet-lede,.setting-label,.rule-card p,.rule-scoring p,.standings li,.choice-copy small,.regular-copy small,.regular-copy em,.select-note,.select-head small,.speech,.turn-whisper,.human-quip,.action-strip,.table-caption,.crossbow-panel small,.tally-sum small,.tie-note,.result-slip>small,.round-marker,.seat-name small,.gem-title,.chalk-record,.choice-record){font-family:var(--ui)}
+html[lang=he] :is(.sheet-lede,.setting-label,.rule-card p,.rule-scoring p,.standings li,.choice-copy small,.select-note,.select-head small,.speech,.turn-whisper,.human-quip,.action-strip,.table-caption,.crossbow-panel small,.tally-sum small,.tie-note,.result-slip>small,.round-marker,.seat-name small,.gem-title,.chalk-record,.choice-record){font-family:var(--ui)}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 .app-shell{position:relative;width:100%;height:100dvh;overflow:hidden;isolation:isolate;background:#110906}
 
@@ -518,36 +518,11 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
 /* Choosing who sits across from you. The characters carry the screen: no
    cards, no frames. Each one is lit when you look at them; the others wait a
    little in the dark. Names and records are written under them on the wood. */
-.regular{position:relative;display:flex;flex-direction:column;align-items:stretch;padding:0;overflow:visible;border:0;border-radius:0;background:none;color:var(--cream);text-align:center;transition:translate .16s ease}
-.regular-portrait{position:relative;display:grid;place-items:end center;aspect-ratio:1/1;filter:brightness(.8) saturate(.88);transition:filter .25s ease}
 /* The bench they sit at: one rail joining the row. */
-.regulars .regular-portrait:after{content:"";position:absolute;z-index:2;left:calc(var(--gap) / -2 - 1px);right:calc(var(--gap) / -2 - 1px);bottom:-3px;height:7px;background:linear-gradient(#a8693a,#5c2f15 45%,#2a1309);box-shadow:0 4px 6px #000b}
-.regular-portrait:before{content:"";position:absolute;inset:8% -6% -4%;border-radius:50%;background:radial-gradient(closest-side,#f2b25e2e,transparent);opacity:0;transition:opacity .25s ease}
-.regular:hover .regular-portrait,.regular:focus-visible .regular-portrait,.regular.chosen .regular-portrait{filter:none}
-.regular:hover .regular-portrait:before,.regular:focus-visible .regular-portrait:before,.regular.chosen .regular-portrait:before{opacity:1}
-.regular:focus-visible{outline:0}
-.regular:focus-visible .regular-copy b{text-decoration:underline 2px;text-underline-offset:5px;text-decoration-color:var(--brass-hi)}
-.regular.loading{cursor:progress}
-.regular-portrait .duel-sprite{position:relative;display:block;width:100%;height:100%;background:var(--sprite-sheet,url('./assets/duel-opponents.png')) no-repeat;background-size:500% 500%;background-position:var(--sprite-x) var(--sprite-y);-webkit-mask-image:radial-gradient(ellipse 50% 90% at 50% 48%,#000 64%,transparent 99%);mask-image:radial-gradient(ellipse 50% 90% at 50% 48%,#000 64%,transparent 99%)}
-.regular-copy{display:grid;gap:2px;padding:9px 2px 4px}
-.regular-copy b{font:700 17px/1.1 var(--display);color:#f3dfb2;text-shadow:0 1px 2px #000}
-.regular-copy small{color:var(--cream-dim);font:italic 500 13px/1.2 var(--display);text-shadow:0 1px 2px #000}
-.regular-copy em{color:#b9a27a;font:italic 400 12.5px/1.25 var(--display)}
 /* Wins and losses, chalked: you · them. */
 .chalk-record{justify-self:center;display:flex;gap:5px;margin-top:3px;color:var(--chalk);font:600 15px/1.2 var(--display);font-variant-numeric:lining-nums;opacity:.92;direction:ltr;text-shadow:0 1px 1px #000,0 0 6px #000}
 .chalk-record i{opacity:.6;font-style:normal}
 /* Bramm and Edrin: the two who play the whole match with you, life-size. */
-.champion-regular{flex-direction:row;align-items:center;width:fit-content;min-width:min(100%,400px);max-width:100%;min-height:150px;text-align:start}
-.champion-regular .regular-portrait{aspect-ratio:2/2.25;width:42%;max-width:230px;flex:0 0 auto;place-items:start center;overflow:hidden}
-.champion-regular .regular-portrait:after{content:"";position:absolute;z-index:2;left:-4px;right:-4px;bottom:0;height:8px;background:linear-gradient(#a8693a,#5c2f15 45%,#2a1309);box-shadow:0 4px 6px #000b}
-.champion-regular .character-art-stage{height:auto;width:100%;aspect-ratio:2/3;filter:drop-shadow(0 8px 10px #000a)}
-.champion-regular .regular-copy{align-content:center;gap:4px;padding:14px 18px}
-.champion-regular .regular-copy b{font-size:30px}
-.champion-regular .chalk-record{justify-self:start}
-.regular-copy .champion-kicker{color:#e6b867;font-style:italic}
-.opponent-edrin .regular-copy .champion-kicker{color:#cbb48a}
-.regulars{--cols:4;--gap:8px;display:flex;flex-wrap:wrap;justify-content:center;gap:16px var(--gap);width:min(100%,640px)}
-.regulars>.regular{width:calc((100% - (var(--cols) - 1) * var(--gap)) / var(--cols))}
 .select-note{margin:2px 0 0;max-width:520px;color:var(--cream-dim);font:italic 500 15px/1.4 var(--display);text-align:center;text-shadow:0 1px 2px #000}
 
 /* 15. Breakpoints ------------------------------------------------------ */
@@ -582,14 +557,8 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
   .select-layer{gap:18px}
   .select-head{margin-top:auto}
   .select-note{margin-bottom:auto}
-  .regulars{--cols:5;--gap:14px;width:min(100%,760px)}
-  .champion-regular{min-height:240px}
-  .champion-regular .regular-portrait{width:220px}
-  .champion-regular .regular-copy b{font-size:36px}
   .select-head h1{font-size:40px}
   .select-head small{font-size:17px}
-  .regular-copy b{font-size:22px}
-  .regular-copy small,.regular-copy em{font-size:14px}
   .chalk-record{font-size:15px}
   .select-note{font-size:16px}
 }
@@ -628,16 +597,8 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
   .seat-score{font-size:15px}
   .home-choices{width:min(100%,560px)}
   .screen-select{--rim:30%}
-  .regulars{--cols:5;--gap:clamp(10px,1.4vh,18px);width:min(96vw,84vh)}
-  .regulars .regular-copy em{display:none}
-  .champion-regular{min-height:clamp(140px,21vh,270px)}
-  .champion-regular .regular-portrait{width:clamp(150px,19vh,250px)}
-  .champion-regular .regular-copy b{font-size:clamp(28px,3.6vh,44px)}
-  .champion-regular .regular-copy small,.champion-regular .regular-copy em{font-size:clamp(13px,1.5vh,18px)}
   .select-head h1{font-size:clamp(28px,3.8vh,46px)}
   .select-head small{font-size:clamp(14px,1.6vh,18px)}
-  .regular-copy b{font-size:clamp(17px,2.1vh,24px)}
-  .regular-copy small,.regular-copy em{font-size:clamp(12px,1.35vh,15px)}
   .chalk-record{font-size:clamp(13px,1.4vh,16px)}
   .select-note{font-size:clamp(14px,1.6vh,18px)}
 }
@@ -734,20 +695,8 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
   .home-choices{margin:0;padding:0;width:min(60%,440px)}
   .home-choice{min-height:64px}
   .home-tools{width:100%;margin-top:4px}
-  .regulars{--cols:5;width:min(100%,800px)}
-  .champion-regular{min-height:110px}
-  .champion-regular .regular-portrait{width:120px}
-  .regulars .regular-portrait{aspect-ratio:4/3}
-  .regular-copy em{display:none}
 }
 
-/* Ten regulars on laptop-height landscape: a slimmer champion card and no attitude line. */
-@media (orientation:landscape) and (min-height:501px) and (max-height:860px){
-  .champion-regular{min-height:clamp(120px,17vh,150px)}
-  .champion-regular .regular-portrait{width:clamp(110px,15vh,140px)}
-  .regulars .regular-copy em{display:none}
-  .regulars{width:min(96vw,88vh)}
-}
 
 /* 16. Motion ------------------------------------------------------------ */
 @keyframes glow-breathe{from{opacity:.3}to{opacity:.42}}
@@ -791,32 +740,90 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
 .duel-seat.opponent-bramm .seat-props,.duel-seat.opponent-edrin .seat-props{display:none}
 
 /* Preparing a table (Bramm's art decodes first): acknowledge the tap at once. */
-.home-choice.loading,.regular.loading{opacity:.72;cursor:progress;pointer-events:none}
+.home-choice.loading{opacity:.72;cursor:progress;pointer-events:none}
 /* Pointer feedback: a legal card lifts a finger's width; nothing jumps. */
 @media (hover:hover) and (pointer:fine){
   .human-turn .hand .card:hover{transform:translateY(calc(var(--rise,0px) - 12px)) rotate(var(--tilt,0deg));box-shadow:var(--shadow-raised);z-index:55}
   .human-turn .hand .card.legal:active{transform:translateY(calc(var(--rise,0px) - 8px)) rotate(var(--tilt,0deg));transition-duration:.05s}
   .draw-pile.draw-suggested:hover .card,.draw-pile:hover .card{translate:0 -2px}
-  .regular:hover{translate:0 -2px}
 }
 .hand.hints .card.quiet{cursor:default}
 /* A game, not a page: long-presses never start a text selection. */
 .app-shell{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-/* Two authored regulars share the featured row: Bramm, the loud champion, and Edrin, the quiet one. */
-.featured-regulars{display:flex;justify-content:center;gap:var(--featured-gap,10px);width:min(100%,800px)}
-.featured-regulars .champion-regular{flex:1 1 0;width:auto;min-width:0}
 @media (max-width:560px){
-  .featured-regulars{--featured-gap:8px}
-  .featured-regulars .champion-regular{min-height:132px}
-  .featured-regulars .champion-regular .regular-portrait{width:40%}
-  .featured-regulars .champion-regular .regular-copy{padding:10px 10px 10px 6px;gap:2px}
-  .featured-regulars .champion-regular .regular-copy b{font-size:20px}
-  .featured-regulars .champion-regular .regular-copy em{display:none}
-  .featured-regulars .regular-copy .champion-kicker{display:none}
-  .regulars{--gap:6px;row-gap:12px}
-  .regulars .regular-copy em{display:none}
-  .regulars .regular-copy{padding:7px 0 2px}
-  .regulars .regular-copy b{font-size:15px}
-  .regulars .regular-copy small{font-size:11.5px}
   .chalk-record{font-size:13px}
+}
+
+/* Generated tavern materials; the plank ends retain their shape at any width. */
+.primary-button{
+  background:transparent;
+  border-image-source:url('./assets/ui-plank.webp');
+  border-image-slice:0 60 fill;
+  border-image-width:0 24px;
+  border-image-repeat:stretch;
+  box-shadow:0 2px 0 #1d0c04,0 6px 10px -2px #000a;
+}
+.icon-button{background:transparent url('./assets/ui-brass-plate.webp') center/100% 100% no-repeat;box-shadow:0 2px 0 #1a0d05,0 4px 6px #0009}
+.result-slip,.tavern-sheet,.turn-whisper,.human-quip,.action-strip,.table-caption,.crossbow-panel,.speech{
+  background-color:var(--parchment);
+  background-image:linear-gradient(172deg,#f4e6c012,transparent 46%,#8a5f2a0a),url('./assets/ui-parchment.webp');
+  background-size:512px 512px;
+  background-repeat:repeat;
+}
+
+/* ── Ragna: her art is a wider 640×679 canvas (bottom-centre anchored); every
+      context keeps her head at the same scale as the other voiced regulars. ── */
+.character-ragna.character-art-stage{aspect-ratio:640/679}
+.duel-figure .character-ragna.character-art-stage{height:calc(var(--fig-h) * 1.42);translate:0 0}
+.portrait-card .character-ragna.character-art-stage{left:-46%;top:3%;width:192%}
+.duel-seat.opponent-ragna .seat-props{display:none}
+
+/* ── Duel table: one voiced regular at a time, sitting across from you. ── */
+.screen-duel{--rim:calc(58% + clamp(0px,(100vw - 600px) * .06,32px));--rim-curve:2%;--stage-top:calc(var(--safe-top) + clamp(96px,12vh,112px))}
+.duel-layer{position:absolute;inset:0;z-index:1;overflow:hidden}
+.duel-layer .select-head{position:absolute;z-index:3;top:calc(14px + var(--safe-top));left:50%;translate:-50% 0;width:min(calc(100% - 32px),980px)}
+.duel-carousel{position:absolute;inset:0;z-index:1;touch-action:pan-y;-webkit-user-select:none;user-select:none}
+.duel-track{display:flex;height:100%;transform:translateX(calc(var(--index,0) * -100% + var(--drag,0px)));transition:transform .44s cubic-bezier(.2,.8,.25,1);will-change:transform}
+[dir=rtl] .duel-track{transform:translateX(calc(var(--index,0) * 100% + var(--drag,0px)))}
+.duel-track.dragging,.reduced-motion .duel-track{transition:none}
+.duel-slide{position:relative;flex:0 0 100%;height:100%}
+.duel-slide-art{position:absolute;left:0;right:0;top:var(--stage-top);bottom:calc(100% - var(--rim) - 3px);display:flex;justify-content:center;align-items:flex-start;overflow:hidden;pointer-events:none;container-type:size}
+.duel-slide-art .character-art-stage{height:160cqh;width:auto;flex:0 0 auto;filter:drop-shadow(0 10px 14px #000b)}
+.duel-slide-art .character-ragna.character-art-stage{height:122cqh}
+.duel-slide-art .character-art{animation:none}
+.duel-plate{position:absolute;left:50%;top:calc(var(--rim) + 24px);translate:-50% 0;display:grid;justify-items:center;gap:2px;width:min(calc(100% - 40px),520px);color:var(--cream);text-align:center;text-shadow:0 1px 2px #000,0 0 10px #000c}
+.duel-plate .champion-kicker{color:#cbb48a;font:italic 500 14px/1.2 var(--display)}
+.duel-plate b{font:700 clamp(32px,9vw,44px)/1.05 var(--display);color:#f3dfb2}
+.duel-plate-title{color:var(--cream-dim);font:500 15px/1.3 var(--display)}
+.duel-plate-title em{font-style:italic}
+.duel-plate .chalk-record{justify-self:center;margin-top:4px}
+.duel-arrow{position:absolute;z-index:2;top:calc((var(--stage-top) + var(--rim)) / 2);translate:0 -50%;display:grid;place-items:center;width:clamp(46px,5vw,54px);height:clamp(46px,5vw,54px);padding:0;border:1px solid #e9cf9a55;border-radius:50%;background:radial-gradient(circle at 50% 35%,#4a2c17e6,#1b0d06e6);color:#f3dfb2;font:400 30px/1 var(--display);box-shadow:0 3px 8px #000b;cursor:pointer}
+.duel-arrow span{display:block;translate:0 -2px}
+[dir=rtl] .duel-arrow span{scale:-1 1}
+.duel-prev{inset-inline-start:max(var(--safe-left),clamp(10px,8vw - 30px,120px))}
+.duel-next{inset-inline-end:max(var(--safe-right),clamp(10px,8vw - 30px,120px))}
+.duel-arrow:focus-visible,.duel-dot:focus-visible,.random-regular:focus-visible{outline:2px solid #f3dfb2;outline-offset:3px}
+.duel-controls{position:absolute;z-index:2;left:0;right:0;bottom:calc(14px + var(--safe-bottom));display:flex;flex-direction:column;align-items:center;gap:10px;padding-inline:16px;pointer-events:none}
+.duel-controls>*{pointer-events:auto}
+.duel-dots{display:flex;gap:10px}
+.duel-dot{width:10px;height:10px;padding:0;border:1px solid #e9cf9a99;border-radius:50%;background:transparent;cursor:pointer;transition:background .2s ease,scale .2s ease}
+.duel-dot.is-current{background:#f3dfb2;scale:1.2}
+.duel-sit{min-width:min(100%,300px)}
+.random-regular{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border:0;background:none;color:var(--cream-dim);font:italic 500 15px/1.2 var(--display);text-decoration:underline;text-decoration-color:#e9cf9a55;text-underline-offset:4px;cursor:pointer;text-shadow:0 1px 2px #000}
+.random-regular img{width:30px;height:auto;filter:drop-shadow(0 2px 3px #000a)}
+.random-regular:hover{color:var(--cream)}
+.random-regular.loading,.duel-sit.loading{opacity:.6;pointer-events:none}
+.screen-duel .select-note{margin:0;font-size:13px;opacity:.85}
+@media (orientation:landscape) and (max-height:500px){
+  .screen-duel{--rim:70%;--stage-top:calc(var(--safe-top) + 64px)}
+  .duel-layer .select-head{top:calc(6px + var(--safe-top))}
+  .duel-layer .select-head small{display:none}
+  .duel-plate{top:auto;bottom:calc(8px + var(--safe-bottom));left:auto;inset-inline-start:max(16px,var(--safe-left));translate:none;justify-items:start;text-align:start;width:auto}
+  .duel-plate b{font-size:26px}
+  .duel-plate .champion-kicker,.duel-plate-title em{display:none}
+  .duel-controls{left:auto;right:auto;inset-inline-end:max(16px,var(--safe-right));bottom:calc(8px + var(--safe-bottom));align-items:flex-end;gap:4px}
+  .screen-duel .select-note{display:none}
+  .duel-seat .seat-figure .character-ragna.character-art-stage{height:auto;width:200%;translate:0 -2%}
+  .duel-plate .chalk-record{justify-self:start}
+  .duel-plate-attitude{display:none}
 }

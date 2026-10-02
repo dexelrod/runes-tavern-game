@@ -4,13 +4,14 @@ import { createDuelSession, createQuickSession, createTavernMatch, finishRound, 
 import { LocalGameTransport } from './platform/transport.js';
 import { clearMatch, feedback, loadMatch, loadSettings, saveMatch, saveSettings, tapFeedback } from './platform/storage.js';
 import { audioSystem } from './platform/audio.js';
-import { chooseBotAction, chooseColor } from './game-ai/bot.js';
+import { chooseBotAction, chooseColor, lastBotDecision } from './game-ai/bot.js';
 import { cardHTML, cardLabel, sigilHTML } from './ui/card.js';
 import { runeSVG } from './ui/runes.js';
 import { calculateHandLayout } from './ui/hand-layout.js';
 import { DUEL_OPPONENTS, duelSpriteStyle, getDuelOpponent, localizeDuelOpponent } from './duel/opponents.js';
-import { AUTHORED_CHARACTERS, authoredCharacter } from './duel/characters.js';
+import { AUTHORED_CHARACTERS, VOICED_OPPONENTS, authoredCharacter } from './duel/characters.js';
 import { debugMarkEdrinVoiceMissing, edrinEventFor } from './duel/edrin.js';
+import { RAGNA_DOUBLE_LINES, debugMarkRagnaVoiceMissing, ragnaEventFor } from './duel/ragna.js';
 
 const root=document.querySelector('#app');
 const APP_VERSION=new URL(import.meta.url).searchParams.get('v')||'dev';
@@ -23,7 +24,7 @@ const isEnglish=()=>settings.language==='en';
 const direction=()=>isEnglish()?'ltr':'rtl';
 const colorNames={he:{red:'בורדו',blue:'צפחה',green:'יער',yellow:'זהב'},en:{red:'Burgundy',blue:'Slate',green:'Forest',yellow:'Gold'}};
 const archetypeNames={he:{hunter:'הציידת',bard:'הפייטן',mercenary:'שכיר החרב',wanderer:'הנודד',scholar:'המלומד',mysterious:'הנוסע'},en:{hunter:'The Hunter',bard:'The Bard',mercenary:'The Mercenary',wanderer:'The Wanderer',scholar:'The Scholar',mysterious:'The Traveler'}};
-const playerNames={you:'You',aila:'Aila',ron:'Ron',bran:'Bran',sela:'Sela',kesh:'Kesh',roderic:'Roderic',lio:'Lio',mograth:'Mograth',harrow:'Harrow',rusk:'Rusk',bramm:'Bramm',adren:'Adren',myra:'Myra',toren:'Toren',leva:'Leva',sig:'Sig',alva:'Alva',hal:'Hal',runa:'Runa',derik:'Derik',אתם:'You',איילה:'Aila',רון:'Ron',בראן:'Bran',אדרן:'Adren',מירא:'Myra',טורן:'Toren',ליבה:'Leva',סיג:'Sig',אלבה:'Alva',האל:'Hal',רונה:'Runa',דריק:'Derik',לוסיאן:'Lucien',איניגו:'Inigo',לידיה:'Lydia',וירן:'Viren',סורן:'Soren',ויילין:'Waylin'};
+const playerNames={you:'You',ragna:'Ragna',edrin:'Edrin',aila:'Aila',ron:'Ron',bran:'Bran',sela:'Sela',kesh:'Kesh',roderic:'Roderic',lio:'Lio',mograth:'Mograth',harrow:'Harrow',rusk:'Rusk',bramm:'Bramm',adren:'Adren',myra:'Myra',toren:'Toren',leva:'Leva',sig:'Sig',alva:'Alva',hal:'Hal',runa:'Runa',derik:'Derik',אתם:'You',איילה:'Aila',רון:'Ron',בראן:'Bran',אדרן:'Adren',מירא:'Myra',טורן:'Toren',ליבה:'Leva',סיג:'Sig',אלבה:'Alva',האל:'Hal',רונה:'Runa',דריק:'Derik',לוסיאן:'Lucien',איניגו:'Inigo',לידיה:'Lydia',וירן:'Viren',סורן:'Soren',ויילין:'Waylin'};
 function colorName(color){return colorNames[settings.language]?.[color]||colorNames.he[color]||'';}
 function colorRuneHTML(color,className='color-rune'){return runeSVG(color,className);}
 
@@ -56,6 +57,9 @@ const authoredPack=()=>session?.mode==='duel'?authoredCharacter(session.opponent
 const isAuthoredDuel=()=>!!authoredPack();
 const isBrammDuel=()=>authoredPack()?.id==='bramm';
 const isEdrinDuel=()=>authoredPack()?.id==='edrin';
+const isRagnaDuel=()=>authoredPack()?.id==='ragna';
+// Ragna owns a mistake only when her own planner knowingly took a second-best card.
+let ragnaSlip=false,ragnaStakesRaised=false;
 // Gameplay time only: paused sheets and a hidden tab never count as "quiet".
 let activeClockTotal=0,activeClockSince=null;
 const activeNow=()=>activeClockTotal+(activeClockSince===null?0:performance.now()-activeClockSince);
@@ -73,10 +77,13 @@ function performCharacterReaction(reaction,{voiceDelay=0}={}){
   if(reaction.priority!=='CRITICAL'&&(characterSpeaking?.priority==='CRITICAL'||session?.phase!=='round'))return null;
   const localized=pack.resolveReaction(reaction,settings.language);
   setCharacterExpression(localized.expression);characterCaptionLine=localized.caption||'';characterCaptionLocale=localized.locale;characterSpeaking=localized.caption||localized.voice?{priority:localized.priority,id:localized.id}:null;render();
-  const epoch=sessionEpoch,finish=()=>{if(epoch!==sessionEpoch)return;const timer=setTimeout(()=>{if(epoch!==sessionEpoch)return;characterSpeaking=null;if(!pack.holdsExpression(characterController)){characterPreviousExpression=characterExpression;characterExpression=restingExpression(pack);}characterCaptionLine='';render();},settings.reducedMotion?180:650);characterSequenceTimers.push(timer);},play=()=>{if(epoch!==sessionEpoch||!isAuthoredDuel())return;audioSystem.setSettings(settings);if(localized.voice){void audioSystem.playVoice(localized.voice,{locale:localized.locale,priority:localized.priority,locked:localized.category==='result',onEnded:finish}).then(node=>{if(!node){const timer=setTimeout(finish,localized.duration||2400);characterSequenceTimers.push(timer);}});}else{const timer=setTimeout(finish,localized.duration||1800);characterSequenceTimers.push(timer);}render();};
+  const epoch=sessionEpoch,finish=()=>{if(epoch!==sessionEpoch)return;const timer=setTimeout(()=>{if(epoch!==sessionEpoch)return;characterSpeaking=null;if(!pack.holdsExpression(characterController)){characterPreviousExpression=characterExpression;characterExpression=restingExpression(pack);}characterCaptionLine='';render();},settings.reducedMotion?180:650);characterSequenceTimers.push(timer);if(localized.followUp)scheduleFollowUp(localized.followUp,epoch);},play=()=>{if(epoch!==sessionEpoch||!isAuthoredDuel())return;audioSystem.setSettings(settings);if(localized.voice){void audioSystem.playVoice(localized.voice,{locale:localized.locale,priority:localized.priority,locked:localized.category==='result',onEnded:finish}).then(node=>{if(!node){const timer=setTimeout(finish,localized.duration||2400);characterSequenceTimers.push(timer);}});}else{const timer=setTimeout(finish,localized.duration||1800);characterSequenceTimers.push(timer);}render();};
   if(voiceDelay){const timer=setTimeout(play,settings.reducedMotion?80:voiceDelay);characterSequenceTimers.push(timer);}else play();
   return localized;
 }
+// A two-beat authored gag (Ragna: "QUIET! THERE'S A GAME ON!" … "Thank you.") is one
+// performance, not two triggers: the callback skips cooldowns but never talks over anyone.
+function scheduleFollowUp(followUp,epoch){const timer=setTimeout(()=>{if(epoch!==sessionEpoch||view!=='game'||isPaused()||session?.phase!=='round'||characterSpeaking||audioSystem.voiceSource||!characterController)return;const next=characterController.force(followUp.id);if(next)performCharacterReaction(next);},(settings.reducedMotion?200:650)+(followUp.delay||0));characterSequenceTimers.push(timer);}
 const VOICE_RANK=Object.freeze({LOW:1,MEDIUM:2,HIGH:3,CRITICAL:4});
 function runCharacter(trigger,context={},force=false){
   const pack=authoredPack();if(view!=='game'||isPaused()||!pack||!characterController)return null;
@@ -98,7 +105,7 @@ function duelLine(kind){const pool=currentDuelOpponent().dialoguePools[kind]||[]
 function recordDuelResult(){if(session?.mode!=='duel'||session.phase!=='matchFinished'||session.recorded)return;const id=session.opponentId,record=settings.duelRecords?.[id]||{played:0,won:0};settings.duelRecords={...(settings.duelRecords||{}),[id]:{played:record.played+1,won:record.won+(session.championId==='p0'?1:0)}};session.recorded=true;saveSettings(settings);}
 function setSession(next){
   sessionEpoch++;clearTimeout(eventTimer);clearTimeout(quipTimer);clearTimeout(roundEndTimer);clearTimeout(duelReactionTimer);clearTimeout(duelIdleTimer);clearCharacterTimers();audioSystem.stopVoice();
-  quip=null;duelReaction='idle';captionLine='';roundResultVisible=next.phase!=='round';session=next;state=session.game;
+  quip=null;duelReaction='idle';captionLine='';roundResultVisible=next.phase!=='round';session=next;state=session.game;ragnaSlip=false;
   const pack=authoredPack();
   if(pack){if(!characterController||characterControllerFor!==pack.id){characterController=pack.createController({initial:next.characterPersonality||next.brammPersonality||null,settings,now:pack.activeClock?activeNow:undefined});characterControllerFor=pack.id;}characterExpression=characterController.defaultExpression();characterPreviousExpression=characterExpression;}else{characterController=null;characterControllerFor=null;characterExpression='01_default_smug';characterPreviousExpression=characterExpression;}
   transport?.disconnect();transport=new LocalGameTransport(state);lastLogLength=state.log.length;lastCounts=Object.fromEntries(state.players.map(p=>[p.id,p.hand.length]));lastHands=Object.fromEntries(state.players.map(p=>[p.id,p.hand.map(card=>card.id)]));lastRenderedTopId=null;incomingCardDelays.clear();propRattled.clear();eventBanner=null;
@@ -115,6 +122,11 @@ function setSession(next){
         else runCharacter('match_loss',{},true);
       }else if(isBrammDuel())runCharacter(opponentWon?'round_win':'round_loss',{},true);
       else if(isEdrinDuel())runCharacter(finalDuel?(opponentWon?'match_win':'match_loss'):(opponentWon?'round_win':'round_loss'),{},true);
+      else if(isRagnaDuel()){
+        // Ragna: the match result replaces the round result, never both. "That's it?" leans on easy wins.
+        const points=session.results.at(-1)?.points||0,spread=Math.abs((session.scores?.p1||0)-(session.scores?.p0||0));
+        runCharacter(finalDuel?(opponentWon?'match_win':'match_loss'):(opponentWon?'round_win':'round_loss'),finalDuel?{close:spread<=6}:{easy:opponentWon&&points>=8,close:!opponentWon&&points<=2},true);
+      }
       else if(session.mode==='duel'){setDuelReaction(opponentWon?'pleased':'annoyed',duelLine(opponentWon?'pleased':'annoyed'),true);}
       roundResultVisible=false;const epoch=sessionEpoch,authoredBeat=isAuthoredDuel()&&finalDuel?authoredPack().finalResultBeat:0;
       audioSystem.duckMusic(.08,240);
@@ -156,7 +168,7 @@ async function startSession(mode='tavern',saved=null){
   view='game';sheet=null;eventBanner=null;audioSystem.setSettings(settings);if(settings.ambience)audioSystem.startAmbience();if(settings.music)audioSystem.startMusic({newRound:true});deckSettling=!saved;render();if(!saved)beginDeckArrival();runActiveClock(true);const pack=authoredPack();if(pack){void audioSystem.preloadVoice(settings.language,Object.keys(pack.voiceLibrary));
 // Every new match against Bramm opens with his voiced introduction. Edrin says one
 // line the first time you meet him; after that he may just glance up, or not.
-if(!saved){const epoch=sessionEpoch,firstEncounter=!settings.charactersMet?.[pack.id];const timer=setTimeout(()=>{if(epoch!==sessionEpoch)return;if(isBrammDuel())runCharacter('intro',{},true);else{runCharacter('intro',{firstEncounter},true);settings.charactersMet={...(settings.charactersMet||{}),[pack.id]:true};saveSettings(settings);}},settings.reducedMotion?350:pack.introDelay);characterSequenceTimers.push(timer);}}scheduleGame();scheduleDuelIdle();
+if(!saved){const epoch=sessionEpoch,firstEncounter=!settings.charactersMet?.[pack.id];const timer=setTimeout(()=>{if(epoch!==sessionEpoch)return;if(isBrammDuel())runCharacter('intro',{},true);else{runCharacter('intro',{firstEncounter,raised:isRagnaDuel()&&ragnaStakesRaised},true);ragnaStakesRaised=false;settings.charactersMet={...(settings.charactersMet||{}),[pack.id]:true};saveSettings(settings);}},settings.reducedMotion?350:pack.introDelay);characterSequenceTimers.push(timer);}}scheduleGame();scheduleDuelIdle();
 }
 function commitAction(action){const beforeTurn=state?.turn,beforeTop=state?topCard(state)?.id:null;if(action.type===ACTIONS.DRAW&&action.playerId==='p0')blockAiUntil=Date.now()+500;try{transport.submitAction(action);selected=null;}catch(error){const advanced=!!state&&(state.turn!==beforeTurn||topCard(state)?.id!==beforeTop);console.error('Game action or update failed',error);hint=advanced?'':(isEnglish()?'You cannot play that card now':'אי אפשר לשחק את הקלף הזה עכשיו');if(!advanced)feedback('invalid',settings);render();if(advanced)scheduleGame();else setTimeout(()=>{hint='';render();},850);}}
 function submit(action){
@@ -270,7 +282,7 @@ function announce(entries){
   if(play){const card=state.discardPile.find(c=>c.id===play.cardId),label=card?(card.type===TYPES.NUMBER?`${card.value} ${colorName(card.color)}`:cardLabel(card,'he')):'קלף';return play.playerId==='p0'?`שיחקתם ${label}`:`${names[play.playerId]} ${verb(play.playerId,'שיחק','שיחקה')} ${label}`;}
   return'';
 }
-const CHARACTER_GENDER={aila:'f',sela:'f',ron:'f',bran:'f',kesh:'m',roderic:'m',lio:'m',mograth:'m',harrow:'m',rusk:'m',bramm:'m'};
+const CHARACTER_GENDER={ragna:'f',edrin:'m',aila:'f',sela:'f',ron:'f',bran:'f',kesh:'m',roderic:'m',lio:'m',mograth:'m',harrow:'m',rusk:'m',bramm:'m'};
 function isFeminine(player){if(!player)return false;const known=player.gender||CHARACTER_GENDER[player.nameKey||player.duelOpponentId];if(known)return known==='f';return(['hunter','scholar'].includes(player.archetype)||['איילה','לידיה','סֶלָה','מירא','ליבה','אלבה','רונה'].includes(player.name));}
 function winnerLine(player,unit='round'){if(!player)return'';const hand=unit==='hand';if(isEnglish())return player.id==='p0'?(hand?'You won the hand':'You won the round'):`${displayName(player)} won the ${hand?'hand':'round'}`;if(player.id==='p0')return hand?'ניצחתם ביד':'ניצחתם בסיבוב';return`${player.name} ${isFeminine(player)?'ניצחה':'ניצח'} ${hand?'ביד':'בסיבוב'}`;}
 function onState(action){
@@ -337,6 +349,16 @@ function onState(action){
       if(oldHuman===1&&humanCount>1){const settle=characterController.oneCardRecovered();if(settle&&!characterSpeaking)setCharacterExpression(settle.expression,settle.duration);}
       const event=edrinEventFor({played,playedCard,stop,stack,penalty,draw,closed,crossbowRun,humanCount,edrinCount,oldHuman,oldEdrin});
       if(event)runCharacter(event[0],{...event[1],playerOnOneCard:humanCount===1,ownTurn:currentPlayer(state).id==='p1',playerStillToPlay:currentPlayer(state).id==='p0'});
+    }else if(isRagnaDuel()&&state.phase!=='finished'){
+      // Ragna: one trigger per table update; her face does most of the work.
+      const humanCount=state.players[0].hand.length,ragnaCount=state.players[1].hand.length,oldHuman=previousCounts.p0??humanCount,oldRagna=previousCounts.p1??ragnaCount;
+      if(oldHuman===1&&humanCount>1){const settle=characterController.oneCardRecovered();if(settle&&!characterSpeaking)setCharacterExpression(settle.expression,settle.duration);}
+      const shown=characterExpression,before=characterController.snapshot().state;characterController.observeTable({humanCount,ragnaCount});const after=characterController.snapshot().state;
+      const slipBefore=ragnaSlip;if(draw?.playerId==='p1'||penalty?.playerId==='p1')ragnaSlip=false;
+      const event=ragnaEventFor({played,playedCard,stop,stack,penalty,draw,closed,crossbowRun,humanCount,ragnaCount,oldHuman,oldRagna,slipBefore});
+      if(event)runCharacter(event[0],{...event[1],playerOnOneCard:humanCount===1,ownTurn:currentPlayer(state).id==='p1',playerStillToPlay:currentPlayer(state).id==='p0'});
+      if(after==='close'&&before==='default'&&characterExpression===shown&&!characterSpeaking)runCharacter('close_game');
+      if(after!==before&&characterExpression===shown&&!characterSpeaking)setCharacterExpression(restingExpression());
     }else if(isAuthoredDuel());
     else if((penalty?.playerId==='p1'&&penalty.amount>=4)||stop?.skipped==='p1')setDuelReaction('annoyed',duelLine('annoyed'));
     else if(humanMove&&(reverse||opened||playedCard?.type===TYPES.KING||state.players[0].hand.length===1))setDuelReaction('surprised',duelLine('surprised'));
@@ -353,14 +375,14 @@ function runBotTurn(playerId,epoch,scheduledTurn){
   pendingBotTurn=null;
   if(epoch!==sessionEpoch||isPaused()||!state||session.phase!=='round'||state.phase==='finished')return;
   const current=currentPlayer(state);if(current.id!==playerId||current.kind!=='ai'||state.turn!==scheduledTurn)return;
-  try{submit(chooseBotAction(state));}
+  try{const action=chooseBotAction(state);if(isRagnaDuel()&&playerId==='p1'&&action.type===ACTIONS.PLAY&&lastBotDecision.playerId===playerId)ragnaSlip=lastBotDecision.slip;submit(action);}
   catch(error){console.error('AI turn action failed',error);if(currentPlayer(state).id===playerId&&state.phase==='playing'){try{submit({type:ACTIONS.DRAW,playerId});}catch(fallbackError){console.error('AI fallback draw failed',fallbackError);}}if(state.phase!=='finished'&&currentPlayer(state).kind==='ai'){try{render();}catch(renderError){console.error('AI recovery render failed',renderError);}scheduleGame();}}
 }
 function scheduleGame(){
   clearTimeout(botTimer);clearTimeout(characterSlowTimer);
   if(isPaused()||!state||session.phase!=='round'||state.phase==='finished')return;
   const active=currentPlayer(state);
-  if(active.kind==='human'){if(isBrammDuel()){const epoch=sessionEpoch,turn=state.turn;characterSlowTimer=setTimeout(()=>{if(epoch===sessionEpoch&&state?.turn===turn&&currentPlayer(state)?.id==='p0')runCharacter('slow_player');},11000);}return;}
+  if(active.kind==='human'){const pack=authoredPack();if(pack?.slowPlayerAfter){const epoch=sessionEpoch,turn=state.turn;characterSlowTimer=setTimeout(()=>{if(epoch===sessionEpoch&&state?.turn===turn&&currentPlayer(state)?.id==='p0'&&!motionLocked)runCharacter('slow_player',{playerOnOneCard:state.players[0].hand.length===1});},pack.slowPlayerAfter);}return;}
   const playerId=active.id,epoch=sessionEpoch,scheduledTurn=state.turn;
   // Edrin's eyes sharpen only for decisions that matter, and only now and then.
   if(isEdrinDuel()&&playerId==='p1'&&edrinConsideredTurn!==scheduledTurn){edrinConsideredTurn=scheduledTurn;const legal=getLegalCards(state,playerId),human=state.players[0].hand.length,mine=active.hand.length,weighty=legal.some(card=>[TYPES.PLUS2,TYPES.KING,TYPES.STOP,TYPES.SUPER_TAKI,TYPES.CHANGE_COLOR].includes(card.type));if(!state.taki?.open&&legal.length>=2&&(human<=2||(mine<=3&&weighty)))runCharacter('edrin_considering');}
@@ -377,15 +399,15 @@ function recordText(record){const won=record?.won||0,lost=Math.max(0,(record?.pl
 function homeHTML(){
   const en=isEnglish(),savedSession=readSavedSession(),resumable=savedSession&&savedSession.phase!=='matchFinished';
   const savedOpponent=savedSession?.mode==='duel'?displayOpponent(getDuelOpponent(savedSession.opponentId||settings.duelOpponent)):null;
-  const bramm=recordText(settings.duelRecords?.bramm);
+  const featured=displayOpponent(getDuelOpponent(featuredDuelOpponent())),featuredRecord=recordText(settings.duelRecords?.[featured.id]);
   const t=en?{
     resumeKicker:'Your seat is kept',resume:{duel:'Continue the Duel',tavern:'Continue the Tavern Match',quick:'Continue Quick Play'},
     quick:'Quick Play',quickSub:'One hand with strangers',tavern:'Tavern Match',tavernSub:'Five rounds with the regulars',
-    duel:'Duel',duelSub:'Bramm waits. “Still unbeaten.”',record:`You <bdi>${bramm.won}</bdi> · Bramm <bdi>${bramm.lost}</bdi>`,rules:'House rules',settings:'Settings'
+    duel:'Duel',duelSub:DUEL_HOME_LINES.en[featured.id],record:`You <bdi>${featuredRecord.won}</bdi> · ${featured.name} <bdi>${featuredRecord.lost}</bdi>`,rules:'House rules',settings:'Settings'
   }:{
     resumeKicker:'המקום שלכם שמור',resume:{duel:'להמשיך בדו־קרב',tavern:'להמשיך במשחק הפונדק',quick:'להמשיך במשחק המהיר'},
     quick:'משחק מהיר',quickSub:'יד אחת עם זרים',tavern:'משחק פונדק',tavernSub:'חמישה סיבובים מול הקבועים',
-    duel:'דו־קרב',duelSub:'בראם מחכה. ״עדיין בלתי־מנוצח.״',record:`אתם <bdi>${bramm.won}</bdi> · בראם <bdi>${bramm.lost}</bdi>`,rules:'חוקי הבית',settings:'הגדרות'
+    duel:'דו־קרב',duelSub:DUEL_HOME_LINES.he[featured.id],record:`אתם <bdi>${featuredRecord.won}</bdi> · ${featured.name} <bdi>${featuredRecord.lost}</bdi>`,rules:'חוקי הבית',settings:'הגדרות'
   };
   const resumeMeta=!resumable?'':savedSession.mode==='duel'
     ?(en?`Against ${savedOpponent.name} · Round <bdi>${savedSession.round}</bdi> of <bdi>${savedSession.totalRounds}</bdi>`:`מול ${savedOpponent.name} · סיבוב <bdi>${savedSession.round}</bdi> מתוך <bdi>${savedSession.totalRounds}</bdi>`)
@@ -396,28 +418,73 @@ function homeHTML(){
   return `<main class="app-shell screen-home ${resumable?'has-resume':''} ${settings.reducedMotion?'reduced-motion':''}" dir="${direction()}">${worldSceneHTML('home')}<section class="home-layer">
     <h1 class="home-title"><img class="primary-runes-logo" src="./assets/brand/runes-white.svg?v=60" alt="${en?'RUNES':'RUNES — רונות'}"></h1>
     <nav class="home-choices" aria-label="${en?'Ways to play':'דרכי משחק'}">${resume}
-      <button class="home-choice quick-choice" data-open="quick"><span class="choice-object">${cardBackStackHTML('object-cards',3)}</span><span class="choice-copy"><strong>${t.quick}</strong><small>${t.quickSub}</small></span></button>
+      <button class="home-choice duel-choice" data-duel><span class="choice-object duel-cameo"><span class="portrait-card">${characterArtHTML(featured,{context:'cameo'})}</span></span><span class="choice-copy"><strong>${t.duel}</strong><small>${t.duelSub}</small><em class="choice-record">${t.record}</em></span></button>
       <button class="home-choice tavern-choice" data-tavern><span class="choice-object"><img class="object-coins" src="./assets/props/gambling/stacked-coins.png" alt="" draggable="false"></span><span class="choice-copy"><strong>${t.tavern}</strong><small>${t.tavernSub}</small></span></button>
-      <button class="home-choice duel-choice" data-duel><span class="choice-object duel-cameo"><span class="portrait-card">${characterArtHTML(getDuelOpponent('bramm'),{context:'cameo'})}</span></span><span class="choice-copy"><strong>${t.duel}</strong><small>${t.duelSub}</small><em class="choice-record">${t.record}</em></span></button>
+      <button class="home-choice quick-choice" data-open="quick"><span class="choice-object">${cardBackStackHTML('object-cards',3)}</span><span class="choice-copy"><strong>${t.quick}</strong><small>${t.quickSub}</small></span></button>
     </nav>
     <div class="home-tools"><button class="tool-button" data-open="rules">${t.rules}</button><i aria-hidden="true">·</i><button class="tool-button" data-open="settings">${t.settings}</button></div>
   </section>${sheetHTML()}</main>`;
 }
+// The duel table: the three voiced regulars, one at a time, sitting across from
+// you. Swipe (or use the arrows/keys) to see the others; which one is waiting
+// first changes every visit. The other ten regulars are a random draw.
+const DUEL_KICKERS=Object.freeze({
+  en:{bramm:'The house champion',edrin:'Thirty years at this table',ragna:'Wants more gold on the table'},
+  he:{bramm:'אלוף הבית',edrin:'שלושים שנה ליד השולחן הזה',ragna:'רוצה יותר זהב על השולחן'}
+});
+const DUEL_HOME_LINES=Object.freeze({
+  en:{bramm:'Bramm waits. “Still unbeaten.”',edrin:'Edrin has saved you a seat.',ragna:'Ragna waits. “Sit straight.”'},
+  he:{bramm:'בראם מחכה. ״עדיין בלתי־מנוצח.״',edrin:'אדרין שמר לכם מקום.',ragna:'ראגנה מחכה. ״לשבת ישר.״'}
+});
+let duelIndex=Math.floor(Math.random()*VOICED_OPPONENTS.length);
+const featuredDuelOpponent=()=>VOICED_OPPONENTS[duelIndex]||VOICED_OPPONENTS[0];
+function rerollDuelFeature(){duelIndex=Math.floor(Math.random()*VOICED_OPPONENTS.length);}
+function duelRecordHTML(opponent){const en=isEnglish(),{won,lost}=recordText(settings.duelRecords?.[opponent.id]);return `<span class="chalk-record" aria-label="${en?`${won} wins, ${lost} losses`:`${won} ניצחונות, ${lost} הפסדים`}"><bdi>${won}</bdi><i>–</i><bdi>${lost}</bdi></span>`;}
+function duelSitLabel(opponent){return isEnglish()?`Sit down with ${opponent.name}`:`לשבת מול ${opponent.name}`;}
 function duelSelectHTML(){
-  const en=isEnglish(),regulars=DUEL_OPPONENTS.filter(item=>!AUTHORED_CHARACTERS[item.id]).map(displayOpponent),bramm=displayOpponent(getDuelOpponent('bramm')),edrin=displayOpponent(getDuelOpponent('edrin'));
-  const recordHTML=opponent=>{const {won,lost}=recordText(settings.duelRecords?.[opponent.id]);return `<span class="chalk-record" aria-label="${en?`${won} wins, ${lost} losses`:`${won} ניצחונות, ${lost} הפסדים`}"><bdi>${won}</bdi><i>–</i><bdi>${lost}</bdi></span>`;};
-  const regular=opponent=>{const [title,attitude]=opponent.descriptor.split(' · ');return `<button class="regular opponent-${opponent.id} ${settings.duelOpponent===opponent.id?'chosen':''}" data-opponent="${opponent.id}" aria-label="${en?`Duel ${opponent.name}, ${title}`:`דו־קרב מול ${opponent.name}, ${title}`}"><span class="regular-portrait">${characterArtHTML(opponent,{context:'select'})}</span><span class="regular-copy"><b>${opponent.name}</b><small>${title}</small><em>${attitude||''}</em>${recordHTML(opponent)}</span></button>`;};
-  const [brammTitle,brammAttitude]=bramm.descriptor.split(' · '),[edrinTitle,edrinAttitude]=edrin.descriptor.split(' · ');
-  return `<main class="app-shell screen-select ${settings.reducedMotion?'reduced-motion':''}" dir="${direction()}">${worldSceneHTML('select')}<section class="select-layer">
+  const en=isEnglish(),cast=VOICED_OPPONENTS.map(id=>displayOpponent(getDuelOpponent(id))),current=cast[duelIndex]||cast[0];
+  const slide=(opponent,index)=>{const [title,attitude]=opponent.descriptor.split(' · ');return `<article class="duel-slide opponent-${opponent.id}" data-slide="${index}" aria-roledescription="${en?'slide':'שקופית'}" aria-label="${opponent.name}" ${index===duelIndex?'':'aria-hidden="true" inert'}>
+      <div class="duel-slide-art">${characterArtHTML(opponent,{context:'select'})}</div>
+      <div class="duel-plate"><small class="champion-kicker">${DUEL_KICKERS[en?'en':'he'][opponent.id]||''}</small><b>${opponent.name}</b><span class="duel-plate-title">${title}${attitude?`<span class="duel-plate-attitude"> · <em>${attitude}</em></span>`:''}</span>${duelRecordHTML(opponent)}</div>
+    </article>`;};
+  const dots=cast.map((opponent,index)=>`<button class="duel-dot ${index===duelIndex?'is-current':''}" data-duel-go="${index}" aria-label="${opponent.name}" ${index===duelIndex?'aria-current="true"':''}></button>`).join('');
+  return `<main class="app-shell screen-select screen-duel ${settings.reducedMotion?'reduced-motion':''}" dir="${direction()}">${worldSceneHTML('select')}<section class="duel-layer">
     <header class="select-head"><button class="icon-button back-button" data-home aria-label="${en?'Back':'חזרה'}"><span aria-hidden="true">${en?'‹':'›'}</span></button><div><small>${en?'The regulars have kept a seat':'הקבועים שמרו לכם מקום'}</small><h1>${en?'Who sits across from you?':'מי יישב מולכם?'}</h1></div></header>
-    <div class="featured-regulars">
-      <button class="regular champion-regular opponent-bramm ${settings.duelOpponent==='bramm'?'chosen':''}" data-opponent="bramm" aria-label="${en?'Duel Bramm, The Unbeaten':'דו־קרב מול בראם, הבלתי־מנוצח'}"><span class="regular-portrait">${characterArtHTML(bramm,{context:'select'})}</span><span class="regular-copy"><small class="champion-kicker">${en?'The house champion':'אלוף הבית'}</small><b>${bramm.name}</b><small>${brammTitle}</small><em>${brammAttitude||''}</em>${recordHTML(bramm)}</span></button>
-      <button class="regular champion-regular opponent-edrin ${settings.duelOpponent==='edrin'?'chosen':''}" data-opponent="edrin" aria-label="${en?'Duel Edrin, The Old Regular':'דו־קרב מול אדרין, הקבוע הוותיק'}"><span class="regular-portrait">${characterArtHTML(edrin,{context:'select'})}</span><span class="regular-copy"><small class="champion-kicker">${en?'Thirty years at this table':'שלושים שנה ליד השולחן הזה'}</small><b>${edrin.name}</b><small>${edrinTitle}</small><em>${edrinAttitude||''}</em>${recordHTML(edrin)}</span></button>
+    <div class="duel-carousel" data-carousel role="region" aria-roledescription="${en?'carousel':'קרוסלה'}" aria-label="${en?'Opponents':'יריבים'}">
+      <div class="duel-track" style="--index:${duelIndex}">${cast.map(slide).join('')}</div>
+      <button class="duel-arrow duel-prev" data-duel-step="-1" aria-label="${en?'Previous opponent':'היריב הקודם'}"><span aria-hidden="true">‹</span></button>
+      <button class="duel-arrow duel-next" data-duel-step="1" aria-label="${en?'Next opponent':'היריב הבא'}"><span aria-hidden="true">›</span></button>
     </div>
-    <div class="regulars">${regulars.map(regular).join('')}</div>
-    <p class="select-note">${en?'Five rounds, one opponent. Every card left in a losing hand is a point.':'חמישה סיבובים מול יריב אחד. כל קלף שנשאר ביד המפסידה שווה נקודה.'}</p>
+    <div class="duel-controls">
+      <div class="duel-dots" role="group" aria-label="${en?'Choose an opponent':'בחירת יריב'}">${dots}</div>
+      <button class="primary-button duel-sit" data-opponent="${current.id}">${duelSitLabel(current)}</button>
+      <button class="random-regular" data-random-opponent><img src="./assets/props/gambling/dice-pair.png" alt="" draggable="false"><span>${en?'Or a random regular':'או יריב אקראי מהקבועים'}</span></button>
+      <p class="select-note">${en?'Five rounds, one opponent. Every card left in a losing hand is a point.':'חמישה סיבובים מול יריב אחד. כל קלף שנשאר ביד המפסידה שווה נקודה.'}</p>
+    </div>
   </section></main>`;
 }
+function bindDuelCarousel(){
+  const carousel=root.querySelector('[data-carousel]');if(!carousel)return;
+  const track=carousel.querySelector('.duel-track'),count=VOICED_OPPONENTS.length,sign=direction()==='rtl'?1:-1;
+  const sync=(dx=0,animate=true)=>{
+    track.classList.toggle('dragging',!animate);track.style.setProperty('--index',duelIndex);track.style.setProperty('--drag',`${dx}px`);
+    track.querySelectorAll('.duel-slide').forEach((node,index)=>{const on=index===duelIndex;node.toggleAttribute('inert',!on);if(on)node.removeAttribute('aria-hidden');else node.setAttribute('aria-hidden','true');});
+    root.querySelectorAll('[data-duel-go]').forEach((dot,index)=>{dot.classList.toggle('is-current',index===duelIndex);if(index===duelIndex)dot.setAttribute('aria-current','true');else dot.removeAttribute('aria-current');});
+    const opponent=displayOpponent(getDuelOpponent(VOICED_OPPONENTS[duelIndex])),sit=root.querySelector('.duel-sit');if(sit){sit.dataset.opponent=opponent.id;sit.textContent=duelSitLabel(opponent);}
+  };
+  const go=index=>{duelIndex=(index+count)%count;sync();void authoredCharacter(VOICED_OPPONENTS[duelIndex])?.preload();};
+  root.querySelectorAll('[data-duel-step]').forEach(button=>button.onclick=()=>{tapFeedback('play',settings);go(duelIndex+Number(button.dataset.duelStep));});
+  root.querySelectorAll('[data-duel-go]').forEach(button=>button.onclick=()=>go(Number(button.dataset.duelGo)));
+  let startX=0,startY=0,dx=0,dragging=false,pointer=null,startTime=0;
+  carousel.onpointerdown=event=>{if(event.target.closest('button'))return;pointer=event.pointerId;startX=event.clientX;startY=event.clientY;dx=0;dragging=false;startTime=event.timeStamp;};
+  carousel.onpointermove=event=>{if(event.pointerId!==pointer)return;const mx=event.clientX-startX,my=event.clientY-startY;if(!dragging){if(Math.abs(mx)<8||Math.abs(mx)<Math.abs(my))return;dragging=true;carousel.setPointerCapture?.(event.pointerId);}dx=mx;sync(dx,false);};
+  const end=event=>{if(event.pointerId!==pointer)return;pointer=null;if(!dragging){return;}dragging=false;const width=carousel.clientWidth||1,fast=Math.abs(dx)/Math.max(1,event.timeStamp-startTime)>.45;
+    // Finger left in LTR (right in RTL) brings the next opponent in.
+    if(Math.abs(dx)>width*.18||(fast&&Math.abs(dx)>24))go(duelIndex+(dx*sign>0?1:-1));else sync();};
+  carousel.onpointerup=end;carousel.onpointercancel=end;
+  sync();
+}
+function startDuelWith(id,button){if(root.querySelector('[data-opponent].loading,[data-random-opponent].loading'))return;settings.duelOpponent=id;saveSettings(settings);clearMatch();button?.classList.add('loading');button?.setAttribute('aria-busy','true');return startSession('duel').catch(error=>{console.error('Unable to prepare duel assets',error);button?.classList.remove('loading');button?.setAttribute('aria-busy','false');});}
 function tableEngravingHTML(){return `<svg class="table-engraving" viewBox="0 0 1000 620" preserveAspectRatio="none" aria-hidden="true"><g><path d="M162 323C185 169 330 91 505 91c177 0 319 77 339 231"/><path d="M842 345C811 491 671 548 501 548c-171 0-310-57-341-204"/></g><g class="engraving-marks"><path d="m149 324 28-29 28 29-28 29zM823 324l28-29 28 29-28 29z"/><path d="m487 91 16-20 16 20-16 20zM487 548l16-20 16 20-16 20z"/></g></svg>`;}
 function cardBackStackHTML(className,count=2){const back=cardHTML(null,cardOptions({hidden:true,small:true})).replace(/ aria-label="[^"]+"/,'');return `<span class="${className}" aria-hidden="true">${back.repeat(count)}</span>`;}
 function worldSceneHTML(context='game'){
@@ -440,7 +507,7 @@ const seatPropStories=Object.freeze({
 function propsHTML(player){const archetype=player.archetype||'wanderer',variants=seatPropStories[archetype]||seatPropStories.wanderer,identity=[...`${player.id}:${archetype}`].reduce((sum,char)=>sum+char.charCodeAt(0),0),items=variants[Math.abs((session?.seed||0)+identity)%variants.length];return `<span class="seat-props" aria-hidden="true">${items.map((item,index)=>`<img class="seat-object prop-${index+1}" src="./assets/props/${propAssets[item]}" alt="" draggable="false">`).join('')}</span>`;}
 let lastPenaltyShown=0,slipShownFor=-1;
 function freshQuip(){if(!quip||quip.rendered)return'';quip.rendered=true;return'enter';}
-const TAVERN_FIGURES=new Set(['aila','ron','bran','sela','kesh']),TAVERN_SPRITES=new Set(['roderic','lio','mograth','harrow','rusk']);
+const TAVERN_FIGURES=new Set(['aila','ron','bran','sela','kesh','roderic','lio','mograth','harrow','rusk']),TAVERN_SPRITES=new Set();
 // Score as coins: one coin per four points (min one), stacked four high, at most
 // three stacks. The exact number always sits beside the pile.
 function coinStacks(score){if(score<=0)return[];const coins=Math.min(12,1+Math.floor(score/4)),stacks=[];for(let left=coins;left>0;left-=4)stacks.push(Math.min(4,left));return stacks;}
@@ -672,7 +739,7 @@ function resumeGameTimers(){
   if(session?.phase!=='round'&&!roundResultVisible)roundEndTimer=setTimeout(revealRoundResult,settings.reducedMotion?80:700);
   runActiveClock(true);scheduleGame();scheduleDuelIdle();
 }
-function goHome(){flushPendingAction();persist();sessionEpoch++;pauseGameTimers({leaving:true});clearTimeout(deckAudioTimer);audioSystem.stopAmbience();audioSystem.stopMusic(true);view='home';sheet=null;selected=null;render();}
+function goHome(){rerollDuelFeature();flushPendingAction();persist();sessionEpoch++;pauseGameTimers({leaving:true});clearTimeout(deckAudioTimer);audioSystem.stopAmbience();audioSystem.stopMusic(true);view='home';sheet=null;selected=null;render();}
 function compactLayout(){return matchMedia('(max-width:599px), (max-height:500px)').matches;}
 function updateHandOverflow(){
   const frame=handFrame();if(!frame)return;
@@ -729,13 +796,16 @@ function bind(){
     input.onchange=()=>{apply();if(input.dataset.channel==='sound'&&settings.sound)audioSystem.play('cardPlaySoft');};
   });
   root.querySelectorAll('[data-players]').forEach(b=>b.onclick=()=>{settings.playerCount=+b.dataset.players;saveSettings(settings);render();root.querySelector(`[data-players="${b.dataset.players}"]`)?.focus({preventScroll:true});});
-  root.querySelector('[data-duel]')?.addEventListener('click',()=>{view='duelSelect';sheet=null;render();for(const pack of Object.values(AUTHORED_CHARACTERS))void pack.preload();});
-  root.querySelectorAll('[data-opponent]').forEach(b=>b.onclick=async()=>{if(root.querySelector('.regular.loading'))return;settings.duelOpponent=b.dataset.opponent;saveSettings(settings);clearMatch();b.classList.add('loading');b.setAttribute('aria-busy','true');try{await startSession('duel');}catch(error){console.error('Unable to prepare duel assets',error);b.classList.remove('loading');b.setAttribute('aria-busy','false');}});
+  root.querySelector('[data-duel]')?.addEventListener('click',()=>{view='duelSelect';sheet=null;render();void authoredCharacter(featuredDuelOpponent())?.preload();for(const pack of Object.values(AUTHORED_CHARACTERS))void pack.preload();});
+  root.querySelectorAll('[data-opponent]').forEach(b=>b.onclick=()=>startDuelWith(b.dataset.opponent,b));
+  // A random regular: one of the ten unvoiced opponents, never the same twice running.
+  root.querySelector('[data-random-opponent]')?.addEventListener('click',event=>{const pool=DUEL_OPPONENTS.filter(item=>!AUTHORED_CHARACTERS[item.id]).map(item=>item.id),fresh=pool.filter(id=>id!==settings.lastRandomOpponent),id=fresh[Math.floor(Math.random()*fresh.length)];settings.lastRandomOpponent=id;startDuelWith(id,event.currentTarget);});
+  bindDuelCarousel();
   root.querySelector('[data-tavern]')?.addEventListener('click',()=>{clearMatch();startSession('tavern');});
   root.querySelector('[data-quick]')?.addEventListener('click',()=>{clearMatch();startSession('quick');});
   root.querySelector('[data-resume]')?.addEventListener('click',event=>{const button=event.currentTarget;if(button.classList.contains('loading'))return;button.classList.add('loading');button.setAttribute('aria-busy','true');const saved=loadMatch();startSession(saved?.mode||'tavern',saved);});
   root.querySelector('[data-next]')?.addEventListener('click',startNextHand);
-  root.querySelector('[data-rematch]')?.addEventListener('click',()=>{clearMatch();startSession('duel');});
+  root.querySelector('[data-rematch]')?.addEventListener('click',()=>{ragnaStakesRaised=isRagnaDuel()&&RAGNA_DOUBLE_LINES.includes(characterController?.snapshot().history.at(-1)?.voice);clearMatch();startSession('duel');});
   root.querySelector('[data-choose-opponent]')?.addEventListener('click',()=>{clearMatch();goHome();view='duelSelect';render();});
   root.querySelectorAll('[data-home]').forEach(b=>b.onclick=goHome);
   root.querySelector('[data-draw]')?.addEventListener('click',()=>{if(state?.phase==='playing'&&currentPlayer(state).id==='p0'&&(!state.taki?.open||crossbowAwaitsPickup(state))){tapFeedback('draw',settings);submit({type:ACTIONS.DRAW,playerId:'p0'});}else if(state?.taki?.open&&currentPlayer(state).id==='p0'){hint=isEnglish()?'Fire the Crossbow to end your turn':'כדי לסיים את התור — לירות בקשת';render();setTimeout(()=>{hint='';render();},1400);}});
@@ -813,6 +883,23 @@ window.EdrinDebug=characterDebug('edrin',{
   setLanguage:language=>{settings.language=language==='he'?'he':'en';saveSettings(settings);if(isEdrinDuel())void audioSystem.preloadVoice(settings.language,Object.keys(AUTHORED_CHARACTERS.edrin.voiceLibrary));render();return settings.language;},
   // Point a voice at a file that does not exist to check the silent fallback.
   markVoiceMissing:(voice,missing=true)=>debugMarkEdrinVoiceMissing(voice,missing)
+});
+window.RagnaDebug=characterDebug('ragna',{
+  simulateWin:()=>isRagnaDuel()?runCharacter('match_win',{close:true},true):null,
+  simulateEasyRoundWin:()=>isRagnaDuel()?runCharacter('round_win',{easy:true},true):null,
+  simulateRagnaOneCard:()=>isRagnaDuel()?runCharacter('ragna_one_card',{},true):null,
+  simulatePlayerDraw:()=>isRagnaDuel()?runCharacter('player_draw',{amount:4,longer:true},true):null,
+  simulateRagnaDraw:(forced=true)=>isRagnaDuel()?runCharacter('ragna_draw',{amount:forced?2:1,forced},true):null,
+  simulateSelfMistake:()=>isRagnaDuel()?runCharacter('self_mistake',{drew:true},true):null,
+  simulateSlowPlayer:()=>isRagnaDuel()?runCharacter('slow_player',{},true):null,
+  simulateNoise:()=>{if(!isRagnaDuel())return null;const r=characterController.force('noise_01');return performCharacterReaction(r);},
+  // The deliberate two-beat gag: 04, a beat of tavern silence, then 05.
+  simulateTavernGag:()=>{if(!isRagnaDuel())return null;const r=characterController.force('idle_04');return performCharacterReaction({...r,followUp:{id:'idle_05',delay:900}});},
+  previewExpressions:(ms=1600)=>{if(!isRagnaDuel())return null;AUTHORED_CHARACTERS.ragna.expressions.forEach((name,index)=>{const timer=setTimeout(()=>setCharacterExpression(name),index*ms);characterSequenceTimers.push(timer);});return AUTHORED_CHARACTERS.ragna.expressions.length;},
+  history:()=>isRagnaDuel()?characterController.snapshot().history:null,
+  cooldown:()=>isRagnaDuel()?characterController.cooldown():null,
+  setLanguage:language=>{settings.language=language==='he'?'he':'en';saveSettings(settings);if(isRagnaDuel())void audioSystem.preloadVoice(settings.language,Object.keys(AUTHORED_CHARACTERS.ragna.voiceLibrary));render();return settings.language;},
+  markVoiceMissing:(voice,missing=true)=>debugMarkRagnaVoiceMissing(voice,missing)
 });
 root.addEventListener('pointerdown',()=>audioSystem.prime(),{once:true,capture:true});
 const suspendAudio=()=>audioSystem.stopAll();

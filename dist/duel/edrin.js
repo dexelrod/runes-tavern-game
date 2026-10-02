@@ -1,4 +1,5 @@
 import { createExpressionPreloader } from './expression-preload.js';
+import { AUTHORED_PRIORITY_RANK, createAuthoredController } from './authored-controller.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // EDRIN — the quiet tavern regular.
@@ -39,7 +40,7 @@ export const normalizeEdrinLocale=locale=>locale==='he'?'he':'en';
 export const EDRIN_STATES=Object.freeze(['default','focused','mildly_pleased','mildly_concerned','distracted','result']);
 const STATE_EXPRESSIONS=Object.freeze({default:'default',focused:'focused',mildly_pleased:'approving',mildly_concerned:'player_one_card_mild_concern',distracted:'idle_distracted',result:null});
 
-export const EDRIN_PRIORITY_RANK=Object.freeze({LOW:1,MEDIUM:2,HIGH:3,CRITICAL:4});
+export const EDRIN_PRIORITY_RANK=AUTHORED_PRIORITY_RANK;
 
 // Authored script (Edrin Script.txt). Performance directions in brackets are
 // never shown. Hebrew is authored localisation and is reproduced exactly.
@@ -158,93 +159,46 @@ export function edrinEventFor({played=null,playedCard=null,stop=null,stack=null,
   return null;
 }
 
-export function createEdrinController({random=Math.random,now=()=>Date.now(),initial=null}={}){
-  let baseState=['default','mildly_concerned','result'].includes(initial?.state)?initial.state:'default',transient=null;
-  let lastSpokenAt=-Infinity,lastVisualAt=-Infinity,roundStartedAt=now();
-  let recentVoices=[...(initial?.recentVoices||[])].slice(0,3),history=[...(initial?.history||[])].slice(-12);
-  const counters={eventsSinceSpoken:0,eventsThisRound:0,nonCriticalThisRound:0,idleThisRound:0,scares:0,roundWins:0,intros:0,...(initial?.counters||{})};
-  let introPlan=null;const usage={...(initial?.usage||{})};
-  const choose=items=>items[Math.floor(random()*items.length)];
-  const chooseWeighted=(items,context)=>{const weights=items.map(item=>Math.max(0,item.weight?item.weight(context):1)),total=weights.reduce((a,b)=>a+b,0);if(!total)return choose(items);let roll=random()*total;for(let i=0;i<items.length;i++){roll-=weights[i];if(roll<0)return items[i];}return items.at(-1);};
-  const probabilityOf=(reaction,context)=>reaction.trigger==='edrin_draw'&&((context.amount||1)>=2||context.bad)?.2:reaction.probability;
-  const state=()=>transient&&now()<transient.until?transient.state:baseState;
-  const remember=reaction=>{
-    recentVoices=[reaction.voice,...recentVoices.filter(v=>v!==reaction.voice)].slice(0,3);usage[reaction.voice]=(usage[reaction.voice]||0)+1;
-    history=[...history,{id:reaction.id,voice:reaction.voice,trigger:reaction.trigger,at:Math.round(now())}].slice(-12);
-    lastSpokenAt=now();counters.eventsSinceSpoken=0;
-    if(reaction.priority!=='CRITICAL')counters.nonCriticalThisRound++;
-    if(reaction.category==='idle')counters.idleThisRound++;
-    if(reaction.category==='intro')counters.intros++;
-    if(reaction.nextState){baseState=reaction.nextState;transient=null;}
-  };
-  function react(trigger,context={},force=false){
-    if(trigger==='intro'){
-      // First encounter: one line. Later matches: a line, a look, or nothing.
-      if(!introPlan)introPlan=context.firstEncounter?'voice':random()<.45?'voice':random()<.64?'expression':'none';
-      const plan=introPlan;introPlan=null;if(plan!=='voice')return null;
-    }
+// Edrin's rules on the shared authored-character controller.
+const EDRIN_SPEC=Object.freeze({
+  reactions:EDRIN_REACTIONS,visuals:VISUALS,uncounted:UNCOUNTED,states:EDRIN_STATES,
+  persistentStates:['default','mildly_concerned','result'],stateExpressions:STATE_EXPRESSIONS,defaultExpression:'default',
+  timing:{visualGap:VISUAL_GAP,casualGap:CASUAL_GAP,casualEvents:CASUAL_EVENTS,highGap:HIGH_GAP,highBudget:3,idleQuiet:IDLE_QUIET},
+  counters:{scares:0,roundWins:0,intros:0},
+  hasVoice,
+  probabilityOf:(reaction,context)=>reaction.trigger==='edrin_draw'&&((context.amount||1)>=2||context.bad)?.2:reaction.probability,
+  // First encounter: one line. Later matches: a line, a look, or nothing.
+  planIntro:(context,random)=>context.firstEncounter?'voice':random()<.45?'voice':random()<.64?'expression':'none',
+  introLook:random=>({expression:['intro_reluctant','casual_acceptance','looking_for_drink'][Math.floor(random()*3)],duration:2200}),
+  suppress(trigger,context){
     // Still mid-turn on his last card, he is about to finish: the round result will speak instead.
-    if(trigger==='edrin_one_card'&&context.ownTurn&&!force)return null;
+    if(trigger==='edrin_one_card'&&context.ownTurn)return true;
     // The player still holds the turn and may go straight out; he just looks.
-    if(trigger==='player_one_card'&&context.playerStillToPlay&&!force)return null;
+    if(trigger==='player_one_card'&&context.playerStillToPlay)return true;
+    return false;
+  },
+  enrich(trigger,context,counters){
     if(trigger==='round_win'&&!counters.roundWins)context={...context,firstWin:true};
     if(trigger==='round_win')counters.roundWins++;
     if(trigger==='player_one_card')context={...context,scares:counters.scares};
-    const locale=context.locale;
-    const pool=EDRIN_REACTIONS.filter(item=>item.trigger===trigger&&(!locale||hasVoice(item.voice,locale)));
-    let candidates=pool.filter(item=>!recentVoices.includes(item.voice));
-    // Result lines cycle through the whole set within a match before any returns.
-    if(pool[0]?.category==='result'){const fresh=candidates.filter(item=>!usage[item.voice]);if(fresh.length)candidates=fresh;}
-    if(!candidates.length)candidates=pool.filter(item=>item.voice!==recentVoices[0]);
-    if(!candidates.length)return null;
-    const reaction=chooseWeighted(candidates,context),rank=EDRIN_PRIORITY_RANK[reaction.priority]||1;
-    if(!force&&reaction.priority!=='CRITICAL'){
-      // Never stack dialogue: a line only cuts in above what is already playing.
-      if((context.busyRank||0)>=rank)return null;
-      const quiet=now()-lastSpokenAt;
-      if(reaction.priority==='HIGH'){if(quiet<HIGH_GAP||counters.nonCriticalThisRound>=3)return null;}
-      else{
-        const budget=counters.eventsThisRound>=40?3:2;
-        if(counters.eventsSinceSpoken<CASUAL_EVENTS||quiet<Math.max(CASUAL_GAP,reaction.cooldown)||counters.nonCriticalThisRound>=budget)return null;
-        if(reaction.category==='idle'){
-          if(now()-Math.max(lastSpokenAt,roundStartedAt)<IDLE_QUIET||context.playerOnOneCard)return null;
-          if(counters.idleThisRound>=2||(counters.idleThisRound===1&&counters.eventsThisRound<60))return null;
-        }
-      }
-      // The same remark wears thin: each repeat within a match halves its chance.
-      if(random()>probabilityOf(reaction,context)*.5**(usage[reaction.voice]||0))return null;
-    }
-    if(trigger==='player_one_card')counters.scares++;
-    remember(reaction);return {...reaction,state:state()};
-  }
-  function observe(trigger,context={}){
-    if(!UNCOUNTED.has(trigger)){counters.eventsSinceSpoken++;counters.eventsThisRound++;}
-    if(trigger==='player_one_card'){baseState='mildly_concerned';transient=null;}
-    if(trigger==='intro'){
-      introPlan=context.firstEncounter?'voice':random()<.45?'voice':random()<.64?'expression':'none';
-      if(introPlan!=='expression')return null;
-      lastVisualAt=now();return {expression:['intro_reluctant','casual_acceptance','looking_for_drink'][Math.floor(random()*3)],duration:2200};
-    }
-    const visual=VISUALS[trigger];if(!visual)return null;
-    if(!visual.always&&now()-lastVisualAt<VISUAL_GAP)return null;
-    const p=typeof visual.p==='function'?visual.p(context):visual.p;if(random()>p)return null;
-    const expression=visual.pick(context,random);lastVisualAt=now();
-    if(trigger==='edrin_considering')transient={state:'focused',until:now()+visual.duration};
-    else if(trigger==='idle_beat'&&expression!=='focused')transient={state:'distracted',until:now()+visual.duration};
-    else if(['player_good_move','edrin_good_move'].includes(trigger)&&expression!=='surprised')transient={state:'mildly_pleased',until:now()+visual.duration};
-    return {expression,duration:visual.duration};
-  }
-  return Object.freeze({
-    react,observe,
-    beginRound(){roundStartedAt=now();counters.nonCriticalThisRound=0;counters.eventsSinceSpoken=0;counters.eventsThisRound=0;counters.idleThisRound=0;baseState='default';transient=null;},
-    force(id){const reaction=EDRIN_REACTIONS.find(item=>item.id===id||item.voice===id);if(!reaction)return null;remember(reaction);return {...reaction,state:state()};},
-    setState(next){if(EDRIN_STATES.includes(next)){if(['default','mildly_concerned','result'].includes(next)){baseState=next;transient=null;}else transient={state:next,until:now()+4000};}return state();},
-    setFlag(){},
-    // The player drew off their last card: Edrin relaxes. Sometimes he has a sip.
-    oneCardRecovered(){if(baseState!=='mildly_concerned')return null;baseState='default';transient=null;const visual=observe('one_card_settled');return visual?{id:'one_card_settled',trigger:'one_card_recovered',voice:null,caption:null,priority:'LOW',category:'visual',...visual,state:state()}:{id:'one_card_settled',trigger:'one_card_recovered',voice:null,caption:null,priority:'LOW',category:'visual',expression:'default',duration:600,state:state()};},
-    defaultExpression(){return STATE_EXPRESSIONS[state()]||'default';},
-    holdsExpression(){return baseState==='result';},
-    cooldown(){const quiet=now()-lastSpokenAt;return {quietMs:Number.isFinite(quiet)?Math.round(quiet):null,casualReadyInMs:Math.max(0,Math.round(CASUAL_GAP-(Number.isFinite(quiet)?quiet:CASUAL_GAP))),eventsSinceSpoken:counters.eventsSinceSpoken,eventsNeeded:Math.max(0,CASUAL_EVENTS-counters.eventsSinceSpoken),roundBudgetUsed:counters.nonCriticalThisRound,roundBudget:counters.eventsThisRound>=40?3:2,idleThisRound:counters.idleThisRound};},
-    snapshot(){return {state:baseState,presentation:state(),recentVoices:[...recentVoices],history:history.map(item=>({...item})),counters:{...counters},usage:{...usage}};}
-  });
+    return context;
+  },
+  idleGate(reaction,context,{counters,sinceQuiet,timing}){
+    if(reaction.category!=='idle')return false;
+    if(sinceQuiet<timing.idleQuiet||context.playerOnOneCard)return true;
+    return counters.idleThisRound>=2||(counters.idleThisRound===1&&counters.eventsThisRound<60);
+  },
+  onSpoken(trigger,counters){if(trigger==='player_one_card')counters.scares++;},
+  onObserve(trigger,context,{setBase}){if(trigger==='player_one_card')setBase('mildly_concerned');},
+  transientFor(trigger,expression){
+    if(trigger==='edrin_considering')return 'focused';
+    if(trigger==='idle_beat'&&expression!=='focused')return 'distracted';
+    if(['player_good_move','edrin_good_move'].includes(trigger)&&expression!=='surprised')return 'mildly_pleased';
+    return null;
+  },
+  // The player drew off their last card: Edrin relaxes. Sometimes he has a sip.
+  recovery:{from:'mildly_concerned',to:'default',visual:'one_card_settled'}
+});
+export function createEdrinController({random=Math.random,now=()=>Date.now(),initial=null}={}){
+  return createAuthoredController(EDRIN_SPEC,{random,now,initial});
 }
