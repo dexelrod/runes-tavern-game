@@ -1,4 +1,4 @@
-import { ACTIONS, currentPlayer, getLegalCards, topCard } from './game-engine/engine.js';
+import { ACTIONS, crossbowAwaitsPickup, currentPlayer, getLegalCards, topCard } from './game-engine/engine.js';
 import { COLORS, TYPES } from './game-engine/cards.js';
 import { createDuelSession, createQuickSession, createTavernMatch, finishRound, restoreSession, standings, startNextRound } from './game-engine/match.js';
 import { LocalGameTransport } from './platform/transport.js';
@@ -241,6 +241,8 @@ function announce(entries){
     if(penalty)return penalty.playerId==='p0'?`You take ${penalty.amount}`:`${names[penalty.playerId]} takes ${penalty.amount}`;
     if(draw)return draw.playerId==='p0'?'You drew a card':`${names[draw.playerId]} drew a card`;
     if(entries.some(x=>x.type==='reverse'))return'Direction reversed';
+    const curseHold=entries.find(x=>x.type==='curseHold');if(curseHold)return curseHold.playerId==='p0'?`Not won yet — ${names[curseHold.nextId]} can return the Curse`:`${names[curseHold.playerId]} is out — unless the Curse comes back`;
+    const leftOpen=entries.find(x=>x.type==='crossbowLeftOpen');if(leftOpen)return leftOpen.nextId==='p0'?'The Crossbow is open for you':`The Crossbow is open for ${names[leftOpen.nextId]}`;
     if(entries.some(x=>x.type==='takiOpened'))return'Crossbow loaded';
     if(entries.some(x=>x.type==='takiClosed'))return'Crossbow fired';
     if(entries.some(x=>x.type==='playAgain'))return currentPlayer(state).id==='p0'?'Play again':`${displayName(currentPlayer(state))} plays again`;
@@ -255,6 +257,8 @@ function announce(entries){
   if(penalty)return penalty.playerId==='p0'?`לקחתם ${penalty.amount} קלפים`:`${names[penalty.playerId]} ${verb(penalty.playerId,'לקח','לקחה')} ${penalty.amount} קלפים`;
   if(draw)return draw.playerId==='p0'?'משכתם קלף':`${names[draw.playerId]} ${verb(draw.playerId,'משך','משכה')} קלף`;
   if(entries.some(x=>x.type==='reverse'))return'כיוון המשחק התהפך';
+  const curseHold=entries.find(x=>x.type==='curseHold');if(curseHold)return curseHold.playerId==='p0'?`עוד לא ניצחתם — ל${names[curseHold.nextId]} יש קללה להחזיר`:`ל${names[curseHold.playerId]} נגמרו הקלפים — אלא אם הקללה תחזור`;
+  const leftOpen=entries.find(x=>x.type==='crossbowLeftOpen');if(leftOpen)return leftOpen.nextId==='p0'?'הקשת נשארה פתוחה בשבילכם':`הקשת נשארה פתוחה ל${names[leftOpen.nextId]}`;
   if(entries.some(x=>x.type==='takiOpened'))return'הקשת דרוכה';
   if(entries.some(x=>x.type==='takiClosed'))return'הקשת נורתה';
   if(entries.some(x=>x.type==='playAgain')){const id=currentPlayer(state).id;return id==='p0'?'שחקו שוב':`${names[id]} ${verb(id,'משחק','משחקת')} שוב`;}
@@ -489,8 +493,11 @@ function statusHTML(){
 function crossbowHTML(){
   if(!state.taki?.open)return'';
   const en=isEnglish(),human=state.taki.ownerId==='p0'&&currentPlayer(state).id==='p0',owner=state.players.find(p=>p.id===state.taki.ownerId),color=colorName(state.taki.color);
-  const sub=human?(en?`Keep playing ${color} cards`:`אפשר להמשיך עם קלפי ${color}`):(en?`${displayName(owner)} keeps playing ${color}`:`${displayName(owner)} ${isFeminine(owner)?'ממשיכה':'ממשיך'} עם ${color}`);
-  return `<div class="crossbow-panel ${human?'yours':''} ${state.taki.color}" style="--taki-color:${colorHex[state.taki.color]}" role="status">${colorRuneHTML(state.taki.color,'crossbow-rune')}<span><b>${en?'Crossbow loaded':'קשת דרוכה'}</b><small>${sub}</small></span>${human?`<button class="fire-button" data-close-taki>${en?'Fire':'לירות'}</button>`:''}</div>`;
+  const pickup=crossbowAwaitsPickup(state);
+  const sub=pickup?(human?(en?`Play all your ${color} cards — or draw`:`אפשר לשים את כל קלפי ה${color} — או למשוך`):(en?`Left open for ${displayName(owner)}`:`נשארה פתוחה ל${displayName(owner)}`))
+    :human?(en?`Keep playing ${color} cards`:`אפשר להמשיך עם קלפי ${color}`):(en?`${displayName(owner)} keeps playing ${color}`:`${displayName(owner)} ${isFeminine(owner)?'ממשיכה':'ממשיך'} עם ${color}`);
+  const title=pickup?(en?'Crossbow left open':'הקשת נשארה פתוחה'):(en?'Crossbow loaded':'קשת דרוכה');
+  return `<div class="crossbow-panel ${human?'yours':''} ${state.taki.color}" style="--taki-color:${colorHex[state.taki.color]}" role="status">${colorRuneHTML(state.taki.color,'crossbow-rune')}<span><b>${title}</b><small>${sub}</small></span>${human&&!pickup?`<button class="fire-button" data-close-taki>${en?'Fire':'לירות'}</button>`:''}</div>`;
 }
 function actionStripText(){
   const en=isEnglish(),active=currentPlayer(state),humanTurn=active.id==='p0'&&state.phase==='playing';
@@ -501,7 +508,7 @@ function actionStripText(){
   if(eventBanner?.kind==='stop'){const target=state.players.find(p=>p.id===eventBanner.targetId);return eventBanner.targetId==='p0'?(en?'Your turn was skipped':'התור שלכם דולג'):(en?`${displayName(target)} is skipped`:`התור של ${displayName(target)} דולג`);}
   if(eventBanner?.kind==='reverse')return en?'Direction reversed':'כיוון המשחק התהפך';
   if(eventBanner?.kind==='color'&&state.activeColor)return en?`Colour is now ${colorName(state.activeColor)}`:`הצבע עכשיו ${colorName(state.activeColor)}`;
-  if(humanTurn&&!state.taki?.open&&!getLegalCards(state,'p0').length)return en?'Nothing matches — draw a card':'אין קלף מתאים — משכו קלף';
+  if(humanTurn&&(!state.taki?.open||crossbowAwaitsPickup(state))&&!getLegalCards(state,'p0').length)return en?'Nothing matches — draw a card':'אין קלף מתאים — משכו קלף';
   const last=state.players.slice(1).find(player=>player.hand.length===1);
   if(last)return en?`${displayName(last)} is down to the last card`:`ל${displayName(last)} נשאר קלף אחרון`;
   return'';
@@ -526,7 +533,7 @@ function gameHTML(){
   const under=state.discardPile.slice(-4,-1),fresh=top.id!==lastRenderedTopId;lastRenderedTopId=top.id;
   const shown=sortedHand(human.hand);
   const handCards=shown.map((card,i)=>{const incoming=incomingCardDelays.get(card.id);return cardHTML(card,cardOptions({legal:isHumanTurn&&legal.has(card.id),highlight:settings.playableHints,selected:selected===card.id,incoming:!!incoming,arrivalDelay:incoming?incoming.delay-(performance.now()-incoming.started):0,index:i,total:shown.length}));}).join('');
-  const drawSuggested=isHumanTurn&&!state.taki?.open&&legal.size===0;
+  const drawSuggested=isHumanTurn&&(!state.taki?.open||crossbowAwaitsPickup(state))&&legal.size===0;
   const resolvedTopColor=top.type===TYPES.CHANGE_COLOR&&state.awaitingColor?null:state.activeColor,showActiveColor=top.color==='wild'||top.type===TYPES.CHANGE_COLOR||top.type===TYPES.SUPER_TAKI||state.activeColor!==top.color;
   const figures=session.mode==='duel'||(session.mode==='tavern'&&opponents.some(p=>TAVERN_FIGURES.has(p.nameKey)||TAVERN_SPRITES.has(p.nameKey)));
   // Play-by-play notes ("Bramm takes 2", "Nothing matches — draw a card") are optional; on by default they stay hidden.
@@ -722,7 +729,7 @@ function bind(){
   root.querySelector('[data-rematch]')?.addEventListener('click',()=>{clearMatch();startSession('duel');});
   root.querySelector('[data-choose-opponent]')?.addEventListener('click',()=>{clearMatch();goHome();view='duelSelect';render();});
   root.querySelectorAll('[data-home]').forEach(b=>b.onclick=goHome);
-  root.querySelector('[data-draw]')?.addEventListener('click',()=>{if(state?.phase==='playing'&&currentPlayer(state).id==='p0'&&!state.taki?.open)submit({type:ACTIONS.DRAW,playerId:'p0'});else if(state?.taki?.open&&currentPlayer(state).id==='p0'){hint=isEnglish()?'Fire the Crossbow to end your turn':'כדי לסיים את התור — לירות בקשת';render();setTimeout(()=>{hint='';render();},1400);}});
+  root.querySelector('[data-draw]')?.addEventListener('click',()=>{if(state?.phase==='playing'&&currentPlayer(state).id==='p0'&&(!state.taki?.open||crossbowAwaitsPickup(state)))submit({type:ACTIONS.DRAW,playerId:'p0'});else if(state?.taki?.open&&currentPlayer(state).id==='p0'){hint=isEnglish()?'Fire the Crossbow to end your turn':'כדי לסיים את התור — לירות בקשת';render();setTimeout(()=>{hint='';render();},1400);}});
   root.querySelector('[data-close-taki]')?.addEventListener('click',()=>submit({type:ACTIONS.END_TURN,playerId:'p0'}));
   root.querySelector('[data-speed-bots]')?.addEventListener('pointerdown',event=>{if(!pendingBotTurn||event.target.closest('button,.card,[role="dialog"]'))return;clearTimeout(botTimer);const pending=pendingBotTurn;runBotTurn(pending.playerId,pending.epoch,pending.scheduledTurn);});
   root.querySelectorAll('[data-color]').forEach(b=>b.onclick=()=>submit({type:ACTIONS.CHOOSE_COLOR,playerId:'p0',color:b.dataset.color}));

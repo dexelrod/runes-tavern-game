@@ -1,4 +1,4 @@
-import { ACTIONS, applyAction, currentPlayer, effectiveTopCard, getLegalCards } from '../game-engine/engine.js';
+import { ACTIONS, applyAction, crossbowAwaitsPickup, currentPlayer, effectiveTopCard, getLegalCards } from '../game-engine/engine.js';
 import { COLORS, TYPES, cardMatches, createDeck } from '../game-engine/cards.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -237,7 +237,11 @@ export function chooseVeteranAction(state,{random=Math.random,profile=VETERAN_PR
   const me=currentPlayer(state),view=tableView(state,me);
   if(state.awaitingColor?.playerId===me.id)return {type:ACTIONS.CHOOSE_COLOR,playerId:me.id,color:veteranColour(me.hand,state,me,{avoid:state.awaitingColor.next==='openTaki'?null:state.activeColor})};
   const legal=getLegalCards(state,me.id);
-  if(state.taki?.open){
+  // An open Crossbow handed over by the previous player: empty its colour if
+  // we hold any, otherwise decide as on any ordinary turn.
+  const pickup=crossbowAwaitsPickup(state)&&state.taki.ownerId===me.id;
+  if(pickup){const card=crossbowStep(state,me,legal,view,random);if(card&&card.color===state.taki.color)return {type:ACTIONS.PLAY,playerId:me.id,cardId:card.id};}
+  if(state.taki?.open&&!pickup){
     if(state.taki.ownerId===me.id){const card=crossbowStep(state,me,legal,view,random);return card?{type:ACTIONS.PLAY,playerId:me.id,cardId:card.id}:{type:ACTIONS.END_TURN,playerId:me.id};}
     if(legal.length)return {type:ACTIONS.PLAY,playerId:me.id,cardId:pickWithJudgement(legal,card=>scoreCard(card,state,me,view,profile),random,profile).id};
     return {type:ACTIONS.DRAW,playerId:me.id};

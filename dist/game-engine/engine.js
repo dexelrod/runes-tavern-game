@@ -7,6 +7,20 @@ export const currentPlayer = state => state.players[state.currentPlayerIndex];
 export const topCard = state => state.discardPile.at(-1);
 export const effectiveTopCard = state => state.discardPile[state.effectiveTopIndex ?? state.discardPile.length - 1];
 const playerById = (state, id) => state.players.find(p => p.id === id);
+// A Crossbow fired with nothing after it stays open: the next player may pick
+// it up and empty every card of its colour, or simply draw.
+export const crossbowAwaitsPickup = state => !!(state.taki?.open && state.taki.inherited && !state.taki.lastCardId);
+const hasCurse = player => !!player?.hand.some(card => card.type === TYPES.PLUS2);
+// A final Curse only wins once the Curse chain it started is over: the chain
+// either stops at someone who cannot (or will not) return a Curse - then the
+// earliest player who went out on a Curse wins - or it comes all the way back
+// to that empty-handed player, who takes the whole stack and play continues.
+function settleCurseChain(state, reachedId) {
+  const pending = (state.curseWinners || []).filter(id => id !== reachedId && !playerById(state, id)?.hand.length);
+  state.curseWinners = [];
+  if (!pending.length || state.phase !== 'playing') return false;
+  state.activePenalty = null; state.phase = 'finished'; state.winnerId = pending[0]; state.log.push({type:'win', playerId:pending[0]}); return true;
+}
 
 export function createInitialState({ playerCount = 3, humanPlayers = 1, seed = Date.now(), players, firstPlayerIndex = 0 } = {}) {
   const count = Math.max(2, Math.min(10, playerCount));
@@ -16,7 +30,7 @@ export function createInitialState({ playerCount = 3, humanPlayers = 1, seed = D
   // The opening card is always a number. Command cards stay in the draw pile.
   const openingIndex = deck.findLastIndex(card => card.type === TYPES.NUMBER);
   const [opening] = deck.splice(openingIndex, 1);
-  return { version:6, seed, phase:'playing', players:dealt, drawPile:deck, discardPile:[opening], effectiveTopIndex:0, currentPlayerIndex:((firstPlayerIndex % dealt.length) + dealt.length) % dealt.length, direction:1, activeColor:opening.color, activePenalty:null, taki:null, freePlay:false, mustPlayAgain:false, awaitingColor:null, winnerId:null, turn:1, log:[{type:'start', cardId:opening.id}] };
+  return { version:6, seed, phase:'playing', players:dealt, drawPile:deck, discardPile:[opening], effectiveTopIndex:0, currentPlayerIndex:((firstPlayerIndex % dealt.length) + dealt.length) % dealt.length, direction:1, activeColor:opening.color, activePenalty:null, curseWinners:[], taki:null, freePlay:false, mustPlayAgain:false, awaitingColor:null, winnerId:null, turn:1, log:[{type:'start', cardId:opening.id}] };
 }
 
 export function serializeState(state) { return JSON.stringify(state); }
@@ -57,6 +71,7 @@ function baseLegal(state, card) {
   // A King grants one unrestricted play, but once that play opens a TAKI the
   // sequence itself is still restricted to the TAKI's colour.
   if (state.taki?.open) {
+    if (crossbowAwaitsPickup(state) && (card.type === TYPES.TAKI || card.type === TYPES.SUPER_TAKI)) return true;
     if (card.type === TYPES.KING || card.type === TYPES.CHANGE_COLOR) return true;
     if (card.type === TYPES.SUPER_TAKI) return true;
     return card.color === state.taki.color;
@@ -91,7 +106,16 @@ function resolveFinalEffect(state, player, card, {fromTaki=false}={}) {
   if (card.color !== WILD) state.activeColor = card.color;
   if (card.type === TYPES.STOP) { const skipped=state.players[nextIndex(state)].id; advance(state,2); state.log.push({type:'stop',skipped}); maybeWin(state,player,card.type); return; }
   if (card.type === TYPES.REVERSE) { if (state.players.length > 2) { state.direction *= -1; state.log.push({type:'reverse',direction:state.direction}); } advance(state); maybeWin(state,player,card.type); return; }
-  if (card.type === TYPES.PLUS2) { state.activePenalty={kind:'plus2',amount:(state.activePenalty?.amount||0)+2}; state.log.push({type:'plus2',playerId:player.id,amount:state.activePenalty.amount}); if(maybeWin(state,player,card.type)){state.activePenalty=null;return;} advance(state); return; }
+  if (card.type === TYPES.PLUS2) {
+    state.activePenalty={kind:'plus2',amount:(state.activePenalty?.amount||0)+2}; state.log.push({type:'plus2',playerId:player.id,amount:state.activePenalty.amount});
+    if (!player.hand.length) state.curseWinners=[...(state.curseWinners||[]),player.id];
+    const next=state.players[nextIndex(state)];
+    // Nobody to return it: the empty-handed Curse player wins at once.
+    if (state.curseWinners?.length && !hasCurse(next) && !state.curseWinners.includes(next.id) && settleCurseChain(state,next.id)) return;
+    advance(state);
+    if (!player.hand.length) state.log.push({type:'curseHold',playerId:player.id,nextId:next.id});
+    return;
+  }
   if (card.type === TYPES.PLUS) { state.mustPlayAgain=true; state.log.push({type:'playAgain',playerId:player.id}); return; }
   if (card.type === TYPES.TAKI) { state.taki={open:true,color:card.color,ownerId:player.id,openedTurn:state.turn,lastCardId:null,lastCardType:null}; state.activeColor=card.color; state.log.push({type:'takiOpened',playerId:player.id,color:card.color}); autoCloseTakiIfNeeded(state,player); return; }
   if (card.type === TYPES.SUPER_TAKI) {
@@ -100,13 +124,14 @@ function resolveFinalEffect(state, player, card, {fromTaki=false}={}) {
     state.taki={open:true,color:inherited,ownerId:player.id,openedTurn:state.turn,lastCardId:null,lastCardType:null}; state.activeColor=inherited; state.log.push({type:'takiOpened',playerId:player.id,color:inherited}); autoCloseTakiIfNeeded(state,player); return;
   }
   if (card.type === TYPES.CHANGE_COLOR) { state.awaitingColor={playerId:player.id, next:'advance',pendingWin:player.hand.length===0}; return; }
-  if (card.type === TYPES.KING) { state.activePenalty=null; state.taki=null; state.activeColor=null; if(maybeWin(state,player,card.type))return; state.freePlay=true; state.mustPlayAgain=true; return; }
+  if (card.type === TYPES.KING) { if(state.curseWinners?.length&&settleCurseChain(state,player.id))return; state.activePenalty=null; state.taki=null; state.activeColor=null; if(maybeWin(state,player,card.type))return; state.freePlay=true; state.mustPlayAgain=true; return; }
   if (maybeWin(state,player,card.type)) return;
   advance(state);
 }
 
 function closeTaki(state, player) {
   if (!state.taki?.open || state.taki.ownerId !== player.id || currentPlayer(state).id !== player.id) throw new Error('No TAKI sequence to finish');
+  if (crossbowAwaitsPickup(state)) { drawAction(state,{type:ACTIONS.DRAW,playerId:player.id}); return; }
   const lastId=state.taki.lastCardId;
   const last=lastId ? state.discardPile.find(c=>c.id===lastId) : topCard(state);
   const color=state.taki.color;
@@ -115,14 +140,18 @@ function closeTaki(state, player) {
   if (!lastId || last.type===TYPES.TAKI || last.type===TYPES.SUPER_TAKI) {
     state.effectiveTopIndex=state.discardPile.length-1;
     state.activeColor=color;
-    if (!maybeWin(state,player,last.type)) advance(state);
+    if (maybeWin(state,player,last.type)) return;
+    advance(state);
+    const next=currentPlayer(state);
+    state.taki={open:true,color,ownerId:next.id,openedTurn:state.turn,lastCardId:null,lastCardType:null,inherited:true,fromPlayerId:player.id};
+    state.log.push({type:'crossbowLeftOpen',playerId:player.id,nextId:next.id,color});
     return;
   }
   resolveFinalEffect(state,player,last,{fromTaki:true});
 }
 
 function autoCloseTakiIfNeeded(state, player) {
-  if (!state.taki?.open || state.taki.ownerId!==player.id || state.phase!=='playing') return;
+  if (!state.taki?.open || state.taki.ownerId!==player.id || state.phase!=='playing' || crossbowAwaitsPickup(state)) return;
   const hasContinuation=player.hand.some(card=>baseLegal(state,card));
   if (!hasContinuation) closeTaki(state,player);
 }
@@ -135,6 +164,10 @@ function playCard(state, action) {
   if(state.freePlay)state.freePlay=false;
   if (card.type===TYPES.SUPER_TAKI) card.inheritedColor=state.activeColor || action.color || null;
   state.discardPile.push(card); state.log.push({type:'play',playerId:player.id,cardId:card.id});
+  if (crossbowAwaitsPickup(state) && (card.color!==state.taki.color || card.type===TYPES.SUPER_TAKI)) {
+    // Not a pickup (King, Rune, Runed Crossbow or another Crossbow): the open Crossbow lapses.
+    state.taki=null; resolveFinalEffect(state,player,card); return;
+  }
   const inTaki=!!state.taki?.open;
   if (inTaki) {
     if (card.type===TYPES.CHANGE_COLOR || card.type===TYPES.KING) { state.taki=null; resolveFinalEffect(state,player,card,{fromTaki:true}); }
@@ -148,9 +181,14 @@ function drawAction(state, action) {
   if (state.phase!=='playing'||state.awaitingColor||currentPlayer(state).id!==action.playerId) throw new Error('Cannot draw');
   // A loaded Crossbow is resolved by firing it (END_TURN), never by drawing;
   // drawing here would pass the turn while the sequence stayed loaded.
+  // An open Crossbow left by the previous player may be declined by drawing.
+  if (crossbowAwaitsPickup(state)) state.taki=null;
   if (state.taki?.open) throw new Error('Cannot draw while a Crossbow is loaded');
   const p=currentPlayer(state);
-  if (state.activePenalty?.kind==='plus2') { const amount=state.activePenalty.amount; drawCards(state,p.id,amount); state.activePenalty=null; state.log.push({type:'drawPenalty',playerId:p.id,amount}); }
+  if (state.activePenalty?.kind==='plus2') {
+    if (state.curseWinners?.length && settleCurseChain(state,p.id)) return;
+    const amount=state.activePenalty.amount; drawCards(state,p.id,amount); state.activePenalty=null; state.log.push({type:'drawPenalty',playerId:p.id,amount});
+  }
   else { drawCards(state,p.id,1); state.log.push({type:'draw',playerId:p.id,amount:1}); }
   advance(state);
 }
