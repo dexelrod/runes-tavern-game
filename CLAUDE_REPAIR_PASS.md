@@ -472,3 +472,14 @@ Owner-supplied silhouettes replace the four stroked colour runes everywhere: Bur
 ## v82 — New action-card art: Quickstep, Turnabout, Shield, Curse
 
 Owner-drawn charcoal sketches replace the four card illustrations. Cut from the owner's transparent sheet, trimmed, scaled to 440 px, stroke density lifted slightly (alpha gamma 0.55) so they hold up at play size next to Crossbow and King, and alpha quantized to 16 levels (keeps the pencil grain, ~35 KB each). Stored under the same names (`assets/cards/{quickstep,turnabout,shield,curse-plus-2}.svg`) as SVG wrappers around the PNG, so the card mask system, corner indices, Rules and the Shield seal pick them up with no code change. Crossbow, Runed Crossbow, Rune and King keep their existing art. Version v82.
+
+## v83 — Turn light vs. playable glow; pause line removed
+
+Owner report: "Highlight playable cards" looked the same on and off, because unplayable cards were always dimmed (`.card.quiet` filter), whatever the setting.
+- **Your turn** (always, regardless of the setting): the whole hand comes into the light and lifts 4 px. While others play, the hand rests in shadow (`.waiting .hand .card`).
+- **Highlight playable cards ON:** on your turn, playable cards also carry a soft warm glow (inner edge light + outer glow, so it still shows on overlapping phone hands). The Crossbow's non-matching cards dim only with the setting on.
+- **OFF:** on your turn every card looks identical; legality shows only when you try a card (the existing "Needs Gold or 7" hint). Desktop hover lifts any card, so hovering doesn't give legality away; the default cursor on unplayable cards also applies only with the setting on.
+- `.card.quiet` no longer dims (unplayable cards are paper like the rest). `cardHTML` unchanged; `app.js` adds a `hints` class to `.hand` when the setting is on.
+- Pause: removed the "Nothing moves until you return." line.
+- Long-press no longer starts a text selection anywhere in the game (`user-select:none` + `-webkit-touch-callout:none` on `.app-shell`), seen in the owner's iPhone screenshots.
+Version v83.

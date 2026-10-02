@@ -133,9 +133,8 @@ html[lang=he] :is(.sheet-lede,.setting-label,.rule-card p,.rule-scoring p,.stand
 .back-sigil{position:absolute;inset:1.06em .69em;display:grid;place-items:center;padding:.5em;border:1px solid #c29652a8;border-radius:50%;background:#5b1b2bea;box-shadow:inset 0 0 0 .19em #2f0e16,0 0 0 .125em #6d4928}
 .back-sigil .runes-sigil{width:82%;height:82%;opacity:.88;filter:sepia(.45) saturate(.72) brightness(1.2)}
 /* Playability. Unplayable cards stay fully opaque — they are paper. */
-.card.quiet{filter:saturate(.8) brightness(.8)}
+.card.quiet{filter:none}
 /* A playable card is simply ready in the hand: it sits a little proud and catches the lamp. */
-.card.legal.playable-hint{box-shadow:0 3px 0 #2a170e8c,0 10px 14px #000a;filter:brightness(1.04)}
 
 /* 5. Game frame --------------------------------------------------------- */
 /* Mobile-first values; see §15 for tablet, landscape and desktop. */
@@ -281,11 +280,17 @@ html[lang=he] :is(.sheet-lede,.setting-label,.rule-card p,.rule-scoring p,.stand
 .hand .card{--cw:var(--card-w);margin-left:var(--overlap,0px);transform:translateY(calc(var(--rise,0px) + var(--drag,0px))) rotate(var(--tilt,0deg));transform-origin:50% 120%;transition:transform .18s cubic-bezier(.2,.75,.25,1),filter .16s,box-shadow .18s;touch-action:pan-x}
 .hand .card:first-child{margin-left:0}
 .hand .card.legal{cursor:pointer}
-.human-turn .hand .card.legal.playable-hint{transform:translateY(calc(var(--rise,0px) - 4px + var(--drag,0px))) rotate(var(--tilt,0deg))}
+/* Whose turn: while others play, your hand rests in shadow. On your turn the
+   whole hand comes up into the lamp light and lifts a little. */
+.waiting .hand .card{filter:brightness(.74) saturate(.82)}
+.human-turn .hand .card{transform:translateY(calc(var(--rise,0px) - 4px + var(--drag,0px))) rotate(var(--tilt,0deg));box-shadow:0 3px 0 #2a170e8c,0 10px 14px #000a;filter:brightness(1.05)}
+/* "Highlight playable cards": on your turn the cards you can play carry a soft
+   warm glow. Off, every card looks the same and you judge for yourself. */
+.human-turn .hand.hints .card.legal{box-shadow:inset 0 0 0 1px #f2c46faa,inset 0 0 14px #f2b45e66,0 3px 0 #2a170e8c,0 10px 14px #000a,0 0 18px 3px #f2b45e99}
 .hand .card.selected,.human-turn .hand .card.selected{z-index:60;transform:translateY(calc(var(--hand-lift) * -.85 + var(--drag,0px))) rotate(0deg);box-shadow:0 6px 0 #24120855,0 18px 22px #000b;filter:brightness(1.08)}
 .hand .card.dragging{transition:none;z-index:70}
 .hand .card.motion-source{visibility:hidden}
-.hand.taki-active .card.quiet{filter:saturate(.6) brightness(.7)}
+.human-turn .hand.hints.taki-active .card.quiet{filter:saturate(.7) brightness(.8)}
 .hand-overflow{position:absolute;z-index:22;bottom:calc(8px + var(--safe-bottom));width:34px;height:calc(var(--card-w) * 1.4 + 6px);display:grid;place-items:center;opacity:0;pointer-events:none;transition:opacity .2s ease}
 .hand-overflow:after{content:"";width:12px;height:12px;border-top:3px solid #f0d9a4;border-left:3px solid #f0d9a4;filter:drop-shadow(0 1px 2px #000)}
 .hand-overflow-start{left:0;background:linear-gradient(90deg,#100805e6,transparent)}
@@ -406,7 +411,7 @@ html[lang=he] :is(.sheet-lede,.setting-label,.rule-card p,.rule-scoring p,.stand
 .pause-sheet{width:min(100%,400px);text-align:center}
 .pause-sheet .sheet-head{justify-content:center}
 .pause-sheet .sheet-close{position:absolute;inset-inline-end:16px;top:16px}
-.pause-actions{display:grid;gap:6px;justify-items:center}
+.pause-actions{display:grid;gap:6px;justify-items:center;margin-top:18px}
 .pause-actions .primary-button{width:min(100%,300px);margin-bottom:6px}
 .pause-links{display:flex;align-items:center;justify-content:center;flex-wrap:wrap}
 .pause-links i{opacity:.45;font-style:normal}
@@ -787,12 +792,14 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
 .home-choice.loading,.regular.loading{opacity:.72;cursor:progress;pointer-events:none}
 /* Pointer feedback: a legal card lifts a finger's width; nothing jumps. */
 @media (hover:hover) and (pointer:fine){
-  .human-turn .hand .card.legal:hover{transform:translateY(calc(var(--rise,0px) - 12px)) rotate(var(--tilt,0deg));box-shadow:var(--shadow-raised);z-index:55}
+  .human-turn .hand .card:hover{transform:translateY(calc(var(--rise,0px) - 12px)) rotate(var(--tilt,0deg));box-shadow:var(--shadow-raised);z-index:55}
   .human-turn .hand .card.legal:active{transform:translateY(calc(var(--rise,0px) - 8px)) rotate(var(--tilt,0deg));transition-duration:.05s}
   .draw-pile.draw-suggested:hover .card,.draw-pile:hover .card{translate:0 -2px}
   .regular:hover{translate:0 -2px}
 }
-.hand .card.quiet{cursor:default}
+.hand.hints .card.quiet{cursor:default}
+/* A game, not a page: long-presses never start a text selection. */
+.app-shell{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 /* Two authored regulars share the featured row: Bramm, the loud champion, and Edrin, the quiet one. */
 .featured-regulars{display:flex;justify-content:center;gap:var(--featured-gap,10px);width:min(100%,800px)}
 .featured-regulars .champion-regular{flex:1 1 0;width:auto;min-width:0}

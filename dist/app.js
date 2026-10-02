@@ -556,7 +556,7 @@ function gameHTML(){
       ${playerPlaceHTML(human)}
       ${hint?`<div class="turn-whisper" role="status">${hint}</div>`:''}
       ${quip?.player==='p0'?`<div class="human-quip">${quip.text}</div>`:''}
-      <div class="hand-frame"><span class="hand-overflow hand-overflow-start" aria-hidden="true"></span><div class="hand ${state.taki?.open?'taki-active':''}" data-hand-anchor role="group" aria-label="${en?`Your hand, ${cardCountLabel(shown.length)}`:`היד שלכם, ${cardCountLabel(shown.length)}`}">${handCards}</div><span class="hand-overflow hand-overflow-end" aria-hidden="true"></span></div>
+      <div class="hand-frame"><span class="hand-overflow hand-overflow-start" aria-hidden="true"></span><div class="hand ${state.taki?.open?'taki-active':''} ${settings.playableHints?'hints':''}" data-hand-anchor role="group" aria-label="${en?`Your hand, ${cardCountLabel(shown.length)}`:`היד שלכם, ${cardCountLabel(shown.length)}`}">${handCards}</div><span class="hand-overflow hand-overflow-end" aria-hidden="true"></span></div>
     </footer>
   </section>${choiceHTML()}${sheetHTML()}</main>`;
 }
@@ -598,7 +598,7 @@ function quickSheetHTML(){
 }
 function pauseHTML(){
   const en=isEnglish();
-  const body=`<p class="sheet-lede">${en?'Nothing moves until you return.':'שום דבר לא זז עד שתחזרו.'}</p><div class="pause-actions"><button class="primary-button" data-close-sheet>${en?'Back to the table':'חזרה לשולחן'}</button><div class="pause-links"><button class="secondary-button" data-pause-nav="rules">${en?'House rules':'חוקי הבית'}</button><i aria-hidden="true">·</i><button class="secondary-button" data-pause-nav="settings">${en?'Settings':'הגדרות'}</button></div><button class="text-button" data-home>${en?'Save and leave the table':'לשמור ולקום מהשולחן'}</button></div>`;
+  const body=`<div class="pause-actions"><button class="primary-button" data-close-sheet>${en?'Back to the table':'חזרה לשולחן'}</button><div class="pause-links"><button class="secondary-button" data-pause-nav="rules">${en?'House rules':'חוקי הבית'}</button><i aria-hidden="true">·</i><button class="secondary-button" data-pause-nav="settings">${en?'Settings':'הגדרות'}</button></div><button class="text-button" data-home>${en?'Save and leave the table':'לשמור ולקום מהשולחן'}</button></div>`;
   return sheetFrame('pause','pause-title',en?'The table waits':'השולחן ממתין',body,{closeLabel:en?'Return to the table':'חזרה לשולחן'});
 }
 function rulesHTML(){
