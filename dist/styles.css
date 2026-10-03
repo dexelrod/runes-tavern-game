@@ -243,8 +243,7 @@ html[lang=he] :is(.sheet-lede,.setting-label,.rule-card p,.rule-scoring p,.stand
 .duel-seat.active .duel-figure .duel-sprite{filter:brightness(1.04) drop-shadow(0 8px 10px #000a)}
 .character-art-stage{position:relative;display:block;height:100%;aspect-ratio:2/3;flex:0 0 auto}
 .duel-figure .character-art-stage{height:calc(var(--fig-h) * 1.85);align-self:flex-start;translate:0 -1%}
-.character-table.lean-in{animation:lean-in 1.8s cubic-bezier(.25,.7,.3,1) both}
-.character-art{display:block;width:100%;height:100%;object-fit:contain;object-position:50% 0;animation:character-expression-in .2s ease-out both}
+.character-art{display:block;width:100%;height:100%;object-fit:contain;object-position:50% 0}
 .duel-seat .seat-plate{padding:4px 10px}
 .duel-seat .seat-name b{font-size:15px}
 
@@ -741,7 +740,6 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
 
 
 /* 16. Motion ------------------------------------------------------------ */
-@keyframes lean-in{0%,100%{transform:none}28%,72%{transform:translateY(-5%) scale(1.025)}}
 @keyframes sign-sway{from{rotate:-.5deg}to{rotate:.6deg}}
 @keyframes life-flicker{0%,100%{opacity:.78;scale:1}17%{opacity:.7;scale:.98}26%{opacity:.95;scale:1.05}47%{opacity:.98;scale:1.04}55%{opacity:.68;scale:.97}68%{opacity:.88}88%{opacity:.92;scale:1.03}}
 @keyframes life-flame{0%,100%{opacity:.8;transform:scale(1)}12%{opacity:.95;transform:scale(.96,1.08)}25%{opacity:.7;transform:scale(1.04,.94)}39%{opacity:1;transform:scale(.94,1.12)}64%{opacity:.92;transform:scale(.97,1.06)}77%{opacity:.68;transform:scale(1.05,.93)}}
@@ -763,7 +761,6 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
 @keyframes card-settle{from{translate:0 -6px;scale:1.03}}
 @keyframes hand-receive{from{opacity:0;translate:0 26px}}
 @keyframes rattle{25%{translate:-3px 0;rotate:-4deg}50%{translate:3px 0;rotate:3deg}75%{translate:-1px 0}}
-@keyframes character-expression-in{from{opacity:.4}}
 @keyframes deck-settle{0%{translate:0 -16px;rotate:-2deg;opacity:.7}60%{translate:0 -2px;rotate:-.4deg;opacity:1}100%{translate:0 0}}
 .draw-pile.deck-settling{animation:deck-settle .9s cubic-bezier(.18,.78,.2,1) both}
 .draw-pile.drawing .card{translate:0 -3px}
