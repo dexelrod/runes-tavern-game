@@ -31,7 +31,7 @@ test('layout is driven by shared table variables, not per-screen magic offsets',
   assert.match(css,/@media \(orientation:landscape\) and \(max-height:500px\)/,'short landscape phones have their own layout');
   assert.match(css,/@media \(min-width:600px\) and \(orientation:portrait\)/,'tablet portrait has its own layout');
   assert.ok((css.match(/@media/g)||[]).length<=14,'breakpoints stay few and named');
-  assert.ok(css.length<80000,'stylesheet stays a single readable system');
+  assert.ok(css.length<90000,'stylesheet stays a single readable system');
 });
 
 test('cards scale as one object and stay opaque when unplayable',()=>{

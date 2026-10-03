@@ -85,6 +85,8 @@ function performCharacterReaction(reaction,{voiceDelay=0}={}){
   if(reaction.priority!=='CRITICAL'&&(characterSpeaking?.priority==='CRITICAL'||session?.phase!=='round'))return null;
   const localized=pack.resolveReaction(reaction,settings.language);
   setCharacterExpression(localized.expression);characterCaptionLine=localized.caption||'';characterCaptionLocale=localized.locale;characterSpeaking=localized.caption||localized.voice?{priority:localized.priority,id:localized.id}:null;render();
+  // A result line is a moment: the character leans in over the table rail for a beat.
+  if(localized.priority==='CRITICAL'&&!settings.reducedMotion){const stage=root.querySelector('.character-art-stage.character-table');if(stage){stage.classList.remove('lean-in');void stage.offsetWidth;stage.classList.add('lean-in');}}
   const epoch=sessionEpoch,finish=()=>{if(epoch!==sessionEpoch)return;const timer=setTimeout(()=>{if(epoch!==sessionEpoch)return;characterSpeaking=null;if(!pack.holdsExpression(characterController)){characterPreviousExpression=characterExpression;characterExpression=restingExpression(pack);}characterCaptionLine='';render();},settings.reducedMotion?180:650);characterSequenceTimers.push(timer);if(localized.followUp)scheduleFollowUp(localized.followUp,epoch);},play=()=>{if(epoch!==sessionEpoch||!isAuthoredDuel())return;audioSystem.setSettings(settings);if(localized.voice){void audioSystem.playVoice(localized.voice,{locale:localized.locale,priority:localized.priority,locked:localized.category==='result',onEnded:finish}).then(node=>{if(!node){const timer=setTimeout(finish,localized.duration||2400);characterSequenceTimers.push(timer);}});}else{const timer=setTimeout(finish,localized.duration||1800);characterSequenceTimers.push(timer);}render();};
   if(voiceDelay){const timer=setTimeout(play,settings.reducedMotion?80:voiceDelay);characterSequenceTimers.push(timer);}else play();
   return localized;
@@ -418,14 +420,15 @@ function homeHTML(){
     duel:'דו־קרב',duelSub:DUEL_HOME_LINES.he[featured.id],record:`אתם <bdi>${featuredRecord.won}</bdi> · ${featured.name} <bdi>${featuredRecord.lost}</bdi>`,rules:'חוקי הבית',settings:'הגדרות'
   };
   const resumeMeta=!resumable?'':savedSession.mode==='duel'
-    ?(en?`Against ${savedOpponent.name} · Round <bdi>${savedSession.round}</bdi> of <bdi>${savedSession.totalRounds}</bdi>`:`מול ${savedOpponent.name} · סיבוב <bdi>${savedSession.round}</bdi> מתוך <bdi>${savedSession.totalRounds}</bdi>`)
+    ?(en?`${savedOpponent.name} is waiting · Round <bdi>${savedSession.round}</bdi> of <bdi>${savedSession.totalRounds}</bdi>`:`${savedOpponent.name} מחכה · סיבוב <bdi>${savedSession.round}</bdi> מתוך <bdi>${savedSession.totalRounds}</bdi>`)
     :savedSession.mode==='tavern'
-      ?(en?`Round <bdi>${savedSession.round}</bdi> of <bdi>${savedSession.totalRounds}</bdi>`:`סיבוב <bdi>${savedSession.round}</bdi> מתוך <bdi>${savedSession.totalRounds}</bdi>`)
+      ?(en?`The regulars are waiting · Round <bdi>${savedSession.round}</bdi> of <bdi>${savedSession.totalRounds}</bdi>`:`הקבועים מחכים · סיבוב <bdi>${savedSession.round}</bdi> מתוך <bdi>${savedSession.totalRounds}</bdi>`)
       :(en?`One hand · <bdi>${savedSession.game?.players?.length||settings.playerCount}</bdi> players`:`יד אחת · <bdi>${savedSession.game?.players?.length||settings.playerCount}</bdi> שחקנים`);
-  const resume=resumable?`<button class="home-choice resume-choice" data-resume><span class="choice-object">${cardBackStackHTML('object-cards object-cards-resume',3)}</span><span class="choice-copy"><small class="choice-kicker">${t.resumeKicker}</small><strong>${t.resume[savedSession.mode]||t.resume.quick}</strong><small>${resumeMeta}</small></span></button>`:'';
+  // A game in progress is not a fourth way to play: it is your seat, kept on a slip of paper above the three.
+  const resume=resumable?`<button class="resume-seat" data-resume><span class="resume-cards">${cardBackStackHTML('object-cards object-cards-resume',3)}</span><span class="resume-copy"><small class="choice-kicker">${t.resumeKicker}</small><strong>${t.resume[savedSession.mode]||t.resume.quick}</strong><small>${resumeMeta}</small></span></button>`:'';
   return `<main class="app-shell screen-home ${resumable?'has-resume':''} ${settings.reducedMotion?'reduced-motion':''}" dir="${direction()}">${worldSceneHTML('home')}<section class="home-layer">
-    <h1 class="home-title"><img class="primary-runes-logo" src="./assets/brand/runes-white.svg?v=60" alt="${en?'RUNES':'RUNES — רונות'}"></h1>
-    <nav class="home-choices" aria-label="${en?'Ways to play':'דרכי משחק'}">${resume}
+    <h1 class="home-title"><span class="tavern-sign"><img class="sign-board" src="./assets/brand/tavern-sign.webp" alt="" draggable="false"><img class="primary-runes-logo" src="./assets/brand/runes-wordmark.svg" alt="${en?'RUNES':'RUNES — רונות'}" draggable="false"></span></h1>${resume}
+    <nav class="home-choices" aria-label="${en?'Ways to play':'דרכי משחק'}">
       <button class="home-choice duel-choice" data-duel><span class="choice-object duel-cameo"><span class="portrait-card">${characterArtHTML(featured,{context:'cameo'})}</span></span><span class="choice-copy"><strong>${t.duel}</strong><small>${t.duelSub}</small><em class="choice-record">${t.record}</em></span></button>
       <button class="home-choice tavern-choice" data-tavern><span class="choice-object"><img class="object-coins" src="./assets/props/gambling/stacked-coins.png" alt="" draggable="false"></span><span class="choice-copy"><strong>${t.tavern}</strong><small>${t.tavernSub}</small></span></button>
       <button class="home-choice quick-choice" data-open="quick"><span class="choice-object">${cardBackStackHTML('object-cards',3)}</span><span class="choice-copy"><strong>${t.quick}</strong><small>${t.quickSub}</small></span></button>
@@ -517,14 +520,32 @@ function tavernLifeHTML(){
   return `<div class="tavern-life"><div class="life-art">${lights}${embers}${motes}</div></div>`;
 }
 let tavernLifeMarkup='';
+// Old marks in the table wood. Each evening's table gets one of a few layouts so the
+// texture never reads as a repeating tile. x/y are % of the visible table, s in vmin.
+const TABLE_MARK_LAYOUTS=Object.freeze([
+  [['mug-ring',14,20,17,.75,-12],['scratches',82,60,19,.5,8],['ale-stain',72,10,30,.45,40]],
+  [['mug-ring',86,28,15,.7,30],['ale-stain',9,58,34,.42,-20],['scratches',63,8,14,.4,80]],
+  [['scratches',17,72,21,.5,-25],['mug-ring',78,48,16,.7,70],['ale-stain',24,14,24,.38,15]],
+  [['ale-stain',88,66,30,.42,110],['scratches',40,9,17,.45,5],['mug-ring',8,34,16,.72,-40]]
+]);
+function tableMarksHTML(context){
+  const layout=context==='home'?[['mug-ring',89,56,15,.6,20],['ale-stain',10,26,26,.36,0],['scratches',14,82,20,.42,-15]]:TABLE_MARK_LAYOUTS[context==='select'?1:Math.abs(session?.seed||0)%TABLE_MARK_LAYOUTS.length];
+  return `<div class="table-marks">${layout.map(([m,x,y,size,o,r])=>`<i style="--m:url('./assets/table/mark-${m}.webp');--x:${x}%;--y:${y}%;--s:${size}vmin;--o:${o};--r:${r}deg"></i>`).join('')}</div>`;
+}
 function worldSceneHTML(context='game'){
   const life=context==='home'||context==='select'?(tavernLifeMarkup||=tavernLifeHTML()):'';
-  return `<div class="scene-world scene-${context}" aria-hidden="true"><div class="tavern-environment"></div>${life}<div class="table-body"><div class="table-surface"></div>${context==='home'?tableEngravingHTML():''}</div><div class="scene-lighting"><i class="fire-glow"></i><i class="candle-glow"></i><i class="table-light"></i></div></div>`;
+  return `<div class="scene-world scene-${context}" aria-hidden="true"><div class="tavern-environment"></div>${life}<div class="table-body"><div class="table-surface"></div>${tableMarksHTML(context)}${context==='home'?tableEngravingHTML():''}</div><div class="scene-lighting"><i class="fire-glow"></i><i class="candle-glow"></i><i class="table-light"></i></div></div>`;
 }
 const propAssets=Object.freeze({
   ceramicCup:'drinks/ceramic-cup.png',darkBottle:'drinks/dark-glass-bottle.png',medievalFlask:'drinks/medieval-flask.png',pewterGoblet:'drinks/pewter-goblet.png',pewterTankard:'drinks/pewter-tankard.png',woodenTankard:'drinks/wooden-tankard.png',
   bettingToken:'gambling/carved-betting-token.png',dice:'gambling/dice-pair.png',bread:'food/bread-chunk.png',cheese:'food/cheese-wedge.png',nuts:'food/nuts-group.png',
-  key:'personal/iron-key.png',pipe:'personal/smoking-pipe.png',ring:'personal/worn-metal-ring.png',rune:'mystical/carved-rune-token.png',amulet:'mystical/small-amulet.png',map:'bonus/map-scrap.png'
+  key:'personal/iron-key.png',pipe:'personal/smoking-pipe.png',ring:'personal/worn-metal-ring.png',rune:'mystical/carved-rune-token.png',amulet:'mystical/small-amulet.png',map:'bonus/map-scrap.png',
+  purse:'personal/coin-purse.png',arrowhead:'personal/arrowhead-herbs.png',flute:'personal/wooden-flute.png',whetstone:'personal/whetstone.png',inkpot:'personal/inkpot-quill.png',horn:'drinks/drinking-horn.png'
+});
+// Each regular keeps the same things in front of them every evening, so an empty seat still says who sits there.
+const SEAT_SIGNATURES=Object.freeze({
+  aila:['woodenTankard','arrowhead'],ron:['ceramicCup','flute'],bran:['pewterTankard','whetstone'],sela:['pewterGoblet','inkpot'],kesh:['darkBottle','rune'],
+  roderic:['pewterTankard','dice'],lio:['ceramicCup','purse'],mograth:['horn','bread'],harrow:['woodenTankard','pipe'],rusk:['medievalFlask','map']
 });
 // Two objects per seat at most: one drink (the signature) and one personal item.
 const seatPropStories=Object.freeze({
@@ -535,7 +556,7 @@ const seatPropStories=Object.freeze({
   mysterious:[['medievalFlask','rune'],['medievalFlask','amulet']],
   wanderer:[['darkBottle','cheese'],['darkBottle','map']]
 });
-function propsHTML(player){const archetype=player.archetype||'wanderer',variants=seatPropStories[archetype]||seatPropStories.wanderer,identity=[...`${player.id}:${archetype}`].reduce((sum,char)=>sum+char.charCodeAt(0),0),items=variants[Math.abs((session?.seed||0)+identity)%variants.length];return `<span class="seat-props" aria-hidden="true">${items.map((item,index)=>`<img class="seat-object prop-${index+1}" src="./assets/props/${propAssets[item]}" alt="" draggable="false">`).join('')}</span>`;}
+function propsHTML(player){const archetype=player.archetype||'wanderer',variants=seatPropStories[archetype]||seatPropStories.wanderer,identity=[...`${player.id}:${archetype}`].reduce((sum,char)=>sum+char.charCodeAt(0),0),items=SEAT_SIGNATURES[player.nameKey]||variants[Math.abs((session?.seed||0)+identity)%variants.length];return `<span class="seat-props" aria-hidden="true">${items.map((item,index)=>`<img class="seat-object prop-${index+1}" src="./assets/props/${propAssets[item]}" alt="" draggable="false">`).join('')}</span>`;}
 let lastPenaltyShown=0,slipShownFor=-1;
 function freshQuip(){if(!quip||quip.rendered)return'';quip.rendered=true;return'enter';}
 const TAVERN_FIGURES=new Set(['aila','ron','bran','sela','kesh','roderic','lio','mograth','harrow','rusk']),TAVERN_SPRITES=new Set();
@@ -647,7 +668,7 @@ function gameHTML(){
     <div class="board" data-speed-bots>
       <div class="seats">${seatsHTML(opponents)}</div>
       <div class="center"><div class="piles">${arrows}
-        <button class="pile draw-pile ${drawSuggested?'draw-suggested':''} ${deckSettling?'deck-settling':''}" data-draw data-draw-anchor aria-label="${en?`Draw a card. ${state.drawPile.length} left in the deck`:`למשוך קלף. ${state.drawPile.length} קלפים בחפיסה`}" style="--deck-depth:${Math.min(6,Math.ceil(state.drawPile.length/16))}"><span class="deck-body">${cardHTML(null,cardOptions({hidden:true}))}</span><span class="deck-count"><bdi>${state.drawPile.length}</bdi></span></button>
+        <button class="pile draw-pile ${drawSuggested?'draw-suggested':''} ${deckSettling?'deck-settling':''}" data-draw data-draw-anchor aria-label="${en?`Draw a card. ${state.drawPile.length} left in the deck`:`למשוך קלף. ${state.drawPile.length} קלפים בחפיסה`}" style="--deck-depth:${Math.min(6,Math.ceil(state.drawPile.length/16))}"><span class="deck-body">${cardHTML(null,cardOptions({hidden:true}))}</span><span class="deck-count"><i class="mini-back" aria-hidden="true"></i><bdi>${state.drawPile.length}</bdi></span></button>
         <div class="pile discard ${fresh?'fresh':''}" data-discard-anchor style="--pile-turn:${((state.discardPile.length%7)-3)*.7}deg" role="img" aria-label="${en?`Top card: ${cardLabel(top,'en')||top.value}. Colour: ${colorName(state.activeColor)||'any'}`:`הקלף העליון: ${cardLabel(top,'he')||top.value}. צבע: ${colorName(state.activeColor)||'חופשי'}`}"><div class="discard-under">${under.map((card,i)=>`<span class="under under-${i}">${cardHTML(card,cardOptions())}</span>`).join('')}</div>${cardHTML(top,cardOptions({activeColor:resolvedTopColor}))}${showActiveColor&&state.activeColor?`<span class="active-stone ${state.activeColor}" title="${colorName(state.activeColor)}">${colorRuneHTML(state.activeColor,'active-color-rune')}</span>`:''}${statusHTML()}</div>
       </div></div>
       <div class="table-notes">${crossbowHTML()}${strip?`<div class="action-strip" role="status" aria-live="polite">${strip}</div>`:''}${captionHTML()}</div>

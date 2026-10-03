@@ -112,7 +112,7 @@ html[lang=he] :is(.sheet-lede,.setting-label,.rule-card p,.rule-scoring p,.stand
 .card .corner.bottom{right:.5em;bottom:.5em;transform:rotate(180deg)}
 .corner-mark{display:grid;place-items:center}
 .corner-asset{display:block;width:1.2em;height:1.2em}
-.card-suit-rune{width:.7em;height:.7em;flex:0 0 auto;fill:var(--card);filter:drop-shadow(0 1px #fff8dc)}
+.card-suit-rune{width:.82em;height:.82em;flex:0 0 auto;fill:var(--card);filter:drop-shadow(0 1px #fff8dc)}
 .card-art{position:absolute;z-index:2;inset:1.375em .69em 1.56em;display:grid;place-items:center}
 .masked-card-asset{display:block;background:var(--card);-webkit-mask:var(--asset) center/contain no-repeat;mask:var(--asset) center/contain no-repeat;filter:drop-shadow(1px 2px 0 #fff4)}
 .native-card-asset{display:block;object-fit:contain;filter:drop-shadow(0 2px 0 #fff6)}
@@ -126,11 +126,11 @@ html[lang=he] :is(.sheet-lede,.setting-label,.rule-card p,.rule-scoring p,.stand
 .card.type-plus2 .card-asset{width:94%;height:88%}
 .card.type-king .card-asset{width:68%;height:94%}
 .card-rune-watermark{position:absolute;z-index:0;left:50%;top:50%;width:55%;height:55%;translate:-50% -50%;fill:var(--card);opacity:.06}
-.card-print{position:absolute;z-index:5;left:.69em;right:.69em;bottom:.44em;color:var(--card);font:700 .5em/1.05 var(--ui);letter-spacing:.035em;text-align:center;text-transform:uppercase;text-wrap:balance;opacity:.92}
+.card-print{position:absolute;z-index:5;left:.69em;right:.69em;bottom:.44em;color:var(--card);font:700 .58em/1.05 var(--ui);letter-spacing:.03em;text-align:center;text-transform:uppercase;text-wrap:balance;opacity:.92}
 .card.type-number .card-print{display:none}
 .card-print{bottom:.5em;left:1.1em;right:1.1em;padding:.08em .3em;color:color-mix(in srgb,var(--card) 66%,#1a0f08);background:linear-gradient(90deg,transparent,#eddcb2 16% 84%,transparent)}
-[lang=he] .card-print,.card-print:lang(he){font-size:.56em;letter-spacing:0}
-.card.type-superTaki .card-print{letter-spacing:0;font-size:.46em}
+[lang=he] .card-print,.card-print:lang(he){font-size:.64em;letter-spacing:0}
+.card.type-superTaki .card-print{letter-spacing:0;font-size:.5em}
 /* Below ~88px the printed name is unreadable noise; the art and corner carry the card. */
 .card:not(.card-back){container-type:inline-size}
 @container (max-width:88px){.card-print{display:none}}
@@ -152,19 +152,19 @@ html[lang=he] :is(.sheet-lede,.setting-label,.rule-card p,.rule-scoring p,.stand
   --rim:calc(var(--head) + var(--fig-h) + 6px);
   --rim-curve:5%;--rim-thick:16px;
   --card-w:clamp(64px,20vw,88px);
-  --pile-w:clamp(72px,24vw,110px);
+  --pile-w:clamp(72px,26vw,122px);
   --back-w:20px;
   --hand-lift:26px;
 }
-.screen-game.with-figures{--fig-h:clamp(78px,11.5vh,112px)}
-.screen-game.mode-duel{--fig-h:clamp(132px,22vh,200px)}
+.screen-game.with-figures{--fig-h:clamp(84px,13.5vh,132px)}
+.screen-game.mode-duel{--fig-h:clamp(140px,25vh,230px)}
 .game{position:absolute;inset:0;z-index:1;display:grid;grid-template-rows:var(--head) minmax(0,1fr) auto;padding-left:var(--safe-left);padding-right:var(--safe-right)}
 .game-head{position:relative;z-index:30;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:calc(4px + var(--safe-top)) 10px 4px}
 /* The round is kept the way a tavern keeps it: five notches, the played ones
    filled with chalk, the current one lit. A short line names it for clarity. */
-.round-marker{position:absolute;left:50%;top:calc(50% + var(--safe-top) / 2);translate:-50% -50%;display:grid;justify-items:center;gap:4px;color:var(--chalk);font:italic 500 14px/1 var(--display);white-space:nowrap;text-shadow:var(--lit)}
-.round-notches{display:flex;gap:5px;direction:ltr}
-.round-notches i{width:7px;height:7px;rotate:45deg;border:1px solid #e9dfc8aa;box-shadow:0 1px 2px #000}
+.round-marker{position:absolute;left:50%;top:calc(50% + var(--safe-top) / 2);translate:-50% -50%;display:grid;justify-items:center;gap:5px;color:var(--chalk);font:600 14px/1 var(--display);letter-spacing:.02em;white-space:nowrap;text-shadow:var(--lit)}
+.round-notches{display:flex;gap:8px;direction:ltr}
+.round-notches i{width:9px;height:9px;rotate:45deg;border:1px solid #e9dfc8aa;box-shadow:0 1px 2px #000}
 .round-notches i.done{background:#e9dfc8cc}
 .round-notches i.now{border-color:#f2c46f;background:#f2c46f;box-shadow:0 0 8px #f2b44f,0 1px 2px #000}
 .sudden-death .round-notches i{border-color:#d0745f}
@@ -186,11 +186,12 @@ html[lang=he] :is(.sheet-lede,.setting-label,.rule-card p,.rule-scoring p,.stand
 /* Each player has a folded place card standing on the rim: house rune and
    name inked on it, the card count pencilled beside. Whose turn it is is told
    by light, not by a border: the lamp finds that seat. */
-.seat-plate{position:relative;z-index:3;display:flex;align-items:center;gap:6px;max-width:100%;min-height:28px;margin-top:-2px;padding:3px 9px 2px;border:0;border-radius:1px;background:linear-gradient(180deg,#d9c08a 0 3px,#f1e3bd 3px,#e6d2a2);color:var(--ink);box-shadow:inset 0 -1px #b89a62,0 2px 0 #00000033,0 5px 7px -1px #000b;filter:brightness(.78) saturate(.9);transition:filter .5s ease}
+.seat-plate{position:relative;z-index:3;display:flex;align-items:center;gap:6px;max-width:100%;min-height:28px;margin-top:-2px;padding:3px 9px 2px;border:0;border-radius:1px;background:linear-gradient(180deg,#d9c08a 0 3px,#f1e3bd 3px,#e6d2a2);color:var(--ink);box-shadow:inset 0 -1px #b89a62,inset 0 0 8px #8a5f2a40,0 2px 0 #00000033,0 5px 7px -1px #000b;border-radius:2px 1px 3px 1px;rotate:-.6deg;filter:brightness(.78) saturate(.9);transition:filter .5s ease}
+.seat-nw .seat-plate,.seat-e .seat-plate{rotate:.5deg}
 .seat-name{display:grid;min-width:0;text-align:center}
 .seat-name b{overflow:hidden;font:700 13px/1.15 var(--display);white-space:nowrap;text-overflow:ellipsis}
 .seat-name small{overflow:hidden;color:var(--ink-soft);font:italic 500 10.5px/1.1 var(--display);white-space:nowrap;text-overflow:ellipsis}
-.seat-count{display:flex;align-items:center;gap:3px;padding-inline-start:6px;border-inline-start:1px solid #8a6a3e66;font:700 14px/1 var(--display);font-variant-numeric:lining-nums tabular-nums;color:var(--ink)}
+.seat-count{display:flex;align-items:center;gap:4px;padding-inline-start:4px;font:700 14px/1 var(--display);font-variant-numeric:lining-nums tabular-nums;color:var(--ink)}
 .mini-back{width:7px;height:10px;border-radius:1px;background:linear-gradient(#7a2940,#531827);box-shadow:inset 0 0 0 1px #c2914a99}
 .house-pin{display:grid;place-items:center;width:16px;height:16px;flex:0 0 auto}
 .house-rune{width:15px;height:15px}
@@ -224,7 +225,7 @@ html[lang=he] :is(.sheet-lede,.setting-label,.rule-card p,.rule-scoring p,.stand
 .seat.rattled .seat-props{animation:rattle .45s ease}
 .contact-shadow{position:absolute;left:20%;right:20%;bottom:-6px;height:18px;border-radius:50%;background:#0008;filter:blur(8px)}
 /* Seat positions along the far rim (phone portrait default). */
-.seats-1 .seat{--seat-w:min(70%,320px)}
+.seats-1 .seat{--seat-w:min(70%,320px);max-width:min(96vw,600px)}
 .seats-2 .seat-nw{--sx:28%}.seats-2 .seat-ne{--sx:72%}
 .seats-3 .seat{--seat-w:33%}.seats-3 .seat-w{--sx:17%}.seats-3 .seat-e{--sx:83%}
 .seats-4 .seat{--seat-w:25%}.seats-4 .seat-w{--sx:12.5%}.seats-4 .seat-nw{--sx:37.5%}.seats-4 .seat-ne{--sx:62.5%}.seats-4 .seat-e{--sx:87.5%}
@@ -242,6 +243,7 @@ html[lang=he] :is(.sheet-lede,.setting-label,.rule-card p,.rule-scoring p,.stand
 .duel-seat.active .duel-figure .duel-sprite{filter:brightness(1.04) drop-shadow(0 8px 10px #000a)}
 .character-art-stage{position:relative;display:block;height:100%;aspect-ratio:2/3;flex:0 0 auto}
 .duel-figure .character-art-stage{height:calc(var(--fig-h) * 1.85);align-self:flex-start;translate:0 -1%}
+.character-table.lean-in{animation:lean-in 1.8s cubic-bezier(.25,.7,.3,1) both}
 .character-art{display:block;width:100%;height:100%;object-fit:contain;object-position:50% 0;animation:character-expression-in .2s ease-out both}
 .duel-seat .seat-plate{padding:4px 10px}
 .duel-seat .seat-name b{font-size:15px}
@@ -254,14 +256,15 @@ html[lang=he] :is(.sheet-lede,.setting-label,.rule-card p,.rule-scoring p,.stand
 .direction-ring.lit{opacity:.75;stroke:#e9b45e;filter:drop-shadow(0 0 8px #e9a04b)}
 .pile{position:relative;padding:0;border:0;background:none;--cw:var(--pile-w)}
 .pile .card{--cw:var(--pile-w)}
-.draw-pile{rotate:-2deg;filter:drop-shadow(calc(var(--deck-depth,3) * 1px) calc(var(--deck-depth,3) * 1.5px) 0 #2a0d14) drop-shadow(0 10px 8px #000a)}
+.draw-pile{rotate:-2.5deg;translate:3px 4px;filter:drop-shadow(calc(var(--deck-depth,3) * 1px) calc(var(--deck-depth,3) * 1.5px) 0 #2a0d14) drop-shadow(0 10px 8px #000a)}
 .draw-pile .deck-body{display:block}
+.deck-count .mini-back{width:9px;height:13px;rotate:4deg;box-shadow:inset 0 0 0 1px #c2914a99,0 1px 2px #000}
 .draw-pile:hover{filter:drop-shadow(calc(var(--deck-depth,3) * 1px) calc(var(--deck-depth,3) * 1.5px) 0 #2a0d14) drop-shadow(0 10px 8px #000a) brightness(1.06)}
 /* Nothing to play: the lamp finds the deck and it sits up, ready to be drawn from. */
-.draw-pile.draw-suggested{translate:0 -4px}
+.draw-pile.draw-suggested{translate:3px 0}
 .draw-pile.draw-suggested:after{content:"";position:absolute;z-index:-1;inset:-38% -46%;border-radius:50%;background:radial-gradient(closest-side,#f0b2603d,#e8963c1a 55%,transparent);pointer-events:none}
 /* The deck count is chalked on the wood beside the deck. */
-.deck-count{position:absolute;right:-6px;bottom:-22px;min-width:30px;display:grid;place-items:center;color:var(--chalk);font:italic 600 15px/1 var(--display);font-variant-numeric:lining-nums tabular-nums;text-shadow:0 1px 1px #000,0 0 6px #000a;opacity:.82;rotate:-4deg}
+.deck-count{position:absolute;right:-8px;bottom:-24px;min-width:30px;display:flex;align-items:center;gap:4px;color:var(--chalk);font:600 15px/1 var(--display);font-variant-numeric:lining-nums tabular-nums;text-shadow:0 1px 1px #000,0 0 6px #000a;opacity:.82;rotate:-4deg}
 .discard{rotate:var(--pile-turn,0deg)}
 .discard>.card{position:relative;z-index:3;box-shadow:0 2px 0 #2a170e8c,0 10px 14px #000a}
 .discard-under{position:absolute;inset:0}
@@ -280,7 +283,7 @@ html[lang=he] :is(.sheet-lede,.setting-label,.rule-card p,.rule-scoring p,.stand
 .round-over .piles{filter:brightness(.6) saturate(.8);transition:filter .4s ease}
 
 /* 8. Hand ---------------------------------------------------------------- */
-.hand-area{position:relative;z-index:20;display:grid;justify-items:center;padding:0 0 calc(8px + var(--safe-bottom));background:radial-gradient(ellipse 60% 70% at 50% 100%,#e8a04f00,transparent);transition:background .5s ease}
+.hand-area{position:relative;z-index:20;display:grid;justify-items:center;padding:0 0 calc(14px + var(--safe-bottom));background:radial-gradient(ellipse 60% 70% at 50% 100%,#e8a04f00,transparent);transition:background .5s ease}
 .hand-area.your-turn{background:radial-gradient(ellipse 60% 70% at 50% 100%,#e8a04f2e,transparent)}
 .hand-frame{position:relative;width:100%;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scrollbar-width:none;padding:var(--hand-lift) 8px var(--hand-drop,4px);direction:ltr}
 .hand-frame::-webkit-scrollbar{display:none}
@@ -324,7 +327,7 @@ html[lang=he] :is(.sheet-lede,.setting-label,.rule-card p,.rule-scoring p,.stand
 .crossbow-panel{display:flex;align-items:center;gap:10px;max-width:min(96vw,520px);padding:6px 8px 6px 14px;border:0;border-radius:1px;background:linear-gradient(176deg,var(--parchment-hi),var(--parchment) 60%,#dcc290);box-shadow:inset 0 0 12px #a27a4238,0 2px 0 #0003,0 6px 8px -2px #000a;color:var(--ink);rotate:-.6deg}
 .crossbow-panel span{display:grid;gap:2px;min-width:0}
 .crossbow-panel b{font:700 16px/1.1 var(--display);color:color-mix(in srgb,var(--taki-color) 70%,#1a0f08)}
-.crossbow-panel small{color:var(--ink-soft);font:italic 500 14px/1.2 var(--display)}
+.crossbow-panel small{color:var(--ink-soft);font:500 14px/1.2 var(--display)}
 .crossbow-rune{width:26px;height:26px;flex:0 0 auto;fill:var(--taki-color)}
 .fire-button{display:grid;place-items:center;width:62px;height:58px;margin-inline-start:4px;padding:0;border:0;border-radius:50% 46% 52% 44%/48% 54% 46% 52%;background:radial-gradient(circle at 36% 30%,var(--wax-hi),var(--wax) 58%,#4a0e18);color:#f6d6cb;font:700 16px/1 var(--display);text-shadow:0 -1px 0 #2a050b,0 1px 0 #e0707a55;box-shadow:inset 0 -3px 5px #3a0810aa,inset 0 2px 2px #e9828a55,0 3px 0 #2a050b88,0 6px 8px #0009;rotate:6deg}
 .fire-button:hover{filter:brightness(1.08)}
@@ -338,7 +341,7 @@ html[lang=he] :is(.sheet-lede,.setting-label,.rule-card p,.rule-scoring p,.stand
 .color-choice.enter{animation:fade-in .16s ease-out both}
 .color-choice.enter .gem{animation:stone-down .3s cubic-bezier(.2,.8,.25,1) both;animation-delay:calc(var(--n) * 45ms)}
 .gem-ring{display:grid;gap:14px;justify-items:center}
-.gem-title{color:var(--chalk);font:italic 600 21px/1 var(--display);text-shadow:var(--lit)}
+.gem-title{color:var(--chalk);font:600 21px/1 var(--display);text-shadow:var(--lit)}
 .gems{display:flex;gap:clamp(8px,3vw,28px)}
 .gem{display:grid;justify-items:center;gap:8px;min-width:70px;padding:4px 2px;border:0;background:none;color:var(--chalk);font:600 15px/1 var(--display);text-shadow:var(--lit)}
 .gem i{display:grid;place-items:center;width:clamp(54px,15vw,76px);height:clamp(52px,14vw,72px);border-radius:46% 52% 44% 50%/52% 46% 54% 44%;background:radial-gradient(circle at 35% 28%,color-mix(in srgb,var(--stone) 70%,#fff),var(--stone) 48%,#1d130d);box-shadow:inset 0 0 0 3px #120b0766,inset 0 -4px 6px #0007,0 4px 2px #0008,0 10px 12px -2px #000a;transition:translate .15s ease,box-shadow .15s ease}
@@ -355,12 +358,12 @@ html[lang=he] :is(.sheet-lede,.setting-label,.rule-card p,.rule-scoring p,.stand
 .result-slip,.tavern-sheet{background:linear-gradient(172deg,var(--parchment-hi),var(--parchment) 46%,#dfc58f);color:var(--ink);box-shadow:inset 0 0 0 1px #fff3d433,inset 0 0 26px #8a5f2a55,inset 0 0 3px #6a45208a,0 2px 0 #00000040,0 16px 26px -6px #000d}
 .result-slip{position:absolute;z-index:50;left:50%;top:calc(var(--fig-h) + var(--seat-h) + (100% - var(--fig-h) - var(--seat-h)) / 2);width:min(92vw,380px);max-height:calc(100% - var(--fig-h) - var(--seat-h) + 20px);overflow:auto;padding:16px 22px 12px;border:0;border-radius:1px;text-align:center;translate:-50% -50%;rotate:-.6deg}
 .result-slip.enter{animation:slip-in .4s cubic-bezier(.2,.8,.25,1) both}
-.result-slip>small{display:block;color:var(--ink-soft);font:italic 500 15px/1 var(--display)}
+.result-slip>small{display:block;color:var(--ink-soft);font:600 14px/1 var(--display);letter-spacing:.04em}
 .result-slip h2{margin:6px 0 12px;font:700 25px/1.15 var(--display)}
 .tally{display:flex;align-items:center;justify-content:center;gap:12px;margin:0 0 12px}
 .tally-sum{display:flex;align-items:flex-end;gap:6px;direction:ltr}
 .tally-sum span{display:grid;justify-items:center;gap:3px}
-.tally-sum small{max-width:70px;overflow:hidden;color:var(--ink-soft);font:italic 500 12px/1 var(--display);white-space:nowrap;text-overflow:ellipsis}
+.tally-sum small{max-width:70px;overflow:hidden;color:var(--ink-soft);font:500 12px/1 var(--display);white-space:nowrap;text-overflow:ellipsis}
 .tally-sum bdi{font:700 20px/1 var(--display);font-variant-numeric:lining-nums}
 .tally-sum>i{font:400 18px/1 var(--display);opacity:.55;padding-bottom:1px}
 .tally-total{display:grid;place-items:center;min-width:58px;height:58px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#f3d58a,#c39744 60%,#8a6425);box-shadow:inset 0 0 0 3px #a87d34,inset 0 0 0 5px #e9c977,0 3px 4px #0006;color:#3a240f;font:700 19px/1 var(--display);font-variant-numeric:lining-nums;text-shadow:0 1px #f6dc9a}
@@ -373,7 +376,7 @@ html[lang=he] :is(.sheet-lede,.setting-label,.rule-card p,.rule-scoring p,.stand
 .standings li.won{font-weight:700}
 .standings li.won span:before{content:"";flex:0 0 auto;align-self:center;width:9px;height:9px;border-radius:50% 44% 52% 46%;background:var(--wax);box-shadow:inset 0 1px #e9828a66}
 .standings.compact li{padding:2px;font-size:16px}
-.tie-note{margin:0 0 10px;font:italic 500 15px/1.3 var(--display)}
+.tie-note{margin:0 0 10px;font:500 15px/1.3 var(--display)}
 .result-actions{display:grid;gap:2px;justify-items:center}
 .result-actions .primary-button{width:100%}
 .flying-coin{position:fixed;z-index:120;width:18px;height:18px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#f7dd94,#c79a45 60%,#8a6425);box-shadow:inset 0 0 0 2px #a87d34,0 2px 3px #0008;pointer-events:none}
@@ -439,7 +442,7 @@ html[lang=he] :is(.sheet-lede,.setting-label,.rule-card p,.rule-scoring p,.stand
 .audio-row .setting-label{flex:0 1 auto;white-space:nowrap}
 .audio-row .setting-label:after{display:none}
 .audio-controls{display:flex;align-items:center;gap:10px;flex:1 1 220px;justify-content:flex-end}
-.audio-controls output{min-width:42px;color:var(--ink-soft);font:italic 500 15px/1 var(--display);font-variant-numeric:lining-nums tabular-nums;text-align:center}
+.audio-controls output{min-width:42px;color:var(--ink-soft);font:500 15px/1 var(--display);font-variant-numeric:lining-nums tabular-nums;text-align:center}
 @media (max-width:599px){.audio-controls{flex-basis:170px;gap:6px}.audio-controls input[type=range]{min-width:70px}.audio-controls output{min-width:34px}}
 .audio-row.muted input[type=range],.audio-row.muted output{opacity:.4}
 /* A fader: an engraved groove, inked to the level, with a brass slide. */
@@ -476,10 +479,14 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
 /* 13. Home ------------------------------------------------------------- */
 /* The ways to play are objects resting on the table — a cut deck, a stack of
    coins, Bramm himself — with their names carved into the wood beside them. */
-.screen-home{--rim:30%;--rim-curve:6%}
+.screen-home{--rim:30%;--rimv:30dvh;--rim-curve:6%;--sign-w:min(80vw,340px);--slip-room:104px}
 .home-layer,.select-layer{position:absolute;inset:0;z-index:1;display:flex;flex-direction:column;align-items:center;padding:calc(18px + var(--safe-top)) calc(16px + var(--safe-right)) calc(16px + var(--safe-bottom)) calc(16px + var(--safe-left));overflow:auto}
-.home-title{flex:0 0 auto;margin:clamp(6px,4vh,48px) 0 0;line-height:0}
-.primary-runes-logo{width:clamp(170px,52vw,300px);height:auto;filter:drop-shadow(0 6px 10px #000c)}
+.home-title{flex:0 0 auto;margin:0;line-height:0}
+/* The name hangs over the room on a painted tavern sign; its chains run up out of frame. */
+.tavern-sign{position:relative;display:block;width:var(--sign-w);aspect-ratio:1;margin-top:calc(var(--sign-w) * -.475 - 18px);transform-origin:50% 0;filter:drop-shadow(0 12px 12px #000b);animation:sign-sway 9s ease-in-out infinite alternate}
+.sign-board{position:absolute;inset:0;width:100%;height:100%;filter:brightness(.84) saturate(.9)}
+.tavern-sign .primary-runes-logo{position:absolute;left:50%;top:73.6%;width:52%;height:auto;translate:-50% -50%;mix-blend-mode:multiply}
+.reduced-motion .tavern-sign{animation:none}
 .home-choices{display:grid;gap:4px;width:min(100%,460px);margin:auto 0;padding-top:24px}
 .home-choice{position:relative;display:flex;align-items:center;gap:14px;min-height:84px;padding:8px 10px;border:0;border-radius:0;background:none;text-align:start;color:var(--cream);text-shadow:0 2px 3px #000}
 .home-choice+.home-choice:before{content:"";position:absolute;top:-3px;left:10%;right:10%;height:2px;background:linear-gradient(90deg,transparent,#1a0a04 20% 80%,transparent);box-shadow:0 1px #c0804530}
@@ -490,10 +497,11 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
 .choice-object:before{content:"";position:absolute;z-index:-1;left:14%;right:14%;bottom:2%;height:16%;border-radius:50%;background:#000a;filter:blur(5px)}
 .choice-copy{display:grid;gap:3px;flex:1;min-width:0}
 .choice-copy strong{font:700 23px/1.1 var(--display);color:#f3dfb2}
-.choice-copy small{color:#dcc69b;font:italic 500 15px/1.3 var(--display)}
+.choice-copy small{color:#dcc69b;font:500 15px/1.3 var(--display)}
+.duel-choice .choice-copy small{font-style:italic}
 .choice-copy .choice-kicker{color:#efc77a;font-style:normal;font-weight:600}
 /* Your record against Bramm is chalked on the table. */
-.choice-record{justify-self:start;margin-top:3px;color:var(--chalk);font:italic 500 14px/1.3 var(--display);font-variant-numeric:lining-nums;opacity:.85}
+.choice-record{justify-self:start;margin-top:3px;color:var(--chalk);font:500 14px/1.3 var(--display);font-variant-numeric:lining-nums;opacity:.85}
 .object-cards{position:relative;width:56px;height:70px}
 .object-cards .card{--cw:46px;position:absolute;left:5px;top:2px;box-shadow:0 3px 5px #0009}
 .object-cards .card:nth-child(1){rotate:-14deg;translate:-6px 3px}
@@ -507,7 +515,17 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
 .portrait-card .character-art-stage{position:absolute;left:-30%;top:4%;width:160%;height:auto;aspect-ratio:2/3}
 .portrait-card .character-art{object-fit:cover;object-position:50% 0}
 .portrait-card:after{content:"";position:absolute;inset:0;border-radius:4px;box-shadow:inset 0 0 0 3px #ead9af,inset 0 0 0 4px #694c2eaa,inset 0 -14px 12px -8px #1a0d0599}
-.resume-choice .choice-copy strong{color:#f6d68c}
+.resume-seat{position:absolute;z-index:2;top:calc(var(--rim) + 12px);left:50%;display:flex;align-items:center;gap:12px;width:min(calc(100% - 32px),400px);padding:8px 18px 8px 10px;border:0;border-radius:1px;color:var(--ink);text-align:start;transform:translateX(-50%) rotate(-.7deg);box-shadow:inset 0 0 14px #a27a4238,0 2px 0 #0003,0 8px 12px -2px #000b;transition:transform .18s ease}
+[dir=rtl] .resume-seat{transform:translateX(-50%) rotate(.7deg)}
+.resume-seat:hover,.resume-seat:focus-visible{transform:translate(-50%,-2px) rotate(-.7deg)}
+.has-resume .home-choices{margin:max(16px,calc(var(--rimv) + var(--slip-room) - var(--sign-w) * .525)) 0 auto;padding-top:0}
+.resume-cards{display:grid;place-items:center;width:52px;height:58px;flex:0 0 auto}
+.resume-cards .object-cards{width:50px;height:58px}.resume-cards .object-cards .card{--cw:38px}
+.resume-copy{display:grid;gap:2px;min-width:0}
+.resume-copy strong{font:700 20px/1.1 var(--display)}
+.resume-copy small{color:var(--ink-soft);font:500 14px/1.3 var(--display);font-variant-numeric:lining-nums}
+.resume-copy .choice-kicker{color:var(--wax);font-weight:600}
+.resume-seat.loading{opacity:.72;cursor:progress;pointer-events:none}
 /* Rules and Settings are words burnt into the table's near edge. */
 .home-tools{display:flex;align-items:center;gap:4px;justify-content:center;margin-top:18px}
 .home-tools i{color:#c9a46a;opacity:.5;font-style:normal}
@@ -531,7 +549,7 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
 .chalk-record{justify-self:center;display:flex;gap:5px;margin-top:3px;color:var(--chalk);font:600 15px/1.2 var(--display);font-variant-numeric:lining-nums;opacity:.92;direction:ltr;text-shadow:0 1px 1px #000,0 0 6px #000}
 .chalk-record i{opacity:.6;font-style:normal}
 /* Bramm and Edrin: the two who play the whole match with you, life-size. */
-.select-note{margin:2px 0 0;max-width:520px;color:var(--cream-dim);font:italic 500 15px/1.4 var(--display);text-align:center;text-shadow:0 1px 2px #000}
+.select-note{margin:2px 0 0;max-width:520px;color:var(--cream-dim);font:500 15px/1.4 var(--display);text-align:center;text-shadow:0 1px 2px #000}
 
 /* 15. Breakpoints ------------------------------------------------------ */
 /* Very small phones */
@@ -551,7 +569,7 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
   .seat-count{font-size:16px}
   .seat-props{display:block}
   .home-choices{width:min(100%,600px);gap:10px}
-  .primary-runes-logo{width:clamp(260px,46vw,430px)}
+  .screen-home{--sign-w:min(70vw,460px);--slip-room:130px}
   .home-choice{min-height:116px;gap:22px}
   .choice-object{width:120px;height:100px}
   .object-cards{width:80px;height:100px}
@@ -572,17 +590,18 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
 }
 /* Landscape with room: tablets, laptops, desktops */
 @media (orientation:landscape) and (min-height:501px){
-  .screen-game{--head:calc(60px + var(--safe-top));--seat-h:clamp(96px,13vh,128px);--card-w:clamp(88px,min(8vw,13.5vh),136px);--pile-w:clamp(88px,min(8.4vw,14vh),168px);--back-w:clamp(26px,2.3vw,36px);--hand-lift:34px;--hand-drop:18px;--rim-curve:3%}
-  .screen-game.with-figures{--fig-h:clamp(120px,19vh,240px)}
+  .screen-game{--head:calc(60px + var(--safe-top));--seat-h:clamp(96px,13vh,128px);--card-w:clamp(88px,min(8.4vw,14.5vh),144px);--pile-w:clamp(88px,min(9.2vw,15.5vh),180px);--back-w:clamp(26px,2.3vw,36px);--hand-lift:34px;--hand-drop:28px;--rim-curve:3%}
+  .screen-game.with-figures{--fig-h:clamp(120px,22vh,270px)}
   .screen-game.mode-quick{--fig-h:clamp(40px,11vh,130px)}
   .seat-plate{min-height:clamp(30px,3.6vh,40px);padding:4px 10px}
   .seat-name b{font-size:clamp(15px,1.75vh,21px)}
   .seat-count{font-size:clamp(15px,1.75vh,21px)}
   .seat-score{font-size:clamp(13px,1.5vh,18px)}
   .round-marker,.head-score{font-size:clamp(13px,1.45vh,17px)}
-  .game-head .icon-button{width:clamp(44px,4.6vh,54px);height:clamp(44px,4.6vh,54px)}
-  .screen-game.mode-duel{--fig-h:clamp(170px,27vh,320px)}
-  .round-marker{font-size:14px}
+  .game-head .icon-button{width:44px;height:44px}
+  .screen-game.mode-duel{--fig-h:clamp(170px,31vh,360px)}
+  .round-marker{font-size:clamp(14px,1.6vh,18px)}
+  .round-notches i{width:clamp(9px,1.1vh,12px);height:clamp(9px,1.1vh,12px)}
   .head-score{display:none}
   .seat-name small{font-size:clamp(11px,1.3vh,15px)}
   .duel-seat .seat-name b{font-size:clamp(16px,2.1vh,25px)}
@@ -600,7 +619,7 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
   .seats-4 .seat-w,.seats-4 .seat-e,.seats-5 .seat-w,.seats-5 .seat-e{top:calc(var(--seat-h) * .62)}
   .hand-frame{padding-inline:clamp(16px,8vw,150px)}
   .player-place{position:absolute;bottom:calc(14px + var(--safe-bottom));inset-inline-end:clamp(12px,3vw,48px);display:flex;align-items:flex-end;gap:10px}
-  .player-drink{width:clamp(44px,6.5vh,84px);height:auto;filter:drop-shadow(0 6px 5px #000b)}
+  .player-drink{display:none}
   .player-place .seat-score{position:static;font-size:clamp(15px,1.8vh,21px)}
   .seat-score{font-size:15px}
   .home-choices{width:min(100%,560px)}
@@ -612,9 +631,9 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
 }
 /* Laptop-height landscape: trim the figure band so piles, notes and hand never collide. */
 @media (orientation:landscape) and (min-height:501px) and (max-height:820px){
-  .screen-game.with-figures{--fig-h:clamp(110px,16vh,150px)}
-  .screen-game.mode-duel{--fig-h:clamp(150px,22vh,190px)}
-  .screen-game{--pile-w:clamp(84px,12.5vh,110px);--card-w:clamp(84px,13vh,112px)}
+  .screen-game.with-figures{--fig-h:clamp(110px,18.5vh,170px)}
+  .screen-game.mode-duel{--fig-h:clamp(150px,25vh,215px)}
+  .screen-game{--pile-w:clamp(84px,13.5vh,120px);--card-w:clamp(84px,13.5vh,116px)}
 }
 /* Seat props on roomy layouts: beside the fan, in world space. */
 @media (min-width:600px) and (min-height:501px){
@@ -623,7 +642,7 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
   .mode-tavern,.mode-duel{--seat-h:clamp(96px,13vh,128px)}
   .seat-props{position:absolute;z-index:2;top:calc(var(--fig-h) + 34px);left:calc(50% + var(--back-w) * 2.4);display:flex;align-items:flex-end;gap:2px;pointer-events:none}
   .seat-object{height:calc(var(--back-w) * 1.5);width:auto;filter:drop-shadow(0 4px 3px #000b)}
-  .seat-object.prop-2{height:calc(var(--back-w) * 1.05)}
+  .seat-object.prop-2{height:calc(var(--back-w) * 1.3)}
   .seat-w .seat-props,.seats-2 .seat-nw .seat-props{left:auto;right:calc(50% + var(--back-w) * 2.4);flex-direction:row-reverse}
   .speech{font-size:14px;max-width:240px}
   /* A duel opponent speaks beside their portrait, not over their cards. */
@@ -642,10 +661,12 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
 /* Big desktop: the three objects sit across the table, scaled with the
    window height so 1366×768 and 2560×1440 frame the same shot. */
 @media (orientation:landscape) and (min-width:1000px) and (min-height:600px){
-  .screen-home{--rim:42%;--rim-curve:9%}
+  .screen-home{--rim:42%;--rimv:42dvh;--rim-curve:9%;--sign-w:clamp(330px,50vh,640px);--slip-room:clamp(110px,15vh,190px)}
   .home-layer{padding-bottom:calc(clamp(14px,3vh,40px) + var(--safe-bottom))}
   .home-title{margin-top:clamp(18px,6vh,90px)}
-  .primary-runes-logo{width:clamp(250px,27vh,460px)}
+  .resume-seat{top:calc(var(--rim) + 2.4vh);width:auto;max-width:560px;padding:clamp(8px,1.2vh,14px) clamp(18px,2.4vh,30px) clamp(8px,1.2vh,14px) clamp(10px,1.4vh,18px)}
+  .resume-copy strong{font-size:clamp(20px,2.4vh,30px)}
+  .resume-copy small{font-size:clamp(14px,1.6vh,19px)}
   .home-choices{grid-auto-flow:column;grid-auto-columns:1fr;gap:clamp(16px,4vh,64px);width:min(92vw,128vh);margin:auto 0;padding-top:clamp(32px,9vh,140px)}
   .home-choice{flex-direction:column;justify-content:flex-start;gap:clamp(10px,1.6vh,22px);min-height:0;padding:clamp(14px,2vh,28px) 10px clamp(16px,2.2vh,30px);text-align:center;transition:background .2s ease}
   .home-choice+.home-choice:before{display:none}
@@ -697,16 +718,23 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
   .board{grid-template-rows:var(--seat-h) minmax(0,1fr)}
   .result-slip{top:50%;max-height:calc(100% - 8px)}
   .screen-home{--rim:13%}
-  .home-layer{flex-direction:row;flex-wrap:wrap;justify-content:center;align-content:center;gap:8px 24px}
-  .home-title{margin:0}
-  .primary-runes-logo{width:180px}
-  .home-choices{margin:0;padding:0;width:min(60%,440px)}
+  .home-layer{display:grid;grid-template-columns:auto minmax(0,440px);grid-template-rows:auto 1fr auto;justify-content:center;align-content:center;gap:4px 24px}
+  .home-title{grid-area:1/1;margin:0;align-self:start}
+  .screen-home{--sign-w:220px}
+  .tavern-sign{margin-top:calc(var(--sign-w) * -.475 - 18px)}
+  .resume-seat{grid-area:2/1;position:static;align-self:start;width:var(--sign-w);margin-top:10px;padding:6px 10px 6px 6px;transform:rotate(-.7deg)}
+  .resume-seat:hover,.resume-seat:focus-visible{transform:rotate(-.7deg) translateY(-2px)}
+  .resume-copy strong{font-size:16px}.resume-copy small{font-size:12px}
+  .home-choices,.has-resume .home-choices{grid-area:1/2/3/3;margin:0;padding:0;width:100%;align-self:center}
+  .home-tools{grid-area:3/1/4/3}
   .home-choice{min-height:64px}
   .home-tools{width:100%;margin-top:4px}
 }
 
 
 /* 16. Motion ------------------------------------------------------------ */
+@keyframes lean-in{0%,100%{transform:none}28%,72%{transform:translateY(-5%) scale(1.025)}}
+@keyframes sign-sway{from{rotate:-.5deg}to{rotate:.6deg}}
 @keyframes life-flicker{0%,100%{opacity:.78;scale:1}17%{opacity:.7;scale:.98}26%{opacity:.95;scale:1.05}47%{opacity:.98;scale:1.04}55%{opacity:.68;scale:.97}68%{opacity:.88}88%{opacity:.92;scale:1.03}}
 @keyframes life-flame{0%,100%{opacity:.8;transform:scale(1)}12%{opacity:.95;transform:scale(.96,1.08)}25%{opacity:.7;transform:scale(1.04,.94)}39%{opacity:1;transform:scale(.94,1.12)}64%{opacity:.92;transform:scale(.97,1.06)}77%{opacity:.68;transform:scale(1.05,.93)}}
 @keyframes life-ember{0%{opacity:0;transform:none}8%{opacity:1}35%{transform:translate(calc(var(--dx)*.6),-7cqh) scale(.9)}65%{opacity:.75;transform:translate(calc(var(--dx)*-.3),-13cqh) scale(.65)}100%{opacity:0;transform:translate(var(--dx),-19cqh) scale(.35)}}
@@ -787,12 +815,25 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
 .primary-button:focus-visible{outline:none;filter:drop-shadow(0 0 1.5px #f3dfb2) drop-shadow(0 0 1.5px #f3dfb2) drop-shadow(0 5px 6px #000a)}
 @media (hover:none){.primary-button:hover{filter:drop-shadow(0 2px 0 #1d0c04) drop-shadow(0 5px 6px #000a)}}
 .icon-button,.icon-button:hover,.icon-button:active{background:transparent url('./assets/ui-brass-plate.webp') center/100% 100% no-repeat;box-shadow:none;filter:drop-shadow(0 2px 0 #1a0d05) drop-shadow(0 3px 4px #0009)}
-.result-slip,.tavern-sheet,.turn-whisper,.human-quip,.action-strip,.table-caption,.crossbow-panel,.speech{
+.result-slip,.tavern-sheet,.turn-whisper,.human-quip,.action-strip,.table-caption,.crossbow-panel,.speech,.resume-seat,.seat-plate{
   background-color:var(--parchment);
   background-image:linear-gradient(172deg,#f4e6c012,transparent 46%,#8a5f2a0a),url('./assets/ui-parchment.webp');
   background-size:512px 512px;
   background-repeat:repeat;
 }
+
+/* Gameplay camera and light: the room steps back, the table holds the eye. */
+.game-head .icon-button{opacity:.78;filter:saturate(.6) brightness(.78) drop-shadow(0 2px 0 #1a0d05) drop-shadow(0 3px 4px #0009);transition:opacity .2s ease,filter .2s ease}
+.game-head .icon-button:hover,.game-head .icon-button:focus-visible{opacity:1;filter:drop-shadow(0 2px 0 #1a0d05) drop-shadow(0 3px 4px #0009)}
+.scene-select .tavern-environment{scale:1.06;filter:saturate(.76) sepia(.05) brightness(.5) contrast(1.04) blur(1.5px)}
+.scene-game .tavern-environment{scale:1.1;background-position:center 34%}
+.mode-duel .scene-game .tavern-environment{scale:1.18;background-position:center 30%}
+.scene-game .tavern-environment:after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 26% 50% at 90% 52%,#0a0503b8,transparent 72%)}
+.scene-game .fire-glow{opacity:.16}
+.scene-game .table-surface:after{background:radial-gradient(ellipse 34% 42% at 50% 40%,#d0883828,transparent 75%),radial-gradient(ellipse 40% 75% at 50% 42%,transparent 50%,#0a0402c4 100%)}
+/* Old marks in the wood: rings, cuts, a spill, wax. Two or three per table, never the same twice. */
+.table-marks{position:absolute;left:18.75%;right:18.75%;top:var(--rim-thick,18px);bottom:0;filter:saturate(.9) brightness(.8)}
+.table-marks i{position:absolute;left:var(--x);top:var(--y);width:var(--s);aspect-ratio:1;background:var(--m) center/contain no-repeat;opacity:var(--o);rotate:var(--r);translate:-50% -50%}
 
 /* ── Ragna: her art is a wider 640×679 canvas (bottom-centre anchored); every
       context keeps her head at the same scale as the other voiced regulars. ── */
@@ -820,7 +861,8 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
 .duel-plate-title{color:var(--cream-dim);font:500 15px/1.3 var(--display)}
 .duel-plate-title em{font-style:italic}
 .duel-plate .chalk-record{justify-self:center;margin-top:4px}
-.duel-arrow{position:absolute;z-index:2;top:calc((var(--stage-top) + var(--rim)) / 2);translate:0 -50%;display:grid;place-items:center;width:clamp(46px,5vw,54px);height:clamp(46px,5vw,54px);padding:0;border:1px solid #e9cf9a55;border-radius:50%;background:radial-gradient(circle at 50% 35%,#4a2c17e6,#1b0d06e6);color:#f3dfb2;font:400 30px/1 var(--display);box-shadow:0 3px 8px #000b;cursor:pointer}
+.duel-arrow{position:absolute;z-index:2;top:calc((var(--stage-top) + var(--rim)) / 2);translate:0 -50%;display:grid;place-items:center;width:44px;height:56px;padding:0;border:0;border-radius:2px;background:url('./assets/ui-brass-plate.webp') center/100% 100% no-repeat;color:#2a1709;font:700 30px/1 var(--display);text-shadow:0 1px #e9c98166;filter:saturate(.75) brightness(.8) drop-shadow(0 2px 0 #1a0d05) drop-shadow(0 4px 5px #0009);opacity:.85;cursor:pointer;transition:filter .2s ease,opacity .2s ease}
+.duel-arrow:hover,.duel-arrow:focus-visible{opacity:1;filter:drop-shadow(0 2px 0 #1a0d05) drop-shadow(0 4px 5px #0009)}
 .duel-arrow span{display:block;translate:0 -2px}
 [dir=rtl] .duel-arrow span{scale:-1 1}
 .duel-prev{inset-inline-start:max(var(--safe-left),clamp(10px,8vw - 30px,120px))}
@@ -828,11 +870,12 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
 .duel-arrow:focus-visible,.duel-dot:focus-visible,.random-regular:focus-visible{outline:2px solid #f3dfb2;outline-offset:3px}
 .duel-controls{position:absolute;z-index:2;left:0;right:0;bottom:calc(14px + var(--safe-bottom));display:flex;flex-direction:column;align-items:center;gap:10px;padding-inline:16px;pointer-events:none}
 .duel-controls>*{pointer-events:auto}
-.duel-dots{display:flex;gap:10px}
-.duel-dot{width:10px;height:10px;padding:0;border:1px solid #e9cf9a99;border-radius:50%;background:transparent;cursor:pointer;transition:background .2s ease,scale .2s ease}
-.duel-dot.is-current{background:#f3dfb2;scale:1.2}
+.duel-dots{display:flex;gap:14px}
+/* The same chalk notches the table keeps for rounds. */
+.duel-dot{width:10px;height:10px;padding:0;border:1px solid #e9dfc8aa;border-radius:0;rotate:45deg;background:transparent;box-shadow:0 1px 2px #000;cursor:pointer;transition:background .2s ease,scale .2s ease}
+.duel-dot.is-current{border-color:#f2c46f;background:#f2c46f;box-shadow:0 0 8px #f2b44f,0 1px 2px #000;scale:1.15}
 .duel-sit{min-width:min(100%,300px)}
-.random-regular{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border:0;background:none;color:var(--cream-dim);font:italic 500 15px/1.2 var(--display);text-decoration:underline;text-decoration-color:#e9cf9a55;text-underline-offset:4px;cursor:pointer;text-shadow:0 1px 2px #000}
+.random-regular{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border:0;background:none;color:var(--cream-dim);font:500 15px/1.2 var(--display);text-decoration:underline;text-decoration-color:#e9cf9a55;text-underline-offset:4px;cursor:pointer;text-shadow:0 1px 2px #000}
 .random-regular img{width:30px;height:auto;filter:drop-shadow(0 2px 3px #000a)}
 .random-regular:hover{color:var(--cream)}
 .random-regular.loading,.duel-sit.loading{opacity:.6;pointer-events:none}
