@@ -14,6 +14,27 @@ import { debugMarkEdrinVoiceMissing, edrinEventFor } from './duel/edrin.js';
 import { RAGNA_DOUBLE_LINES, debugMarkRagnaVoiceMissing, ragnaEventFor } from './duel/ragna.js';
 
 const root=document.querySelector('#app');
+// iOS 26 home-screen web apps (portrait): WebKit can report the viewport (innerHeight,
+// dvh) as starting *below* the status bar while still drawing the page from the very
+// top of the screen, with env(safe-area-inset-top) at 0. The game then stops short of
+// the bottom (a black band) and its top bar sits under the clock, out of reach. When we
+// see exactly that signature, size the app to the whole screen and pad the top by the
+// missing status-bar height ourselves. Everywhere else this does nothing.
+function fitStandaloneViewport(){
+  const html=document.documentElement,standalone=navigator.standalone===true||matchMedia('(display-mode: standalone)').matches;
+  let full=0,gap=0;
+  if(standalone&&/iPhone|iPod/.test(navigator.userAgent)){
+    const portrait=innerHeight>=innerWidth;full=portrait?Math.max(screen.width,screen.height):Math.min(screen.width,screen.height);gap=full-innerHeight;
+    const probe=document.createElement('div');probe.style.cssText='position:fixed;top:0;left:0;width:1px;height:env(safe-area-inset-top,0px);visibility:hidden;pointer-events:none';document.body.append(probe);const envTop=probe.getBoundingClientRect().height;probe.remove();
+    if(!(gap>=20&&gap<=100&&envTop<1))gap=0;
+  }
+  if(gap){html.style.setProperty('--app-h',`${full}px`);html.style.setProperty('--ios-status-fix',`${gap}px`);}
+  else{html.style.removeProperty('--app-h');html.style.removeProperty('--ios-status-fix');}
+  if(scrollX||scrollY)scrollTo(0,0);
+}
+fitStandaloneViewport();
+for(const type of ['resize','orientationchange','pageshow'])addEventListener(type,()=>{fitStandaloneViewport();for(const wait of [120,600])setTimeout(fitStandaloneViewport,wait);},{passive:true});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(fitStandaloneViewport,60);});
 const APP_VERSION=new URL(import.meta.url).searchParams.get('v')||'dev';
 // Player-facing order of the four colours: Burgundy, Forest, Gold, Slate.
 const DISPLAY_COLORS=Object.freeze(['red','green','yellow','blue']);
