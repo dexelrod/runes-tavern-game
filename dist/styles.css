@@ -61,6 +61,11 @@ html[lang=he] :is(.sheet-lede,.setting-label,.rule-card p,.rule-scoring p,.stand
 .table-surface{position:absolute;inset:var(--rim-thick,18px) 0 0;background:#49240f url('./assets/table-wood-v37.jpg') center top/max(900px,70vw) auto repeat;filter:saturate(.9) brightness(.8)}
 .table-surface:after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 38%,#c97f3424 0 24%,transparent 60%),radial-gradient(ellipse at 50% 55%,transparent 52%,#0b040266 100%)}
 .table-engraving{position:absolute;left:50%;top:50%;width:min(64vw,760px);height:min(46vh,430px);translate:-50% -50%;fill:none;stroke:#170904;stroke-width:5;stroke-linecap:round;opacity:.16;filter:drop-shadow(0 1px #c0804540)}
+.tavern-life{position:absolute;inset:-2%;container-type:size;overflow:hidden;mix-blend-mode:screen}
+.life-art{position:absolute;--w:max(100cqw,100cqh*1.7768);--h:max(100cqh,100cqw/1.7768);width:var(--w);height:var(--h);left:calc((100cqw - var(--w))/2);top:calc((100cqh - var(--h))*.4)}
+.life-art i{position:absolute;left:var(--x);top:var(--y);width:var(--s);aspect-ratio:var(--r,1);margin:calc(var(--s)/var(--r,1)/-2) 0 0 calc(var(--s)/-2);border-radius:50%;opacity:.82;background:radial-gradient(closest-side,var(--c),var(--e) 45%,#0000);transform-origin:50% 85%;animation:var(--k,life-flicker) var(--d) var(--o) linear infinite}
+.life-art .l-ember{min-width:3px;opacity:0}.life-art .l-mote{min-width:2px;opacity:0;animation-timing-function:ease-in-out}
+.reduced-motion .life-art i{animation:none}.reduced-motion .l-ember,.reduced-motion .l-mote{display:none}
 .scene-lighting{position:absolute;inset:0;mix-blend-mode:screen}
 .scene-lighting i{position:absolute;display:block}
 .fire-glow{right:-14%;top:-6%;width:52%;height:66%;background:radial-gradient(ellipse at 80% 22%,#df6b2b80,transparent 66%);filter:blur(12px);opacity:.38;animation:glow-breathe 5.5s ease-in-out infinite alternate}
@@ -702,6 +707,10 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
 
 
 /* 16. Motion ------------------------------------------------------------ */
+@keyframes life-flicker{0%,100%{opacity:.78;scale:1}17%{opacity:.7;scale:.98}26%{opacity:.95;scale:1.05}47%{opacity:.98;scale:1.04}55%{opacity:.68;scale:.97}68%{opacity:.88}88%{opacity:.92;scale:1.03}}
+@keyframes life-flame{0%,100%{opacity:.8;transform:scale(1)}12%{opacity:.95;transform:scale(.96,1.08)}25%{opacity:.7;transform:scale(1.04,.94)}39%{opacity:1;transform:scale(.94,1.12)}64%{opacity:.92;transform:scale(.97,1.06)}77%{opacity:.68;transform:scale(1.05,.93)}}
+@keyframes life-ember{0%{opacity:0;transform:none}8%{opacity:1}35%{transform:translate(calc(var(--dx)*.6),-7cqh) scale(.9)}65%{opacity:.75;transform:translate(calc(var(--dx)*-.3),-13cqh) scale(.65)}100%{opacity:0;transform:translate(var(--dx),-19cqh) scale(.35)}}
+@keyframes life-mote{0%,100%{opacity:0;transform:none}25%,75%{opacity:var(--a)}50%{transform:translate(var(--dx),var(--dy))}}
 @keyframes glow-breathe{from{opacity:.3}to{opacity:.42}}
 @keyframes fade-in{from{opacity:0}}
 .screen-enter{animation:lights-up .42s ease-out both}
@@ -736,7 +745,7 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
 .travelling-card.back .travelling-front{display:none}
 @keyframes travel-flip{0%,30%{transform:rotateY(0)}75%,100%{transform:rotateY(180deg)}}
 .reduced-motion *,.reduced-motion *:before,.reduced-motion *:after{animation-duration:.01ms!important;animation-delay:0ms!important;transition-duration:.01ms!important}
-@media (prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-delay:0ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+@media (prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-delay:0ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}.life-art i{animation:none}.l-ember,.l-mote{display:none}}
 
 /* A fanned (non-browsing) hand never scrolls: rotation overflow is visual only. */
 .hand-frame:not(.browsing){overflow-x:hidden}

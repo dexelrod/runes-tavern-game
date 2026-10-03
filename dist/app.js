@@ -495,8 +495,31 @@ function bindDuelCarousel(){
 function startDuelWith(id,button){if(root.querySelector('[data-opponent].loading,[data-random-opponent].loading'))return;settings.duelOpponent=id;saveSettings(settings);clearMatch();button?.classList.add('loading');button?.setAttribute('aria-busy','true');return startSession('duel').catch(error=>{console.error('Unable to prepare duel assets',error);button?.classList.remove('loading');button?.setAttribute('aria-busy','false');});}
 function tableEngravingHTML(){return `<svg class="table-engraving" viewBox="0 0 1000 620" preserveAspectRatio="none" aria-hidden="true"><g><path d="M162 323C185 169 330 91 505 91c177 0 319 77 339 231"/><path d="M842 345C811 491 671 548 501 548c-171 0-310-57-341-204"/></g><g class="engraving-marks"><path d="m149 324 28-29 28 29-28 29zM823 324l28-29 28 29-28 29z"/><path d="m487 91 16-20 16 20-16 20zM487 548l16-20 16 20-16 20z"/></g></svg>`;}
 function cardBackStackHTML(className,count=2){const back=cardHTML(null,cardOptions({hidden:true,small:true})).replace(/ aria-label="[^"]+"/,'');return `<span class="${className}" aria-hidden="true">${back.repeat(count)}</span>`;}
+// Living tavern: flickering light sources, rising embers and drifting dust over the painted room.
+// Positions are in % of tavern-environment-v37.jpg; .life-art reproduces the background's cover crop.
+const TAVERN_LIGHT_KINDS=Object.freeze({
+  candle:{c:'#ffbe6e80',e:'#ff964626',t:[2.2,3.8]},far:{c:'#ffb4644d',e:'#ff8c3c14',t:[2.2,3.8]},lantern:{c:'#ffc47a70',e:'#ff964624',t:[2.6,4]},
+  'fire-halo':{c:'#ff7a2a48',e:'#ff6a201a',t:[3.2,4.4]},'fire-wall':{c:'#ff8c3c2c',e:'#ff78280e',t:[2.4,3.2]},
+  'fire-core':{c:'#ffd08c8c',e:'#ff823230',t:[1.4,2.1],r:.62,k:'life-flame'},'fire-floor':{c:'#ff823238',e:'#ff6e1e10',t:[2.6,3.4],r:3.2}
+});
+const TAVERN_LIGHTS=Object.freeze([
+  ['fire-halo',89.5,33,34],['fire-wall',87,22,20],['fire-core',90.5,38,8],['fire-floor',87,62,32],
+  ['candle',6.6,32.4,5],['candle',7.8,30.8,4.5],['lantern',16.9,16.5,7.5],
+  ['candle',38.7,2.2,4],['candle',45.4,1.2,4],['candle',51.3,2.2,4],['candle',50,4.2,3],
+  ['far',31.4,22,3],['far',40.7,33.2,3.4],['far',54.8,27.8,2.6],['far',63.5,35,2.8],['far',73,25.3,2.4],['far',77,32.6,2.6]
+]);
+function tavernLifeHTML(){
+  let seed=7;const rnd=(a,b)=>{seed=(seed*16807)%2147483647;return a+(b-a)*((seed-1)/2147483646);},f=n=>n.toFixed(2);
+  const lights=TAVERN_LIGHTS.map(([kind,x,y,s])=>{const k=TAVERN_LIGHT_KINDS[kind],d=rnd(...k.t);return `<i style="--x:${x}%;--y:${y}%;--s:${s}%;--c:${k.c};--e:${k.e};${k.r?`--r:${k.r};`:''}${k.k?`--k:${k.k};`:''}--d:${f(d)}s;--o:${f(-rnd(0,d))}s"></i>`;}).join('');
+  let embers='';for(let i=0;i<16;i++){const d=rnd(2.6,4.6);embers+=`<i class="l-ember" style="--x:${f(rnd(88.4,92.6))}%;--y:${f(rnd(39.5,43))}%;--s:.3%;--c:#fff0c0;--e:#ffa040;--k:life-ember;--dx:${f(rnd(-2.2,1.6))}cqw;--d:${f(d)}s;--o:${f(-rnd(0,d*1.6))}s"></i>`;}
+  const moteZones=[[3,14,18,38],[3,14,18,38],[22,58,6,34],[22,58,6,34],[22,58,6,34],[30,52,4,28],[60,80,20,36],[60,80,20,36]];
+  const motes=moteZones.map(([x1,x2,y1,y2])=>{const d=rnd(16,28);return `<i class="l-mote" style="--x:${f(rnd(x1,x2))}%;--y:${f(rnd(y1,y2))}%;--s:.2%;--c:#ffe2b0;--e:#ffe2b040;--k:life-mote;--dx:${f(rnd(-3,3))}cqw;--dy:${f(rnd(-4,2))}cqh;--a:${f(rnd(.25,.5))};--d:${f(d)}s;--o:${f(-rnd(0,d))}s"></i>`;}).join('');
+  return `<div class="tavern-life"><div class="life-art">${lights}${embers}${motes}</div></div>`;
+}
+let tavernLifeMarkup='';
 function worldSceneHTML(context='game'){
-  return `<div class="scene-world scene-${context}" aria-hidden="true"><div class="tavern-environment"></div><div class="table-body"><div class="table-surface"></div>${context==='home'?tableEngravingHTML():''}</div><div class="scene-lighting"><i class="fire-glow"></i><i class="candle-glow"></i><i class="table-light"></i></div></div>`;
+  const life=context==='home'||context==='select'?(tavernLifeMarkup||=tavernLifeHTML()):'';
+  return `<div class="scene-world scene-${context}" aria-hidden="true"><div class="tavern-environment"></div>${life}<div class="table-body"><div class="table-surface"></div>${context==='home'?tableEngravingHTML():''}</div><div class="scene-lighting"><i class="fire-glow"></i><i class="candle-glow"></i><i class="table-light"></i></div></div>`;
 }
 const propAssets=Object.freeze({
   ceramicCup:'drinks/ceramic-cup.png',darkBottle:'drinks/dark-glass-bottle.png',medievalFlask:'drinks/medieval-flask.png',pewterGoblet:'drinks/pewter-goblet.png',pewterTankard:'drinks/pewter-tankard.png',woodenTankard:'drinks/wooden-tankard.png',
