@@ -479,7 +479,7 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
 /* 13. Home ------------------------------------------------------------- */
 /* The ways to play are objects resting on the table — a cut deck, a stack of
    coins, Bramm himself — with their names carved into the wood beside them. */
-.screen-home{--rim:30%;--rimv:30dvh;--rim-curve:6%;--sign-w:min(80vw,340px);--slip-room:104px}
+.screen-home{--rim:30%;--rim-curve:6%;--sign-w:min(80vw,340px)}
 .home-layer,.select-layer{position:absolute;inset:0;z-index:1;display:flex;flex-direction:column;align-items:center;padding:calc(18px + var(--safe-top)) calc(16px + var(--safe-right)) calc(16px + var(--safe-bottom)) calc(16px + var(--safe-left));overflow:auto}
 .home-title{flex:0 0 auto;margin:0;line-height:0}
 /* The name hangs over the room on a painted tavern sign; its chains run up out of frame. */
@@ -515,15 +515,15 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
 .portrait-card .character-art-stage{position:absolute;left:-30%;top:4%;width:160%;height:auto;aspect-ratio:2/3}
 .portrait-card .character-art{object-fit:cover;object-position:50% 0}
 .portrait-card:after{content:"";position:absolute;inset:0;border-radius:4px;box-shadow:inset 0 0 0 3px #ead9af,inset 0 0 0 4px #694c2eaa,inset 0 -14px 12px -8px #1a0d0599}
-.resume-seat{position:absolute;z-index:2;top:calc(var(--rim) + 12px);left:50%;display:flex;align-items:center;gap:12px;width:min(calc(100% - 32px),400px);padding:8px 18px 8px 10px;border:0;border-radius:1px;color:var(--ink);text-align:start;transform:translateX(-50%) rotate(-.7deg);box-shadow:inset 0 0 14px #a27a4238,0 2px 0 #0003,0 8px 12px -2px #000b;transition:transform .18s ease}
-[dir=rtl] .resume-seat{transform:translateX(-50%) rotate(.7deg)}
-.resume-seat:hover,.resume-seat:focus-visible{transform:translate(-50%,-2px) rotate(-.7deg)}
-.has-resume .home-choices{margin:max(16px,calc(var(--rimv) + var(--slip-room) - var(--sign-w) * .525)) 0 auto;padding-top:0}
+.resume-seat{position:relative;display:flex;align-items:center;gap:10px;width:100%;margin:0 0 12px;padding:7px 14px 7px 8px;border:0;border-radius:1px;color:var(--ink);text-align:start;transform:rotate(-.6deg);box-shadow:inset 0 0 14px #a27a4238,0 2px 0 #0003,0 8px 12px -2px #000b;transition:transform .18s ease}
+[dir=rtl] .resume-seat{transform:rotate(.6deg)}
+.resume-seat:hover,.resume-seat:focus-visible{transform:rotate(-.6deg) translateY(-2px)}
+.resume-seat+.home-choice:before{display:none}
 .resume-cards{display:grid;place-items:center;width:52px;height:58px;flex:0 0 auto}
 .resume-cards .object-cards{width:50px;height:58px}.resume-cards .object-cards .card{--cw:38px}
 .resume-copy{display:grid;gap:2px;min-width:0}
-.resume-copy strong{font:700 20px/1.1 var(--display)}
-.resume-copy small{color:var(--ink-soft);font:500 14px/1.3 var(--display);font-variant-numeric:lining-nums}
+.resume-copy strong{font:700 18px/1.15 var(--display)}
+.resume-copy small{color:var(--ink-soft);font:500 13px/1.3 var(--display);font-variant-numeric:lining-nums}
 .resume-copy .choice-kicker{color:var(--wax);font-weight:600}
 .resume-seat.loading{opacity:.72;cursor:progress;pointer-events:none}
 /* Rules and Settings are words burnt into the table's near edge. */
@@ -569,7 +569,10 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
   .seat-count{font-size:16px}
   .seat-props{display:block}
   .home-choices{width:min(100%,600px);gap:10px}
-  .screen-home{--sign-w:min(70vw,460px);--slip-room:130px}
+  .screen-home{--sign-w:min(70vw,460px)}
+  .resume-seat{margin-bottom:18px;padding:10px 20px 10px 12px}
+  .resume-copy strong{font-size:24px}
+  .resume-copy small{font-size:16px}
   .home-choice{min-height:116px;gap:22px}
   .choice-object{width:120px;height:100px}
   .object-cards{width:80px;height:100px}
@@ -661,10 +664,13 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
 /* Big desktop: the three objects sit across the table, scaled with the
    window height so 1366×768 and 2560×1440 frame the same shot. */
 @media (orientation:landscape) and (min-width:1000px) and (min-height:600px){
-  .screen-home{--rim:42%;--rimv:42dvh;--rim-curve:9%;--sign-w:clamp(330px,50vh,640px);--slip-room:clamp(110px,15vh,190px)}
+  .screen-home{--rim:42%;--rim-curve:9%;--sign-w:clamp(330px,50vh,640px)}
   .home-layer{padding-bottom:calc(clamp(14px,3vh,40px) + var(--safe-bottom))}
   .home-title{margin-top:clamp(18px,6vh,90px)}
-  .resume-seat{top:calc(var(--rim) + 2.4vh);width:auto;max-width:560px;padding:clamp(8px,1.2vh,14px) clamp(18px,2.4vh,30px) clamp(8px,1.2vh,14px) clamp(10px,1.4vh,18px)}
+  .resume-seat{position:absolute;z-index:2;top:calc(var(--rim) + 2.4vh);left:50%;width:auto;max-width:560px;margin:0;padding:clamp(8px,1.2vh,14px) clamp(18px,2.4vh,30px) clamp(8px,1.2vh,14px) clamp(10px,1.4vh,18px);transform:translateX(-50%) rotate(-.7deg)}
+  [dir=rtl] .resume-seat{transform:translateX(-50%) rotate(.7deg)}
+  .resume-seat:hover,.resume-seat:focus-visible{transform:translate(-50%,-2px) rotate(-.7deg)}
+  .has-resume .home-choices{padding-top:clamp(110px,16vh,200px)}
   .resume-copy strong{font-size:clamp(20px,2.4vh,30px)}
   .resume-copy small{font-size:clamp(14px,1.6vh,19px)}
   .home-choices{grid-auto-flow:column;grid-auto-columns:1fr;gap:clamp(16px,4vh,64px);width:min(92vw,128vh);margin:auto 0;padding-top:clamp(32px,9vh,140px)}
@@ -722,10 +728,11 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
   .home-title{grid-area:1/1;margin:0;align-self:start}
   .screen-home{--sign-w:220px}
   .tavern-sign{margin-top:calc(var(--sign-w) * -.475 - 18px)}
-  .resume-seat{grid-area:2/1;position:static;align-self:start;width:var(--sign-w);margin-top:10px;padding:6px 10px 6px 6px;transform:rotate(-.7deg)}
-  .resume-seat:hover,.resume-seat:focus-visible{transform:rotate(-.7deg) translateY(-2px)}
-  .resume-copy strong{font-size:16px}.resume-copy small{font-size:12px}
-  .home-choices,.has-resume .home-choices{grid-area:1/2/3/3;margin:0;padding:0;width:100%;align-self:center}
+
+
+  .resume-copy strong{font-size:16px}.resume-copy small{font-size:12px}.resume-seat{margin-bottom:4px;padding:5px 12px}.resume-cards{display:none}
+  .has-resume .home-choice{min-height:54px;padding-block:4px}
+  .home-choices{grid-area:1/2/3/3;margin:0;padding:0;width:100%;align-self:center}
   .home-tools{grid-area:3/1/4/3}
   .home-choice{min-height:64px}
   .home-tools{width:100%;margin-top:4px}
