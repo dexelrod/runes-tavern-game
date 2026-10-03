@@ -723,19 +723,20 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
   .fire-button{min-width:64px;min-height:42px;padding:0 12px;font-size:15px}
   .board{grid-template-rows:var(--seat-h) minmax(0,1fr)}
   .result-slip{top:50%;max-height:calc(100% - 8px)}
-  .screen-home{--rim:13%}
-  .home-layer{display:grid;grid-template-columns:auto minmax(0,440px);grid-template-rows:auto 1fr auto;justify-content:center;align-content:center;gap:4px 24px}
-  .home-title{grid-area:1/1;margin:0;align-self:start}
-  .screen-home{--sign-w:220px}
+  /* Short landscape: the sign hangs in the room on the left; on the table below it your kept
+     seat and the house links, and beside them the three ways to play. */
+  .screen-home{--sign-w:190px;--rim:calc(var(--safe-top) + 106px)}
+  .home-layer{display:grid;grid-template-columns:auto minmax(0,420px);grid-template-areas:"title ." "slip duel" "tools tavern" ". quick";grid-template-rows:auto auto auto 1fr;justify-content:center;align-content:start;gap:0 clamp(20px,5vw,48px)}
+  .home-choices{display:contents}
+  .home-title{grid-area:title;margin:0;justify-self:center;height:calc(var(--rim) - var(--safe-top) - 16px)}
   .tavern-sign{margin-top:calc(var(--sign-w) * -.475 - 18px)}
-
-
-  .resume-copy strong{font-size:16px}.resume-copy small{font-size:12px}.resume-seat{margin-bottom:4px;padding:5px 12px}.resume-cards{display:none}
-  .has-resume .home-choice{min-height:54px;padding-block:4px}
-  .home-choices{grid-area:1/2/3/3;margin:0;padding:0;width:100%;align-self:center}
-  .home-tools{grid-area:3/1/4/3}
-  .home-choice{min-height:64px}
-  .home-tools{width:100%;margin-top:4px}
+  .duel-choice{grid-area:duel;margin-top:12px}.tavern-choice{grid-area:tavern}.quick-choice{grid-area:quick;align-self:start}
+  .home-choice{min-height:60px;padding-block:4px}
+  .resume-seat{grid-area:slip;align-self:start;justify-self:center;width:calc(var(--sign-w) + 30px);margin:16px 0 0;padding:5px 10px}
+  .resume-cards{display:none}
+  .resume-copy strong{font-size:15px}.resume-copy small{font-size:12px}
+  .home-tools{grid-area:tools;align-self:start;margin:6px 0 0}
+  .screen-home:not(.has-resume) .home-tools{grid-area:slip;margin-top:20px}
 }
 
 
