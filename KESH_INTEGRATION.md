@@ -114,13 +114,16 @@ His character is unchanged. He is a quiet lizardfolk traveller who reads the tab
 
 ## Reading rhythm
 
+v98 brought his ordinary pace in line with the rest of the table, so only weighty decisions get his longer look.
+
 | Turn | Think time |
 |---|---|
-| Quick (one legal card, a draw, inside a Crossbow) | 0.6–0.9 s |
-| Ordinary | 0.85–1.5 s, with 12% getting an extra 0.6 s pause |
-| Major | 1.25–2.15 s |
+| Quick (one legal card, a draw, inside a Crossbow) | 0.48–0.7 s, about the same as everyone else |
+| Ordinary | 0.62–0.95 s, about the same as everyone else |
+| Major (Curse, King, Rune, Runed Crossbow, a decisive card) | 1.25–2.15 s, where the stone tell happens |
 
 - Everything is capped at 2.4 s, and multiplied by 0.75 on the "quick" difficulty.
+- A turn with a tell is held at least 1.04 s so the touch can show.
 
 ## Omen AI (fair)
 

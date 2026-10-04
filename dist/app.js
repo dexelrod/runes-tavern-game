@@ -466,7 +466,8 @@ function planKeshTurn(playerId,turn){
   const tell=free?keshTellFor({major,choices:legal.length,turnsSinceTell:keshTellMemory.turnsSince,tellsThisRound:keshTellMemory.thisRound}):null;
   keshTellMemory.turnsSince++;if(tell){keshTellMemory.turnsSince=0;keshTellMemory.thisRound++;keshTellMemory.toldThisRound=true;}
   const r=Math.random(),quick=action.type!==ACTIONS.PLAY||legal.length<=1||!!state.taki?.open||!!state.awaitingColor;
-  let wait=quick?620+r*300:major?1250+r*900:850+r*650+(Math.random()<.12?600:0);
+  // Ordinary and forced turns keep the table's usual pace; only weighty decisions get his longer look.
+  let wait=quick?480+r*220:major?1250+r*900:620+r*330;
   if(settings.difficulty==='quick')wait*=.75;
   if(tell)wait=Math.max(wait,tell.lead+420);
   keshPlan={playerId,turn,state,action,tell,major,wait:Math.min(2400,wait),shown:false,told:false,consumed:false};
