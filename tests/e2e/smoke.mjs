@@ -87,17 +87,17 @@ console.log('Duel vs Edrin: one round, Hebrew');
   check(await playRound(page),'duel round reaches the result slip');
   check(errors.length===0,`no console errors (${errors.join(' | ')})`);await context.close();}
 
-console.log('Duel select: three voiced regulars, swipe, random regular');
+console.log('Duel select: four voiced regulars, swipe, random regular');
 {const {page,context,errors}=await open({width:390,height:844},{language:'en'},true);
   check(await page.evaluate(()=>[...document.querySelectorAll('.home-choice')].map(n=>n.classList[1]).join())==='duel-choice,tavern-choice,quick-choice','home order: Duel, Tavern Match, Quick Play');
   await page.click('[data-duel]');await page.waitForTimeout(300);
-  check(await page.locator('.duel-slide').count()===3,'exactly three voiced regulars at the duel table');
+  check(await page.locator('.duel-slide').count()===4,'exactly four voiced regulars at the duel table');
   const first=await page.getAttribute('.duel-sit','data-opponent');
   const box=await page.locator('.duel-carousel').boundingBox();
   await page.mouse.move(box.x+box.width*.8,box.y+box.height*.3);await page.mouse.down();await page.mouse.move(box.x+box.width*.2,box.y+box.height*.3,{steps:8});await page.mouse.up();await page.waitForTimeout(300);
   check(await page.getAttribute('.duel-sit','data-opponent')!==first,'a swipe brings the next opponent');
   await page.click('[data-random-opponent]');await page.waitForTimeout(1500);
-  const id=(await saved(page))?.opponentId;check(!!id&&!['bramm','edrin','ragna'].includes(id),`random regular is one of the unvoiced ten (${id})`);
+  const id=(await saved(page))?.opponentId;check(!!id&&!['bramm','edrin','ragna','kesh'].includes(id),`random regular is one of the unvoiced nine (${id})`);
   check(errors.length===0,`no console errors (${errors.join(' | ')})`);await context.close();}
 
 console.log('Duel vs Ragna: one round, Hebrew and English');
@@ -109,6 +109,19 @@ for(const language of ['he','en']){const {page,context,errors}=await open({width
   check(!/\[|\]/.test(await bubble.textContent()),'no acting directions in the bubble');
   check(await page.locator('.duel-seat .speech:not(.character-speech)').count()===0,'no generic bot bubble at Ragna\'s seat');
   check(await playRound(page),'duel round reaches the result slip');
+  check(errors.length===0,`no console errors (${errors.join(' | ')})`);await context.close();}
+
+console.log('Duel vs Kesh: one round, Hebrew and English');
+for(const language of ['he','en']){const {page,context,errors}=await open({width:390,height:844},{language,captions:true},true);
+  await page.click('[data-duel]');await page.click('[data-duel-go="3"]');await page.click('.duel-sit[data-opponent="kesh"]');await page.waitForSelector('.duel-seat.opponent-kesh .character-art',{timeout:10000}).catch(()=>{});
+  check(await page.locator('.duel-seat.opponent-kesh .character-art').isVisible(),'Kesh sits at the table');
+  check(/\/assets\/kesh\/expressions\/kesh_\d\d_/.test(await page.getAttribute('.duel-seat.opponent-kesh .character-art','src')),'his new expression art, not the old sprite');
+  await page.waitForTimeout(800);const bubble=page.locator('.character-speech').first();
+  check(await bubble.count()===1&&(await bubble.getAttribute('dir'))===(language==='he'?'rtl':'ltr'),'his first-meeting intro bubble shows in the active language');
+  check(!/\[|\]/.test(await bubble.textContent()),'no acting directions in the bubble');
+  check(await page.locator('.duel-seat .speech:not(.character-speech)').count()===0,'no generic bot bubble at Kesh\'s seat');
+  check(await playRound(page),'duel round reaches the result slip');
+  const said=await page.evaluate(()=>window.KeshDebug.history().map(item=>item.voice));check(said.every(voice=>/^kesh_/.test(voice)),'only his own authored lines');
   check(errors.length===0,`no console errors (${errors.join(' | ')})`);await context.close();}
 
 await browser.close();

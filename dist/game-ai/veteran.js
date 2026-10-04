@@ -50,17 +50,29 @@ export function observedGaps(state,meId){
   return gaps;
 }
 
-function tableView(state,me){
+// Kesh's omen for the hand: the colour of the first card turned up (or, if that
+// was a wild, the first colour anyone played). Public, fixed for the whole hand —
+// a superstition, not information.
+export function omenColour(state){
+  const start=colourOfId(state.log.find(e=>e.type==='start')?.cardId);if(start)return start;
+  for(const entry of state.log){if(entry.type==='play'){const c=colourOfId(entry.cardId);if(c)return c;}if(entry.type==='color'&&entry.color)return entry.color;}
+  return null;
+}
+
+function tableView(state,me,P=null){
   const others=state.players.filter(p=>p.id!==me.id),opp=Math.min(...others.map(p=>p.hand.length));
   const threat=others.find(p=>p.hand.length===opp),gaps=observedGaps(state,me.id).get(threat?.id)||new Set();
-  return {opp,gaps,twoPlayer:state.players.length===2,danger:opp<=2};
+  return {opp,gaps,twoPlayer:state.players.length===2,danger:opp<=2,omen:P?.omenBias?omenColour(state):null};
 }
 
 function colourCounts(cards){const counts=Object.fromEntries(COLORS.map(c=>[c,0]));for(const card of cards)if(counts[card.color]!==undefined)counts[card.color]++;return counts;}
 
-export function veteranColour(hand,state,me,{avoid=null}={}){
-  const view=tableView(state,me),counts=colourCounts(hand),actions=colourCounts(hand.filter(card=>card.type!==TYPES.NUMBER));
-  const score=colour=>counts[colour]*10+actions[colour]*2+(view.gaps.has(colour)?(view.danger?12:4):0)-(colour===avoid?1:0);
+export function veteranColour(hand,state,me,{avoid=null,profile=null}={}){
+  const view=tableView(state,me,profile),counts=colourCounts(hand),actions=colourCounts(hand.filter(card=>card.type!==TYPES.NUMBER));
+  // A superstitious player leans toward the hand's omen colour when naming one —
+  // about one card's worth, never against an empty colour.
+  const omen=colour=>view.omen===colour&&counts[colour]>0?profile.omenPick:0;
+  const score=colour=>counts[colour]*10+actions[colour]*2+(view.gaps.has(colour)?(view.danger?12:4):0)-(colour===avoid?1:0)+omen(colour);
   return COLORS.toSorted((a,b)=>score(b)-score(a))[0];
 }
 
@@ -73,6 +85,8 @@ function scoreCard(card,state,me,view,P){
   const wildsLeft=after.filter(isWild).length;
   const canFollow=setColour?after.some(c=>c.color===setColour||isWild(c)||(c.type===card.type&&card.type!==TYPES.NUMBER)||(c.type===TYPES.NUMBER&&card.type===TYPES.NUMBER&&c.value===card.value)):true;
   if(setColour)score+=follow*P.followWeight+(view.gaps.has(setColour)?P.missingColour*(view.danger?2:1):0);
+  // Omen profiles (Kesh) like to keep the table on the hand's omen colour.
+  if(P.omenBias&&setColour&&setColour===view.omen)score+=P.omenBias;
   switch(card.type){
     case TYPES.NUMBER:score+=2;break;
     case TYPES.REVERSE:score+=view.twoPlayer?2:3;break;
@@ -159,7 +173,7 @@ function planTurn(state,me,P,random,note){
   const meId=me.id,start=me.hand.length;let nodes=0;
   const options=s=>{
     const player=currentPlayer(s);
-    if(s.awaitingColor?.playerId===player.id)return [{type:ACTIONS.CHOOSE_COLOR,playerId:player.id,color:veteranColour(player.hand,s,player,{avoid:s.awaitingColor.next==='openTaki'?null:s.activeColor})}];
+    if(s.awaitingColor?.playerId===player.id)return [{type:ACTIONS.CHOOSE_COLOR,playerId:player.id,color:veteranColour(player.hand,s,player,{avoid:s.awaitingColor.next==='openTaki'?null:s.activeColor,profile:P})}];
     if(s.taki?.open&&s.taki.ownerId===player.id){const view=tableView(s,player),card=crossbowStep(s,player,getLegalCards(s,player.id),view,()=>.5);return [card?{type:ACTIONS.PLAY,playerId:player.id,cardId:card.id}:{type:ACTIONS.END_TURN,playerId:player.id}];}
     const legal=getLegalCards(s,player.id);
     if(!legal.length)return [{type:ACTIONS.DRAW,playerId:player.id}];
@@ -241,8 +255,8 @@ function sampledChoice(state,me,actions,random,P,note){
 // `note` (optional) is filled with {slip:true} when the choice was a knowing
 // second-best: the only time a character may honestly blame herself for a card.
 export function chooseVeteranAction(state,{random=Math.random,profile=VETERAN_PROFILE,note=null}={}){
-  const me=currentPlayer(state),view=tableView(state,me);
-  if(state.awaitingColor?.playerId===me.id)return {type:ACTIONS.CHOOSE_COLOR,playerId:me.id,color:veteranColour(me.hand,state,me,{avoid:state.awaitingColor.next==='openTaki'?null:state.activeColor})};
+  const me=currentPlayer(state),view=tableView(state,me,profile);
+  if(state.awaitingColor?.playerId===me.id)return {type:ACTIONS.CHOOSE_COLOR,playerId:me.id,color:veteranColour(me.hand,state,me,{avoid:state.awaitingColor.next==='openTaki'?null:state.activeColor,profile})};
   const legal=getLegalCards(state,me.id);
   // An open Crossbow handed over by the previous player: empty its colour if
   // we hold any, otherwise decide as on any ordinary turn.
@@ -274,4 +288,18 @@ export const PRESSURE_PROFILE=Object.freeze({
   ...VETERAN_PROFILE,
   holdWild:9,holdKing:7,holdCurse:1,curseMidgame:14,curseDanger:32,crossbowPerCard:7,
   actionTempo:4,pressure:9,mistakeRate:.07,lateOpp:5
+});
+
+// Kesh: the same fair, public-information judgement, without the look-ahead.
+// Balanced and patient: he keeps a Curse or a King for when it matters, spends
+// Runes readily (he likes to change the colour), and leans toward the hand's
+// omen colour — the first card turned up. That superstition costs him a little
+// now and then; it is never a blunder and never a hidden-card advantage.
+// Variable rather than sharp: more jitter, and a rare (~4%) close second choice.
+export const OMEN_PROFILE=Object.freeze({
+  ...VETERAN_PROFILE,
+  samples:0,
+  holdWild:7,holdKing:9,holdCurse:4,curseMidgame:9,curseDanger:24,
+  jitter:2.5,mistakeRate:.04,mistakeWindow:6,
+  omenBias:3,omenPick:9
 });

@@ -54,7 +54,7 @@ test('bubbles use the authored transcript with acting directions removed, Hebrew
 });
 
 test('one framework: Edrin plugs into the shared registry and the single Web Audio voice path',()=>{
-  assert.deepEqual(Object.keys(AUTHORED_CHARACTERS).toSorted(),['bramm','edrin','ragna']);
+  assert.deepEqual(Object.keys(AUTHORED_CHARACTERS).toSorted(),['bramm','edrin','kesh','ragna']);
   assert.match(resolveCharacterVoice('edrin_round_win_01','he').src,/edrin_round_win_01_he\.mp3$/);
   assert.match(resolveCharacterVoice('bramm_loss_01','en').src,/bramm_loss_01\.mp3$/);
   const app=read('../dist/app.js');
@@ -174,7 +174,7 @@ test('results: one line per hand, round pools while the match continues, match p
   assert.equal(edrin.holdsExpression(),true,'the result face holds under the result slip');edrin.beginRound();assert.equal(edrin.holdsExpression(),false);
   const app=read('../dist/app.js');
   assert.match(app,/else if\(isEdrinDuel\(\)\)runCharacter\(finalDuel\?\(opponentWon\?'match_win':'match_loss'\):\(opponentWon\?'round_win':'round_loss'\),\{\},true\);/);
-  assert.equal((app.match(/runCharacter\(finalDuel\?/g)||[]).length,2,'one result dispatch each for Edrin and Ragna');
+  assert.equal((app.match(/runCharacter\(finalDuel\?/g)||[]).length,3,'one result dispatch each for Edrin, Ragna and Kesh');
 });
 
 test('first win of the match favours the delayed "Oh. I won."',()=>{
@@ -221,7 +221,7 @@ test('brutal reactions fire only on genuine swings; ordinary good moves do not q
 
 test('generic bot dialogue is fully suppressed when Edrin (or Bramm) sits at the table',()=>{
   const app=read('../dist/app.js');
-  assert.match(app,/if\(!isAuthoredDuel\(\)\)\{\n    if\(stop\)showQuip/);
+  assert.match(app,/if\(!isAuthoredDuel\(\)&&!keshSpoke\)\{\n    if\(stop\)showQuip/);
   assert.match(app,/function setDuelReaction\(kind,text=null,force=false\)\{if\(session\?\.mode!=='duel'\|\|isAuthoredDuel\(\)\)return;/);
   assert.match(app,/takiRun>=3&&!isAuthoredDuel\(\)/);
   const edrin=getDuelOpponent('edrin');for(const pool of Object.values(edrin.dialoguePools))assert.equal(pool.length,0);

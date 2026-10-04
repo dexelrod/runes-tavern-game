@@ -12,6 +12,7 @@ import { DUEL_OPPONENTS, duelSpriteStyle, getDuelOpponent, localizeDuelOpponent 
 import { AUTHORED_CHARACTERS, VOICED_OPPONENTS, authoredCharacter } from './duel/characters.js';
 import { debugMarkEdrinVoiceMissing, edrinEventFor } from './duel/edrin.js';
 import { RAGNA_DOUBLE_LINES, debugMarkRagnaVoiceMissing, ragnaEventFor } from './duel/ragna.js';
+import { createKeshController, debugMarkKeshVoiceMissing, keshDebugMissingVoices, keshDecisionIsMajor, keshEventFor, keshExpressionURL, keshTavernEventFor, keshTellFor, keshUnrecorded, preloadKeshExpressions, resolveKeshReaction } from './duel/kesh.js';
 
 const root=document.querySelector('#app');
 // iOS home-screen web apps can leave the document scrolled (after rotation, the
@@ -31,7 +32,7 @@ const isPaused=()=>view==='game'&&(Boolean(sheet)||document.hidden);
 const isEnglish=()=>settings.language==='en';
 const direction=()=>isEnglish()?'ltr':'rtl';
 const colorNames={he:{red:'בורדו',blue:'צפחה',green:'יער',yellow:'זהב'},en:{red:'Burgundy',blue:'Slate',green:'Forest',yellow:'Gold'}};
-const archetypeNames={he:{hunter:'הציידת',bard:'הפייטן',mercenary:'שכיר החרב',wanderer:'הנודד',scholar:'המלומד',mysterious:'הנוסע'},en:{hunter:'The Hunter',bard:'The Bard',mercenary:'The Mercenary',wanderer:'The Wanderer',scholar:'The Scholar',mysterious:'The Traveler'}};
+const archetypeNames={he:{hunter:'הציידת',bard:'הפייטן',mercenary:'שכיר החרב',wanderer:'הנודד',scholar:'המלומד',mysterious:'הסוחר',traveler:'הנוסע'},en:{hunter:'The Hunter',bard:'The Bard',mercenary:'The Mercenary',wanderer:'The Wanderer',scholar:'The Scholar',mysterious:'The Trader',traveler:'The Traveler'}};
 const playerNames={you:'You',ragna:'Ragna',edrin:'Edrin',aila:'Aila',ron:'Ron',bran:'Bran',sela:'Sela',kesh:'Kesh',roderic:'Roderic',lio:'Lio',mograth:'Mograth',harrow:'Harrow',rusk:'Rusk',bramm:'Bramm',adren:'Adren',myra:'Myra',toren:'Toren',leva:'Leva',sig:'Sig',alva:'Alva',hal:'Hal',runa:'Runa',derik:'Derik',אתם:'You',איילה:'Aila',רון:'Ron',בראן:'Bran',אדרן:'Adren',מירא:'Myra',טורן:'Toren',ליבה:'Leva',סיג:'Sig',אלבה:'Alva',האל:'Hal',רונה:'Runa',דריק:'Derik',לוסיאן:'Lucien',איניגו:'Inigo',לידיה:'Lydia',וירן:'Viren',סורן:'Soren',ויילין:'Waylin'};
 function colorName(color){return colorNames[settings.language]?.[color]||colorNames.he[color]||'';}
 function colorRuneHTML(color,className='color-rune'){return runeSVG(color,className);}
@@ -44,14 +45,15 @@ const dialogueHe={
   hunter:{skip:['אה, לא. תורך.','לאן אתה חושב שאתה הולך?','שב.'],penalty:['ארבעה?!','זה מסלים מהר.','אני רואה שבחרנו באלימות.'],reverse:['חוזר אליך.','הסתובבו השולחנות.'],last:['כולם עליו.','עוד לא ניצחת.'],king:['הכתר החליט.','טוב. זה משנה דברים.']},
   bard:{skip:['בחייך.','זה היה מיותר לחלוטין.'],penalty:['אה. נפלא.','בשלב הזה פשוט תן לי את הקופה.'],reverse:['תרתי משמע.','שינוי בתוכניות.'],last:['זה נהיה מעניין.','אל תחייך עדיין.'],king:['קשה להתווכח עם כתר.','בחירה אמיצה.']},
   mercenary:{skip:['אני אזכור את זה.','את זה אני מחזיר לך.'],penalty:['יש גבול.','נקמה מוגשת עם קלפים.'],reverse:['חוזר אליך.','חשבתי שנפטרתי ממך.'],last:['מישהו יעצור אותו?','לא טוב.'],king:['זה יעלה לך.','הכתר החליט.']},
-  mysterious:{skip:['הרוח השתנתה.','כך נפל הסימן.'],penalty:['האש יודעת.','הדרך מתארכת.'],reverse:['הנהר חוזר לאחור.','סימן מעניין.'],last:['הסוף קרוב.','הסימן לא משקר.'],king:['הכתר דיבר.','לא ראיתי את זה בסימנים.']},
+  // Rusk the trader. Kesh's sayings (wind, fire, roads, signs) belong to Kesh alone (duel/kesh.js).
+  mysterious:{skip:['רשמתי.','זה יעלה לך.'],penalty:['עסקה גרועה.','מישהו ישלם על זה.'],reverse:['הממ.','אוזניים למעלה.'],last:['שימו עין.','העסקה כמעט נסגרה.'],king:['קלף יקר.','מעניין.']},
   scholar:{skip:['מעניין.','זה חוקי. בדקתי.'],penalty:['כנראה שאין גבול.','אני דורש נבואה חדשה.'],reverse:['זה לא היה חלק מהנבואה.','הכוכבים לא הזהירו אותי מזה.'],last:['אני רואה את הסוף.','כל כך קרוב.'],king:['זה מרגיש כמו קסם קדום.','בטוח שזה לא קסם אפל?']}
 };
 const dialogueEn={
   hunter:{skip:['Oh, no. Your turn.','Where d’you think you’re going?','Sit.'],penalty:['Four?!','That escalated quickly.','So we’ve chosen violence.'],reverse:['Back to you.','The tables have turned.'],last:['Everyone on them.','You haven’t won yet.'],king:['The crown has spoken.','Well. That changes things.']},
   bard:{skip:['Come on.','That was entirely unnecessary.'],penalty:['Ah. Wonderful.','At this point, just give me the pot.'],reverse:['Quite literally.','Change of plans.'],last:['This is getting interesting.','Don’t smile yet.'],king:['Hard to argue with a crown.','Bold choice.']},
   mercenary:{skip:['I’ll remember that.','I’ll return the favour.'],penalty:['There is a limit.','Revenge is served with cards.'],reverse:['Back to you.','I thought I was rid of you.'],last:['Will someone stop them?','Not good.'],king:['That’ll cost you.','The crown has spoken.']},
-  mysterious:{skip:['The wind has changed.','So the sign has fallen.'],penalty:['The fire knows.','The road grows longer.'],reverse:['The river turns back.','A curious sign.'],last:['The end is near.','The signs don’t lie.'],king:['The crown has spoken.','The signs didn’t show this.']},
+  mysterious:{skip:['Noted.','That will cost you.'],penalty:['Bad trade.','Someone will pay for that.'],reverse:['Hm.','Ears up.'],last:['Watch that one.','Nearly a done deal.'],king:['Expensive card.','Interesting.']},
   scholar:{skip:['Interesting.','It is legal. I checked.'],penalty:['Apparently there is no limit.','I demand a new prophecy.'],reverse:['That was not in the prophecy.','The stars did not warn me.'],last:['I can see the end.','So close.'],king:['This feels like ancient magic.','Sure that isn’t dark magic?']}
 };
 const tavernBanterHe=['יפה.','לא רע.','באמת?','כמובן.','ידעתי.','נו באמת.','זה היה אישי.','טעות.','בחירה מפוקפקת.','יש לך מזל.','עוד לא סיימתי.','היית חייב?','אני צריך עוד משקה.','הקלפים שונאים אותי.','מרשים. מעצבן, אבל מרשים.','שקט. אני חושב.','יש לי תוכנית.','לא הייתה לי תוכנית.','בדיוק לפי התוכנית.'];
@@ -66,6 +68,17 @@ const isAuthoredDuel=()=>!!authoredPack();
 const isBrammDuel=()=>authoredPack()?.id==='bramm';
 const isEdrinDuel=()=>authoredPack()?.id==='edrin';
 const isRagnaDuel=()=>authoredPack()?.id==='ragna';
+const isKeshDuel=()=>authoredPack()?.id==='kesh';
+// Kesh at a Tavern table: his seat, his own controller (the same authored reaction
+// table as in a Duel) and the face on his seat. Null when he is not seated.
+let keshTavern=null;
+// The rune-stone tell is decided together with his real decision, before he plays.
+// `keshTellPending`: he consulted the stone before his last move and the table has
+// not answered yet. `keshPenaltyOnHuman`: the player faced a Curse when they acted.
+let keshPlan=null,keshTellPending=false,keshPenaltyOnHuman=false;
+const keshTellMemory={turnsSince:99,thisRound:0,toldThisRound:false};
+function resetKeshTellMemory(round=false){keshPlan=null;keshTellPending=false;keshPenaltyOnHuman=false;keshTellMemory.thisRound=0;keshTellMemory.toldThisRound=false;if(!round)keshTellMemory.turnsSince=99;}
+const keshSeatId=()=>isKeshDuel()?'p1':keshTavern?.id||null;
 // Ragna owns a mistake only when her own planner knowingly took a second-best card.
 let ragnaSlip=false,ragnaStakesRaised=false;
 // Gameplay time only: paused sheets and a hidden tab never count as "quiet".
@@ -87,10 +100,13 @@ function performCharacterReaction(reaction,{voiceDelay=0}={}){
   setCharacterExpression(localized.expression);characterCaptionLine=localized.caption||'';characterCaptionLocale=localized.locale;characterSpeaking=localized.caption||localized.voice?{priority:localized.priority,id:localized.id}:null;render();
   // A result line is a moment: the character leans in over the table rail for a beat.
   if(localized.category==='result'&&!settings.reducedMotion){const stage=root.querySelector('.character-art-stage.character-table');if(stage)stage.animate([{transform:'none'},{transform:'translateY(-1.8%) scale(1.008)',offset:.35},{transform:'translateY(-1.8%) scale(1.008)',offset:.7},{transform:'none'}],{duration:2400,easing:'ease-in-out'});}
-  const epoch=sessionEpoch,finish=()=>{if(epoch!==sessionEpoch)return;const timer=setTimeout(()=>{if(epoch!==sessionEpoch)return;characterSpeaking=null;if(!pack.holdsExpression(characterController)){characterPreviousExpression=characterExpression;characterExpression=restingExpression(pack);}characterCaptionLine='';render();},settings.reducedMotion?180:650);characterSequenceTimers.push(timer);if(localized.followUp)scheduleFollowUp(localized.followUp,epoch);},play=()=>{if(epoch!==sessionEpoch||!isAuthoredDuel())return;audioSystem.setSettings(settings);if(localized.voice){void audioSystem.playVoice(localized.voice,{locale:localized.locale,priority:localized.priority,locked:localized.category==='result',onEnded:finish}).then(node=>{if(!node){const timer=setTimeout(finish,localized.duration||2400);characterSequenceTimers.push(timer);}});}else{const timer=setTimeout(finish,localized.duration||1800);characterSequenceTimers.push(timer);}render();};
+  const epoch=sessionEpoch,finish=()=>{if(epoch!==sessionEpoch)return;const timer=setTimeout(()=>{if(epoch!==sessionEpoch)return;characterSpeaking=null;if(!pack.holdsExpression(characterController)){characterPreviousExpression=characterExpression;characterExpression=restingExpression(pack);}characterCaptionLine='';render();},settings.reducedMotion?180:650);characterSequenceTimers.push(timer);if(localized.followUp)scheduleFollowUp(localized.followUp,epoch);},play=()=>{if(epoch!==sessionEpoch||!isAuthoredDuel())return;if(localized.voice){void speakCharacterVoice(localized,{locked:localized.category==='result',onEnded:finish}).then(node=>{if(!node){const timer=setTimeout(finish,localized.duration||2400);characterSequenceTimers.push(timer);}});}else{const timer=setTimeout(finish,localized.duration||1800);characterSequenceTimers.push(timer);}render();};
   if(voiceDelay){const timer=setTimeout(play,settings.reducedMotion?80:voiceDelay);characterSequenceTimers.push(timer);}else play();
   return localized;
 }
+// The one in-game voice path for every authored character, at a Duel or a Tavern
+// table: Web Audio game sound, never a media element (no Now Playing, no takeover).
+function speakCharacterVoice(localized,{locked=false,onEnded=null}={}){audioSystem.setSettings(settings);return audioSystem.playVoice(localized.voice,{locale:localized.locale,priority:localized.priority,locked,onEnded});}
 // A two-beat authored gag (Ragna: "QUIET! THERE'S A GAME ON!" … "Thank you.") is one
 // performance, not two triggers: the callback skips cooldowns but never talks over anyone.
 function scheduleFollowUp(followUp,epoch){const timer=setTimeout(()=>{if(epoch!==sessionEpoch||view!=='game'||isPaused()||session?.phase!=='round'||characterSpeaking||audioSystem.voiceSource||!characterController)return;const next=characterController.force(followUp.id);if(next)performCharacterReaction(next);},(settings.reducedMotion?200:650)+(followUp.delay||0));characterSequenceTimers.push(timer);}
@@ -119,6 +135,8 @@ function setSession(next){
   sessionEpoch++;clearTimeout(eventTimer);clearTimeout(quipTimer);clearTimeout(roundEndTimer);clearTimeout(duelReactionTimer);clearTimeout(duelIdleTimer);clearCharacterTimers();audioSystem.stopVoice();
   quip=null;duelReaction='idle';captionLine='';roundResultVisible=next.phase!=='round';session=next;state=session.game;ragnaSlip=false;
   const pack=authoredPack();
+  const keshSeat=session.mode==='tavern'?state.players.find(p=>p.nameKey==='kesh'):null;clearTimeout(keshTavern?.timer);
+  keshTavern=keshSeat?{id:keshSeat.id,controller:(keshTavern?.id===keshSeat.id&&keshTavern.controller)||createKeshController({now:activeNow}),expression:'default_observant',timer:null}:null;keshPlan=null;keshTellPending=false;
   if(pack){if(!characterController||characterControllerFor!==pack.id){characterController=pack.createController({initial:next.characterPersonality||next.brammPersonality||null,settings,now:pack.activeClock?activeNow:undefined});characterControllerFor=pack.id;}characterExpression=characterController.defaultExpression();characterPreviousExpression=characterExpression;}else{characterController=null;characterControllerFor=null;characterExpression='01_default_smug';characterPreviousExpression=characterExpression;}
   transport?.disconnect();transport=new LocalGameTransport(state);lastLogLength=state.log.length;lastCounts=Object.fromEntries(state.players.map(p=>[p.id,p.hand.length]));lastHands=Object.fromEntries(state.players.map(p=>[p.id,p.hand.map(card=>card.id)]));lastRenderedTopId=null;incomingCardDelays.clear();propRattled.clear();eventBanner=null;
   transport.subscribeToState((nextState,action)=>{
@@ -139,18 +157,24 @@ function setSession(next){
         const points=session.results.at(-1)?.points||0,spread=Math.abs((session.scores?.p1||0)-(session.scores?.p0||0));
         runCharacter(finalDuel?(opponentWon?'match_win':'match_loss'):(opponentWon?'round_win':'round_loss'),finalDuel?{close:spread<=6}:{easy:opponentWon&&points>=8,close:!opponentWon&&points<=2},true);
       }
+      else if(isKeshDuel()){
+        // Kesh: one result line, round or match, never both. "I misread that one." is earned by a hand where he consulted the stone.
+        const points=session.results.at(-1)?.points||0,spread=Math.abs((session.scores?.p1||0)-(session.scores?.p0||0));
+        runCharacter(finalDuel?(opponentWon?'match_win':'match_loss'):(opponentWon?'round_win':'round_loss'),{close:finalDuel?spread<=6:points<=3,told:keshTellMemory.toldThisRound},true);
+      }
       else if(session.mode==='duel'){setDuelReaction(opponentWon?'pleased':'annoyed',duelLine(opponentWon?'pleased':'annoyed'),true);}
+      else if(session.mode==='tavern'&&keshTavern)keshTavernResult();
       roundResultVisible=false;const epoch=sessionEpoch,authoredBeat=isAuthoredDuel()&&finalDuel?authoredPack().finalResultBeat:0;
       audioSystem.duckMusic(.08,240);
       roundEndTimer=setTimeout(()=>{if(epoch!==sessionEpoch)return;revealRoundResult();},settings.reducedMotion?(authoredBeat?900:120):(authoredBeat||1050));
     }
-    persist();render();scheduleGame();
+    noteKeshTable();persist();render();scheduleGame();
   });scheduleDuelIdle();
 }
 let coinsAnimatedFor=-1;
 function revealRoundResult(){roundResultVisible=true;recordDuelResult();feedback('round',settings);persist();render();}
 function startNextHand(){
-  feedback('shuffle',settings);deckSettling=true;if(isAuthoredDuel())characterController?.beginRound();
+  feedback('shuffle',settings);deckSettling=true;if(isAuthoredDuel())characterController?.beginRound();keshTavern?.controller.beginRound();resetKeshTellMemory(true);
   setSession(startNextRound(session));blockAiUntil=Date.now()+1300;
   if(session.mode==='duel')setDuelReaction('drink',duelLine('drink'),true);
   if(settings.music)audioSystem.startMusic({newRound:true});
@@ -170,14 +194,20 @@ function beginDeckArrival(){
   audioSystem.setSettings(settings);audioSystem.play('shuffle');clearTimeout(deckAudioTimer);
   deckAudioTimer=setTimeout(()=>{audioSystem.play('deckPutDown');deckSettling=false;root.querySelector('[data-draw-anchor]')?.classList.remove('deck-settling');},1050);
 }
+// Expressions decode before a character sits down, but a slow or failed asset never
+// holds the table hostage: after a few seconds the match starts anyway and any
+// missing face falls back to the character's default.
+const preloadWithin=(promise,ms=5000)=>Promise.race([promise.catch(()=>null),new Promise(resolve=>setTimeout(resolve,ms))]);
 async function startSession(mode='tavern',saved=null){
-  characterController=null;clearCharacterTimers();
+  characterController=null;keshTavern=null;resetKeshTellMemory();clearCharacterTimers();
   const fresh=()=>mode==='tavern'?createTavernMatch({seed:Date.now()}):mode==='duel'?createDuelSession({seed:Date.now(),opponent:getDuelOpponent(settings.duelOpponent)}):createQuickSession({playerCount:settings.playerCount,seed:Date.now()});
   let next;try{next=saved?restoreSession(saved):fresh();}catch{clearMatch();next=fresh();}
   // Expressions decode before the character sits down; voices warm in the background.
-  if(next.mode==='duel'&&authoredCharacter(next.opponentId))await authoredCharacter(next.opponentId).preload();
+  if(next.mode==='duel'&&authoredCharacter(next.opponentId))await preloadWithin(authoredCharacter(next.opponentId).preload());
+  const keshAtTavern=next.mode==='tavern'&&(next.roster||next.game?.players||[]).some(p=>p.nameKey==='kesh');
+  if(keshAtTavern)await preloadWithin(preloadKeshExpressions());
   setSession(next);if(!saved)blockAiUntil=Date.now()+1300;
-  view='game';sheet=null;eventBanner=null;audioSystem.setSettings(settings);if(settings.ambience)audioSystem.startAmbience();if(settings.music)audioSystem.startMusic({newRound:true});deckSettling=!saved;render();if(!saved)beginDeckArrival();runActiveClock(true);const pack=authoredPack();if(pack){void audioSystem.preloadVoice(settings.language,Object.keys(pack.voiceLibrary));
+  view='game';sheet=null;eventBanner=null;audioSystem.setSettings(settings);if(settings.ambience)audioSystem.startAmbience();if(settings.music)audioSystem.startMusic({newRound:true});deckSettling=!saved;render();if(!saved)beginDeckArrival();runActiveClock(true);if(keshAtTavern)void audioSystem.preloadVoice(settings.language,Object.keys(AUTHORED_CHARACTERS.kesh.voiceLibrary));const pack=authoredPack();if(pack){void audioSystem.preloadVoice(settings.language,Object.keys(pack.voiceLibrary));
 // Every new match against Bramm opens with his voiced introduction. Edrin says one
 // line the first time you meet him; after that he may just glance up, or not.
 if(!saved){const epoch=sessionEpoch,firstEncounter=!settings.charactersMet?.[pack.id];const timer=setTimeout(()=>{if(epoch!==sessionEpoch)return;if(isBrammDuel())runCharacter('intro',{},true);else{runCharacter('intro',{firstEncounter,raised:isRagnaDuel()&&ragnaStakesRaised},true);ragnaStakesRaised=false;settings.charactersMet={...(settings.charactersMet||{}),[pack.id]:true};saveSettings(settings);}},settings.reducedMotion?350:pack.introDelay);characterSequenceTimers.push(timer);}}scheduleGame();scheduleDuelIdle();
@@ -252,8 +282,10 @@ async function animateCardMovement(action){
 function showEvent(kind,playerId=null,amount=null,cardId=null){clearTimeout(eventTimer);eventBanner={kind,playerId,targetId:playerId,amount,cardId};const epoch=sessionEpoch;eventTimer=setTimeout(()=>{if(epoch!==sessionEpoch)return;eventBanner=null;captionLine='';if(view==='game'&&!motionLocked)render();},settings.reducedMotion?300:1100);}
 const FEMININE_HE=[['אני צריך','אני צריכה'],['אני חושב','אני חושבת'],['אני מחזיר','אני מחזירה']];
 function voicedLine(playerId,text){if(!text||isEnglish()||!isFeminine(state?.players?.find(p=>p.id===playerId)))return text;return FEMININE_HE.reduce((line,[m,f])=>line.replace(m,f),text);}
-function showQuip(player,text,force=false){text=voicedLine(player,text);if(!settings.dialogue||!text||(!force&&Date.now()-lastQuipAt<7800))return;lastQuipAt=Date.now();clearTimeout(quipTimer);quip={player,text};quipTimer=setTimeout(()=>{quip=null;render();},Math.min(2800,1500+text.length*42));}
-function botLine(playerId,trigger){const player=state.players.find(p=>p.id===playerId),pool=(isEnglish()?dialogueEn:dialogueHe)[player?.archetype]?.[trigger]||[];return pool[Math.floor(Math.random()*pool.length)];}
+function showQuip(player,text,force=false){text=voicedLine(player,text);if(!settings.dialogue||!text||(!force&&Date.now()-lastQuipAt<7800))return;
+  // Kesh owns his moment at a Tavern table: no generic quip cuts across his line or his bubble.
+  if(keshTavern&&(audioSystem.voiceSource||quip?.player===keshTavern.id))return;lastQuipAt=Date.now();clearTimeout(quipTimer);quip={player,text};quipTimer=setTimeout(()=>{quip=null;render();},Math.min(2800,1500+text.length*42));}
+function botLine(playerId,trigger){const player=state.players.find(p=>p.id===playerId);if(player?.nameKey==='kesh')return null;const pool=(isEnglish()?dialogueEn:dialogueHe)[player?.archetype]?.[trigger]||[];return pool[Math.floor(Math.random()*pool.length)];}
 // Game-event haptics use the full vibration pattern where the browser has one (Android).
 // iPhone haptics come only from the player's own taps (tapFeedback), the one moment iOS allows.
 function eventFeedback(kind){if(typeof navigator.vibrate==='function')feedback(kind,settings);}
@@ -329,14 +361,17 @@ function onState(action){
   if(winnerId)audioSystem.play(winnerId==='p0'?'winHand':'loseHand',{delay:(stop||reverse||stack||opened||closed)?280:90});
   if(closed||opened)eventFeedback('takiOpen',settings);else if(stop)eventFeedback('stop',settings);else if(reverse)eventFeedback('reverse',settings);else if(stack||penalty)eventFeedback('penalty',settings);else if(playedCard?.type===TYPES.KING)eventFeedback('king',settings);else if(again)eventFeedback('plus',settings);else if(draw||action.type===ACTIONS.DRAW)eventFeedback('draw',settings);else if(color)eventFeedback('color',settings);else if(entries.length)eventFeedback('play',settings);
   if(penalty?.amount>=6){propRattled.add(penalty.playerId);const epoch=sessionEpoch;setTimeout(()=>{if(epoch!==sessionEpoch)return;propRattled.delete(penalty.playerId);root.querySelector(`[data-player-id="${penalty.playerId}"]`)?.classList.remove('rattled');},520);}
-  if(state.taki?.open)takiRun++;const crossbowRun=takiRun;if(closed){if(takiRun>=3&&!isAuthoredDuel()){const watcher=state.players.find(p=>p.kind==='ai'&&p.id!==closed.playerId);showQuip(watcher?.id,botLine(watcher?.id,'penalty'));}takiRun=0;}
+  if(state.taki?.open)takiRun++;const crossbowRun=takiRun;
+  // Kesh at a Tavern table speaks only his own authored lines, and only one voice owns a moment.
+  const keshSpoke=keshTavern&&state.phase!=='finished'?keshTavernObserve({played,playedCard,stop,stack,penalty,draw,reverse,previousCounts}):false;
+  if(closed){if(takiRun>=3&&!isAuthoredDuel()&&!keshSpoke){const watcher=state.players.find(p=>p.kind==='ai'&&p.id!==closed.playerId&&p.nameKey!=='kesh');showQuip(watcher?.id,botLine(watcher?.id,'penalty'));}takiRun=0;}
   // Generic table banter never plays over an authored character.
-  if(!isAuthoredDuel()){
+  if(!isAuthoredDuel()&&!keshSpoke){
     if(stop)showQuip(stop.skipped,botLine(stop.skipped,'skip'));
     else if(penalty&&penalty.amount>=4)showQuip(penalty.playerId,botLine(penalty.playerId,'penalty'));
-    else if(reverse){const speaker=state.players.find(p=>p.kind==='ai');showQuip(speaker?.id,botLine(speaker?.id,'reverse'));}
-    else if(playedCard?.type===TYPES.KING){const speaker=state.players.find(p=>p.kind==='ai'&&p.id!==played.playerId);showQuip(speaker?.id,botLine(speaker?.id,'king'));}
-    else if(played){const one=state.players.find(p=>p.hand.length===1&&p.id===played.playerId),speaker=state.players.find(p=>p.kind==='ai'&&p.id!==played.playerId);if(one)showQuip(speaker?.id,botLine(speaker?.id,'last'),true);else if(Math.random()<.1){const banter=isEnglish()?tavernBanterEn:tavernBanterHe;showQuip(speaker?.id,banter[Math.floor(Math.random()*banter.length)]);}}
+    else if(reverse){const speaker=state.players.find(p=>p.kind==='ai'&&p.nameKey!=='kesh');showQuip(speaker?.id,botLine(speaker?.id,'reverse'));}
+    else if(playedCard?.type===TYPES.KING){const speaker=state.players.find(p=>p.kind==='ai'&&p.id!==played.playerId&&p.nameKey!=='kesh');showQuip(speaker?.id,botLine(speaker?.id,'king'));}
+    else if(played){const one=state.players.find(p=>p.hand.length===1&&p.id===played.playerId),speaker=state.players.find(p=>p.kind==='ai'&&p.id!==played.playerId&&p.nameKey!=='kesh');if(one)showQuip(speaker?.id,botLine(speaker?.id,'last'),true);else if(Math.random()<.1){const banter=isEnglish()?tavernBanterEn:tavernBanterHe;showQuip(speaker?.id,banter[Math.floor(Math.random()*banter.length)]);}}
   }
   if(session.mode==='duel'){
     const humanMove=played?.playerId==='p0',opponentMove=played?.playerId==='p1';
@@ -371,12 +406,26 @@ function onState(action){
       if(event)runCharacter(event[0],{...event[1],playerOnOneCard:humanCount===1,ownTurn:currentPlayer(state).id==='p1',playerStillToPlay:currentPlayer(state).id==='p0'});
       if(after==='close'&&before==='default'&&characterExpression===shown&&!characterSpeaking)runCharacter('close_game');
       if(after!==before&&characterExpression===shown&&!characterSpeaking)setCharacterExpression(restingExpression());
+    }else if(isKeshDuel()&&state.phase!=='finished'){
+      // Kesh: one trigger per table update. He notices nearly everything and says very little.
+      const humanCount=state.players[0].hand.length,keshCount=state.players[1].hand.length,oldHuman=previousCounts.p0??humanCount,oldKesh=previousCounts.p1??keshCount;
+      if(oldHuman===1&&humanCount>1){const settle=characterController.oneCardRecovered();if(settle&&!characterSpeaking)setCharacterExpression(settle.expression,settle.duration);}
+      const shown=characterExpression,before=characterController.snapshot().state;characterController.observeTable({humanCount,keshCount});const after=characterController.snapshot().state;
+      // The table's answer to a move he had checked the stone for.
+      const answered=keshTellPending&&(played?.playerId==='p0'||draw?.playerId==='p0'||!!penalty||stop?.skipped==='p1');
+      const event=keshEventFor({played,playedCard,stop,stack,penalty,draw,closed,reverse,color,crossbowRun,humanCount,keshCount,oldHuman,oldKesh,tellPending:answered,cursedBefore:keshPenaltyOnHuman});
+      if(answered)keshTellPending=false;
+      if(played?.playerId==='p1'&&keshPlan?.told&&!keshPlan.consumed){keshPlan.consumed=true;keshTellPending=true;}
+      if(event)runCharacter(event[0],{...event[1],keshCount,playerOnOneCard:humanCount===1,ownTurn:currentPlayer(state).id==='p1',playerStillToPlay:currentPlayer(state).id==='p0'});
+      if(after==='attentive'&&before==='default'&&characterExpression===shown&&!characterSpeaking)runCharacter('close_game');
+      if(after!==before&&characterExpression===shown&&!characterSpeaking)setCharacterExpression(restingExpression());
     }else if(isAuthoredDuel());
     else if((penalty?.playerId==='p1'&&penalty.amount>=4)||stop?.skipped==='p1')setDuelReaction('annoyed',duelLine('annoyed'));
     else if(humanMove&&(reverse||opened||playedCard?.type===TYPES.KING||state.players[0].hand.length===1))setDuelReaction('surprised',duelLine('surprised'));
     else if(opponentMove&&(stack||opened||playedCard?.type===TYPES.KING||state.players[1].hand.length===1))setDuelReaction('pleased',duelLine('pleased'));
   }
 }
+function noteKeshTable(){if(keshSeatId())keshPenaltyOnHuman=!!state?.activePenalty&&state.phase==='playing'&&currentPlayer(state).id==='p0';}
 function delay(){
   const active=currentPlayer(state),legal=getLegalCards(state,active.id),base=settings.difficulty==='quick'?520:settings.difficulty==='thoughtful'?1100:680;
   const obvious=legal.length===1,important=legal.some(card=>[TYPES.PLUS2,TYPES.KING,TYPES.SUPER_TAKI].includes(card.type))||active.hand.length<=2;
@@ -387,7 +436,7 @@ function runBotTurn(playerId,epoch,scheduledTurn){
   pendingBotTurn=null;
   if(epoch!==sessionEpoch||isPaused()||!state||session.phase!=='round'||state.phase==='finished')return;
   const current=currentPlayer(state);if(current.id!==playerId||current.kind!=='ai'||state.turn!==scheduledTurn)return;
-  try{const action=chooseBotAction(state);if(isRagnaDuel()&&playerId==='p1'&&action.type===ACTIONS.PLAY&&lastBotDecision.playerId===playerId)ragnaSlip=lastBotDecision.slip;submit(action);}
+  try{const plan=keshPlan&&keshPlan.playerId===playerId&&keshPlan.turn===scheduledTurn&&keshPlan.state===state?keshPlan:null,action=plan?plan.action:chooseBotAction(state);if(plan?.tell&&plan.shown)plan.told=true;if(isRagnaDuel()&&playerId==='p1'&&action.type===ACTIONS.PLAY&&lastBotDecision.playerId===playerId)ragnaSlip=lastBotDecision.slip;submit(action);}
   catch(error){console.error('AI turn action failed',error);if(currentPlayer(state).id===playerId&&state.phase==='playing'){try{submit({type:ACTIONS.DRAW,playerId});}catch(fallbackError){console.error('AI fallback draw failed',fallbackError);}}if(state.phase!=='finished'&&currentPlayer(state).kind==='ai'){try{render();}catch(renderError){console.error('AI recovery render failed',renderError);}scheduleGame();}}
 }
 function scheduleGame(){
@@ -399,7 +448,90 @@ function scheduleGame(){
   // Edrin's eyes sharpen only for decisions that matter, and only now and then.
   if(isEdrinDuel()&&playerId==='p1'&&edrinConsideredTurn!==scheduledTurn){edrinConsideredTurn=scheduledTurn;const legal=getLegalCards(state,playerId),human=state.players[0].hand.length,mine=active.hand.length,weighty=legal.some(card=>[TYPES.PLUS2,TYPES.KING,TYPES.STOP,TYPES.SUPER_TAKI,TYPES.CHANGE_COLOR].includes(card.type));if(!state.taki?.open&&legal.length>=2&&(human<=2||(mine<=3&&weighty)))runCharacter('edrin_considering');}
   pendingBotTurn={playerId,epoch,scheduledTurn};
-  botTimer=setTimeout(()=>runBotTurn(playerId,epoch,scheduledTurn),Math.max(delay(),blockAiUntil-Date.now()));
+  const kesh=playerId===keshSeatId()?planKeshTurn(playerId,scheduledTurn):null,wait=Math.max(kesh?kesh.wait:delay(),blockAiUntil-Date.now());
+  if(kesh)stageKeshTell(kesh,epoch,wait);
+  botTimer=setTimeout(()=>runBotTurn(playerId,epoch,scheduledTurn),wait);
+}
+
+// ── Kesh: a reading rhythm and the rune-stone tell ─────────────────────────────
+// His decision is made once per turn (the same fair planner either way); the
+// tell and the pause come from that real decision. Some turns are quick, some
+// get a pause, a few get the stone. Never a glow, never a guaranteed warning.
+function planKeshTurn(playerId,turn){
+  if(keshPlan&&keshPlan.playerId===playerId&&keshPlan.turn===turn&&keshPlan.state===state)return keshPlan;
+  const me=currentPlayer(state),legal=getLegalCards(state,playerId),action=chooseBotAction(state),card=action.type===ACTIONS.PLAY?me.hand.find(c=>c.id===action.cardId):null;
+  const others=state.players.filter(p=>p.id!==playerId).map(p=>p.hand.length),nearest=Math.min(...others),humanCount=state.players[0].hand.length;
+  const free=!state.taki?.open&&!state.awaitingColor&&action.type===ACTIONS.PLAY;
+  const major=free&&keshDecisionIsMajor({cardType:card?.type,humanCount:session.mode==='duel'?humanCount:nearest,keshCount:me.hand.length,nextCount:nearest,penalty:state.activePenalty?.amount||0});
+  const tell=free?keshTellFor({major,choices:legal.length,turnsSinceTell:keshTellMemory.turnsSince,tellsThisRound:keshTellMemory.thisRound}):null;
+  keshTellMemory.turnsSince++;if(tell){keshTellMemory.turnsSince=0;keshTellMemory.thisRound++;keshTellMemory.toldThisRound=true;}
+  const r=Math.random(),quick=action.type!==ACTIONS.PLAY||legal.length<=1||!!state.taki?.open||!!state.awaitingColor;
+  let wait=quick?620+r*300:major?1250+r*900:850+r*650+(Math.random()<.12?600:0);
+  if(settings.difficulty==='quick')wait*=.75;
+  if(tell)wait=Math.max(wait,tell.lead+420);
+  keshPlan={playerId,turn,state,action,tell,major,wait:Math.min(2400,wait),shown:false,told:false,consumed:false};
+  return keshPlan;
+}
+function stageKeshTell(plan,epoch,wait){
+  if(!plan.tell||plan.shown)return;
+  const show=()=>{
+    if(epoch!==sessionEpoch||isPaused()||state?.turn!==plan.turn||plan.state!==state)return;plan.shown=true;const tell=plan.tell,phase=tell.after==='omen_reading'?'reading':tell.after==='omen_realization'?'realization':'touch';
+    // Touch → the card → (sometimes) reading or the small "of course" → calm again.
+    keshFace(tell.touch,tell.lead+620);if(tell.speak&&phase==='touch')keshOmenLine('touch');
+    if(tell.after){const timer=setTimeout(()=>{if(epoch!==sessionEpoch||isPaused())return;if(keshFaceIs(tell.touch)||keshFaceIs(null))keshFace(tell.after,1500);if(tell.speak&&phase!=='touch')keshOmenLine(phase);},tell.lead+560);characterSequenceTimers.push(timer);}
+  };
+  const timer=setTimeout(show,Math.max(0,wait-plan.tell.lead));characterSequenceTimers.push(timer);
+}
+// One face for Kesh wherever he sits: the duel stage, or his seat at a Tavern table.
+function keshFace(expression,duration){if(isKeshDuel()){if(!characterSpeaking)setCharacterExpression(expression,duration);}else if(keshTavern)setKeshTavernExpression(expression,duration);}
+function keshFaceIs(expression){const current=isKeshDuel()?characterExpression:keshTavern?.expression,rest=isKeshDuel()?restingExpression():keshTavern?.controller.defaultExpression();return expression===null?current===rest:current===expression;}
+function keshOmenLine(phase){if(isKeshDuel())runCharacter('omen',{phase});else if(keshTavern)keshTavernReact('omen',{phase});}
+// ── Kesh at a Tavern table ─────────────────────────────────────────────────────
+// The same authored reactions, scheduler and voice path as his Duel; his face is
+// his seat portrait. The table is busier, so he waits for a clear moment: he never
+// talks over another line, and when he speaks the generic regulars stay quiet.
+function setKeshTavernExpression(expression,duration=0){
+  if(!keshTavern)return;const seat=keshTavern;clearTimeout(seat.timer);seat.expression=expression||seat.controller.defaultExpression();render();
+  if(duration>0){const epoch=sessionEpoch;seat.timer=setTimeout(()=>{if(epoch!==sessionEpoch||keshTavern!==seat)return;seat.expression=seat.controller.defaultExpression();render();},settings.reducedMotion?Math.min(duration,900):duration);}
+}
+function keshTavernReact(trigger,context={},force=false){
+  const seat=keshTavern;if(!seat||view!=='game'||isPaused())return null;
+  const visual=seat.controller.observe(trigger,context);
+  const speaking=!!audioSystem.voiceSource||(!!quip&&Date.now()-lastQuipAt<2600);
+  if(visual&&!audioSystem.voiceSource)setKeshTavernExpression(visual.expression,visual.duration);
+  const reaction=seat.controller.react(trigger,{...context,locale:settings.language,busyRank:speaking?3:0},force);if(!reaction)return visual?{visual}:null;
+  settings.characterRecentVoices={...(settings.characterRecentVoices||{}),kesh:seat.controller.snapshot().recentVoices};saveSettings(settings);
+  keshTavernSpeak(reaction);return reaction;
+}
+function keshTavernSpeak(reaction){
+  const seat=keshTavern;if(!seat||!reaction)return;const localized=resolveKeshReaction(reaction,settings.language),epoch=sessionEpoch;
+  setKeshTavernExpression(localized.expression,localized.duration);
+  if(!settings.dialogue)return;
+  const bubble=()=>{if(epoch!==sessionEpoch||keshTavern!==seat)return;quip={player:seat.id,text:localized.caption,lang:localized.locale};lastQuipAt=Date.now();clearTimeout(quipTimer);quipTimer=setTimeout(()=>{quip=null;render();},Math.max(1800,localized.duration));render();};
+  lastQuipAt=Date.now();
+  // Captions on: the bubble shows the exact line. Captions off: voice only — unless the voice cannot play, then the words still reach the table.
+  if(localized.voice)void speakCharacterVoice(localized,{locked:localized.category==='result'}).then(node=>{if(!node&&!settings.captions)bubble();});
+  if(settings.captions||!localized.voice)bubble();
+}
+function keshTavernObserve({played,playedCard,stop,stack,penalty,draw,reverse,previousCounts}){
+  const seat=keshTavern;if(!seat)return false;
+  const counts=Object.fromEntries(state.players.map(p=>[p.id,p.hand.length])),others=state.players.filter(p=>p.id!==seat.id).map(p=>p.hand.length);
+  const before=seat.controller.snapshot().state;seat.controller.observeTable({humanCount:Math.min(...others),keshCount:counts[seat.id]});
+  const answered=keshTellPending&&(played&&played.playerId!==seat.id||!!draw&&draw.playerId!==seat.id||!!penalty||stop?.skipped===seat.id);
+  const event=keshTavernEventFor({keshId:seat.id,played,playedCard,stop,stack,penalty,draw,reverse,counts,oldCounts:previousCounts,tellPending:answered});
+  if(answered)keshTellPending=false;
+  if(played?.playerId===seat.id&&keshPlan?.told&&!keshPlan.consumed){keshPlan.consumed=true;keshTellPending=true;}
+  const reaction=event?keshTavernReact(event[0],{...event[1],tavern:true,ownTurn:currentPlayer(state).id===seat.id,playerStillToPlay:false,playerOnOneCard:Math.min(...others)===1}):null;
+  if(seat.controller.snapshot().state!==before&&!reaction&&!audioSystem.voiceSource)setKeshTavernExpression(null);
+  return !!reaction?.voice||!!reaction?.caption;
+}
+function keshTavernResult(){
+  const seat=keshTavern,result=session.results.at(-1);if(!seat||!result)return;
+  if(session.phase==='matchFinished'){
+    if(session.championId===seat.id)keshTavernReact('match_win',{close:false},true);
+    else if(session.championId==='p0'&&Math.random()<.7)keshTavernReact('match_loss',{close:false},true);
+  }else if(result.winnerId===seat.id&&Math.random()<.75)keshTavernReact('round_win',{},true);
+  else if(result.winnerId==='p0'&&Math.random()<.3)keshTavernReact('round_loss',{told:keshTellMemory.toldThisRound},true);
 }
 
 /* ------------------------------------------------------------------ */
@@ -438,16 +570,16 @@ function homeHTML(){
     <div class="home-tools"><button class="tool-button" data-open="rules">${t.rules}</button><i aria-hidden="true">·</i><button class="tool-button" data-open="settings">${t.settings}</button></div>
   </section>${sheetHTML()}</main>`;
 }
-// The duel table: the three voiced regulars, one at a time, sitting across from
+// The duel table: the four voiced regulars, one at a time, sitting across from
 // you. Swipe (or use the arrows/keys) to see the others; which one is waiting
-// first changes every visit. The other ten regulars are a random draw.
+// first changes every visit. The other nine regulars are a random draw.
 const DUEL_KICKERS=Object.freeze({
-  en:{bramm:'The house champion',edrin:'Thirty years at this table',ragna:'Wants more gold on the table'},
-  he:{bramm:'אלוף הבית',edrin:'שלושים שנה ליד השולחן הזה',ragna:'רוצה יותר זהב על השולחן'}
+  en:{bramm:'The house champion',edrin:'Thirty years at this table',ragna:'Wants more gold on the table',kesh:'Reads the table by its signs'},
+  he:{bramm:'אלוף הבית',edrin:'שלושים שנה ליד השולחן הזה',ragna:'רוצה יותר זהב על השולחן',kesh:'קורא את השולחן לפי הסימנים'}
 });
 const DUEL_HOME_LINES=Object.freeze({
-  en:{bramm:'Bramm waits. “Still unbeaten.”',edrin:'Edrin has saved you a seat.',ragna:'Ragna waits. “Sit straight.”'},
-  he:{bramm:'בראם מחכה. ״עדיין בלתי־מנוצח.״',edrin:'אדרין שמר לכם מקום.',ragna:'ראגנה מחכה. ״לשבת ישר.״'}
+  en:{bramm:'Bramm waits. “Still unbeaten.”',edrin:'Edrin has saved you a seat.',ragna:'Ragna waits. “Sit straight.”',kesh:'Kesh waits. “The signs are quiet tonight.”'},
+  he:{bramm:'בראם מחכה. ״עדיין בלתי־מנוצח.״',edrin:'אדרין שמר לכם מקום.',ragna:'ראגנה מחכה. ״לשבת ישר.״',kesh:'קֶשׁ מחכה. ״הסימנים שקטים הלילה.״'}
 });
 let duelIndex=Math.floor(Math.random()*VOICED_OPPONENTS.length);
 const featuredDuelOpponent=()=>VOICED_OPPONENTS[duelIndex]||VOICED_OPPONENTS[0];
@@ -545,8 +677,9 @@ const propAssets=Object.freeze({
   purse:'personal/coin-purse.png',arrowhead:'personal/arrowhead-herbs.png',flute:'personal/wooden-flute.png',whetstone:'personal/whetstone.png',inkpot:'personal/inkpot-quill.png',horn:'drinks/drinking-horn.png'
 });
 // Each regular keeps the same things in front of them every evening, so an empty seat still says who sits there.
+// Kesh keeps only his clay cup on the table: his rune stone stays in his hand.
 const SEAT_SIGNATURES=Object.freeze({
-  aila:['woodenTankard','arrowhead'],ron:['ceramicCup','flute'],bran:['pewterTankard','whetstone'],sela:['pewterGoblet','inkpot'],kesh:['darkBottle','rune'],
+  aila:['woodenTankard','arrowhead'],ron:['ceramicCup','flute'],bran:['pewterTankard','whetstone'],sela:['pewterGoblet','inkpot'],kesh:['ceramicCup'],
   roderic:['pewterTankard','dice'],lio:['ceramicCup','purse'],mograth:['horn','bread'],harrow:['woodenTankard','pipe'],rusk:['medievalFlask','map']
 });
 // Two objects per seat at most: one drink (the signature) and one personal item.
@@ -574,6 +707,8 @@ function seatScoreHTML(player){
 function revealedHandHTML(player){if(session.phase==='round'||!roundResultVisible||!player.hand.length)return'';const shown=player.hand.slice(0,compactLayout()?4:7),more=player.hand.length-shown.length;return `<span class="revealed-hand" aria-hidden="true">${shown.map((card,index)=>cardHTML(card,cardOptions({small:true,legal:false,highlight:false,index}))).join('')}${more>0?`<b class="revealed-more">+<bdi>${more}</bdi></b>`:''}</span>`;}
 function seatFigureHTML(player){
   if(session.mode==='duel')return `<div class="seat-figure duel-figure">${characterArtHTML(currentDuelOpponent(),{context:'table'})}<i class="contact-shadow"></i></div>`;
+  // Kesh's seat is his live expression art (the same 40 poses as his Duel), so his face and the stone tell work at the Tavern too.
+  if(session.mode==='tavern'&&player.nameKey==='kesh'){const face=keshTavern?.id===player.id?keshTavern.expression:'default_observant';return `<div class="seat-figure kesh-figure"><img src="${keshExpressionURL(face)}" alt="" draggable="false" onerror="this.onerror=null;this.src='${keshExpressionURL()}'"></div>`;}
   if(session.mode==='tavern'&&TAVERN_FIGURES.has(player.nameKey))return `<div class="seat-figure"><img src="./assets/characters/table/${player.nameKey}-seated.webp" alt="" draggable="false"></div>`;
   if(session.mode==='tavern'&&TAVERN_SPRITES.has(player.nameKey))return `<div class="seat-figure sprite-figure"><i class="duel-sprite sheet-b" style="${duelSpriteStyle(getDuelOpponent(player.nameKey),'idle')}"></i></div>`;
   return'';
@@ -954,6 +1089,42 @@ window.RagnaDebug=characterDebug('ragna',{
   cooldown:()=>isRagnaDuel()?characterController.cooldown():null,
   setLanguage:language=>{settings.language=language==='he'?'he':'en';saveSettings(settings);if(isRagnaDuel())void audioSystem.preloadVoice(settings.language,Object.keys(AUTHORED_CHARACTERS.ragna.voiceLibrary));render();return settings.language;},
   markVoiceMissing:(voice,missing=true)=>debugMarkRagnaVoiceMissing(voice,missing)
+});
+// Kesh: QA can force every line (in either language), every face, the stone tell and
+// each game situation, and read back the scheduler and any missing asset.
+window.KeshDebug=characterDebug('kesh',{
+  simulateWin:()=>isKeshDuel()?runCharacter('match_win',{close:true},true):null,
+  simulateKeshOneCard:()=>isKeshDuel()?runCharacter('kesh_one_card',{},true):null,
+  simulatePlayerOneCard:()=>isKeshDuel()?runCharacter('player_one_card',{},true):null,
+  simulateCurse:(amount=2)=>isKeshDuel()?runCharacter('curse',{amount,haul:amount>=4},true):null,
+  simulateSkip:()=>isKeshDuel()?runCharacter('skip',{},true):null,
+  simulateReverse:()=>isKeshDuel()?runCharacter('reverse',{},true):null,
+  simulateKing:(broke=false)=>isKeshDuel()?runCharacter('king',{broke},true):null,
+  simulateOmenFailure:()=>isKeshDuel()?runCharacter('omen_failed',{told:true},true):null,
+  simulateSetback:(haul=false)=>isKeshDuel()?runCharacter('setback',{haul},true):null,
+  simulatePlayerDraw:()=>isKeshDuel()?runCharacter('player_draw',{amount:4,haul:true},true):null,
+  simulateKeshDraw:(forced=true)=>isKeshDuel()?runCharacter('kesh_draw',{amount:forced?2:1,forced},true):null,
+  simulatePlayerGoodMove:(big=true)=>isKeshDuel()?runCharacter('player_good_move',{big},true):null,
+  simulateKeshGoodMove:()=>isKeshDuel()?runCharacter('kesh_good_move',{keshCount:3},true):null,
+  simulateSlowPlayer:()=>isKeshDuel()?runCharacter('slow_player',{},true):null,
+  // The silent stone beat as it plays before a weighty card. after: null | 'omen_reading' | 'omen_realization'.
+  simulateRuneTell:({speak=false,after=null}={})=>{if(!keshSeatId()||!state)return null;const plan={playerId:keshSeatId(),turn:state.turn,state,tell:{touch:'omen_touch',after,lead:620,speak},shown:false};stageKeshTell(plan,sessionEpoch,620);return plan.tell;},
+  previewExpressions:(ms=1600)=>{if(!isKeshDuel())return null;AUTHORED_CHARACTERS.kesh.expressions.forEach((name,index)=>{const timer=setTimeout(()=>setCharacterExpression(name),index*ms);characterSequenceTimers.push(timer);});return AUTHORED_CHARACTERS.kesh.expressions.length;},
+  history:()=>isKeshDuel()?characterController.snapshot().history:keshTavern?.controller.snapshot().history||null,
+  cooldown:()=>isKeshDuel()?characterController.cooldown():keshTavern?.controller.cooldown()||null,
+  locale:()=>settings.language,
+  setLanguage:language=>{settings.language=language==='he'?'he':'en';saveSettings(settings);if(keshSeatId())void audioSystem.preloadVoice(settings.language,Object.keys(AUTHORED_CHARACTERS.kesh.voiceLibrary));render();return settings.language;},
+  // Play one line in a given language, then restore the player's language.
+  triggerIn:(id,language='he')=>{if(!isKeshDuel())return null;const previous=settings.language;settings.language=language==='he'?'he':'en';const found=AUTHORED_CHARACTERS.kesh.reactions.find(item=>item.id===id||item.voice===id);const result=found?performCharacterReaction(characterController.force(found.id)):null;settings.language=previous;return result;},
+  markVoiceMissing:(voice,missing=true)=>debugMarkKeshVoiceMissing(voice,missing),
+  // Every expression and every voice file for the active language, checked over the network.
+  missingAssets:async()=>{const pack=AUTHORED_CHARACTERS.kesh,locale=settings.language,urls=[...pack.expressions.map(name=>[`expression:${name}`,keshExpressionURL(name)]),...Object.keys(pack.voiceLibrary).map(voice=>[`voice:${voice}:${locale}`,pack.resolveVoice(voice,locale)?.src]).filter(([,url])=>url)];const missing=[];await Promise.all(urls.map(async([label,url])=>{try{const response=await fetch(url,{method:'HEAD',cache:'no-store'});if(!response.ok)missing.push(label);}catch{missing.push(label);}}));return {locale,checked:urls.length,missing:missing.sort(),unrecorded:keshUnrecorded(),forcedMissing:keshDebugMissingVoices()};},
+  plan:()=>keshPlan?{turn:keshPlan.turn,major:keshPlan.major,wait:Math.round(keshPlan.wait),tell:keshPlan.tell,shown:keshPlan.shown}:null,
+  tellMemory:()=>({...keshTellMemory,pending:keshTellPending}),
+  // At a Tavern table (no Duel stage): his seat, his face and his own scheduler.
+  tavern:()=>keshTavern?{seat:keshTavern.id,expression:keshTavern.expression,...keshTavern.controller.snapshot(),cooldown:keshTavern.controller.cooldown()}:null,
+  tavernTrigger:(id,language=settings.language)=>{if(!keshTavern)return null;const found=AUTHORED_CHARACTERS.kesh.reactions.find(item=>item.id===id||item.voice===id);if(!found)return null;const previous=settings.language;settings.language=language;keshTavernSpeak(keshTavern.controller.force(found.id));settings.language=previous;return found.id;},
+  tavernExpression:value=>{if(!keshTavern||!AUTHORED_CHARACTERS.kesh.expressions.includes(value))return false;setKeshTavernExpression(value,2400);return true;}
 });
 root.addEventListener('pointerdown',()=>audioSystem.prime(),{once:true,capture:true});
 const suspendAudio=()=>audioSystem.stopAll();

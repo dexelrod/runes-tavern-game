@@ -4,6 +4,7 @@
 // different about that character's staging; nothing is duplicated per language.
 import { BRAMM_EXPRESSIONS, BRAMM_REACTIONS, BRAMM_VOICE_LIBRARY, brammExpressionURL, createBrammController, preloadBrammExpressions, resolveBrammReaction, resolveBrammVoice } from './bramm.js';
 import { RAGNA_EXPRESSIONS, RAGNA_REACTIONS, RAGNA_VOICE_LIBRARY, createRagnaController, preloadRagnaExpressions, ragnaExpressionURL, resolveRagnaReaction, resolveRagnaVoice } from './ragna.js';
+import { KESH_EXPRESSIONS, KESH_REACTIONS, KESH_VOICE_LIBRARY, createKeshController, keshExpressionURL, preloadKeshExpressions, resolveKeshReaction, resolveKeshVoice } from './kesh.js';
 import { EDRIN_EXPRESSIONS, EDRIN_REACTIONS, EDRIN_VOICE_LIBRARY, createEdrinController, edrinExpressionURL, preloadEdrinExpressions, resolveEdrinReaction, resolveEdrinVoice } from './edrin.js';
 
 const bramm=Object.freeze({
@@ -64,9 +65,29 @@ const ragna=Object.freeze({
   introDelay:1300
 });
 
-export const AUTHORED_CHARACTERS=Object.freeze({bramm,edrin,ragna});
-// The three voiced opponents offered at the duel table, in their canonical order.
-export const VOICED_OPPONENTS=Object.freeze(['bramm','edrin','ragna']);
+const kesh=Object.freeze({
+  id:'kesh',label:'Kesh',
+  expressions:KESH_EXPRESSIONS,defaultExpression:'default_observant',expressionURL:keshExpressionURL,preload:preloadKeshExpressions,
+  reactions:KESH_REACTIONS,voiceLibrary:KESH_VOICE_LIBRARY,resolveReaction:resolveKeshReaction,resolveVoice:resolveKeshVoice,
+  createController:({initial,settings,now})=>createKeshController({now,initial:{...(initial||{}),recentVoices:initial?.recentVoices||settings?.characterRecentVoices?.kesh||[]}}),
+  holdsExpression:controller=>!!controller?.holdsExpression?.(),
+  lead(trigger){
+    // He looks first and takes his time; the words, when there are any, come after.
+    if(trigger==='player_one_card')return {delay:720};
+    if(trigger==='kesh_one_card'||trigger==='omen_failed')return {delay:560};
+    return null;
+  },
+  idleTriggers:()=>[['idle_quiet',{}]],
+  idleFallback:(controller,{concerned})=>controller?.observe('idle_beat',{concerned}),
+  // A player who sits on a decision for a long while may get a dry "Still here, then." (once a match).
+  slowPlayerAfter:15000,
+  finalResultBeat:1700,activeClock:true,
+  introDelay:1500
+});
+
+export const AUTHORED_CHARACTERS=Object.freeze({bramm,edrin,ragna,kesh});
+// The four voiced opponents offered at the duel table, in their canonical order.
+export const VOICED_OPPONENTS=Object.freeze(['bramm','edrin','ragna','kesh']);
 export const authoredCharacter=id=>AUTHORED_CHARACTERS[id]||null;
 export function characterForVoice(name=''){return Object.values(AUTHORED_CHARACTERS).find(pack=>pack.voiceLibrary[name])||null;}
 export function resolveCharacterVoice(name,locale='en'){return characterForVoice(name)?.resolveVoice(name,locale)||null;}

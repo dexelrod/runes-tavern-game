@@ -8,7 +8,7 @@ export const TAVERN_REGULARS=Object.freeze([
   {name:'רון',nameKey:'ron',kind:'ai',archetype:'bard',house:'red'},
   {name:'בראן',nameKey:'bran',kind:'ai',archetype:'mercenary',house:'blue'},
   {name:'סֶלָה',nameKey:'sela',kind:'ai',archetype:'scholar',house:'yellow'},
-  {name:'קֶשׁ',nameKey:'kesh',kind:'ai',archetype:'mysterious',house:'blue'},
+  {name:'קֶשׁ',nameKey:'kesh',kind:'ai',archetype:'traveler',house:'blue'},
   {name:'רודריק',nameKey:'roderic',kind:'ai',archetype:'mercenary',house:'red'},
   {name:'ליאו',nameKey:'lio',kind:'ai',archetype:'bard',house:'yellow'},
   {name:'מוגרת׳',nameKey:'mograth',kind:'ai',archetype:'mercenary',house:'green'},

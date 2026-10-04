@@ -847,6 +847,16 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
 .portrait-card .character-ragna.character-art-stage{left:-46%;top:3%;width:192%}
 .duel-seat.opponent-ragna .seat-props{display:none}
 
+/* ── Kesh: a square 640×640 canvas (one shared crop of every pose, bottom-centre
+      anchored); each context keeps his head at the scale of the other voiced regulars. ── */
+.character-kesh.character-art-stage{aspect-ratio:1}
+/* Sized so the table rim falls below his hands: the rune stone he checks must stay in view. */
+.duel-figure .character-kesh.character-art-stage{height:calc(var(--fig-h) * 1.22);translate:0 0}
+.portrait-card .character-kesh.character-art-stage{left:-50%;top:3%;width:200%}
+.duel-seat.opponent-kesh .seat-props{display:none}
+/* At a Tavern table his seat portrait is the same live expression art. */
+.seat-figure.kesh-figure>img{height:calc(var(--fig-h) * 1.2);max-width:none;translate:0 9%}
+
 /* ── Duel table: one voiced regular at a time, sitting across from you. ── */
 .screen-duel{--rim:calc(58% + clamp(0px,(100vw - 600px) * .06,32px));--rim-curve:2%;--stage-top:calc(var(--safe-top) + clamp(96px,12vh,112px))}
 .duel-layer{position:absolute;inset:0;z-index:1;overflow:hidden}
@@ -859,6 +869,7 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
 .duel-slide-art{position:absolute;left:0;right:0;top:var(--stage-top);bottom:calc(100% - var(--rim) - 3px);display:flex;justify-content:center;align-items:flex-start;overflow:hidden;pointer-events:none;container-type:size}
 .duel-slide-art .character-art-stage{height:160cqh;width:auto;flex:0 0 auto;filter:drop-shadow(0 10px 14px #000b)}
 .duel-slide-art .character-ragna.character-art-stage{height:122cqh}
+.duel-slide-art .character-kesh.character-art-stage{height:114cqh}
 .duel-slide-art .character-art{animation:none}
 .duel-plate{position:absolute;left:50%;top:calc(var(--rim) + 24px);translate:-50% 0;display:grid;justify-items:center;gap:2px;width:min(calc(100% - 40px),520px);color:var(--cream);text-align:center;text-shadow:0 1px 2px #000,0 0 10px #000c}
 .duel-plate .champion-kicker{color:#cbb48a;font:italic 500 14px/1.2 var(--display)}
@@ -895,6 +906,7 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
   .duel-controls{left:auto;right:auto;inset-inline-end:max(16px,var(--safe-right));bottom:calc(8px + var(--safe-bottom));align-items:flex-end;gap:4px}
   .screen-duel .select-note{display:none}
   .duel-seat .seat-figure .character-ragna.character-art-stage{height:auto;width:200%;translate:0 -2%}
+  .duel-seat .seat-figure .character-kesh.character-art-stage{height:auto;width:205%;translate:0 -3%}
   .duel-plate .chalk-record{justify-self:start}
   .duel-plate-attitude{display:none}
 }

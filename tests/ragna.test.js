@@ -54,7 +54,7 @@ test('bubbles show the exact authored transcript, acting directions removed, Heb
 });
 
 test('one framework: Ragna plugs into the shared registry, the shared controller and the single voice path',()=>{
-  assert.deepEqual(VOICED_OPPONENTS,['bramm','edrin','ragna']);
+  assert.deepEqual(VOICED_OPPONENTS,['bramm','edrin','ragna','kesh']);
   assert.match(resolveCharacterVoice('ragna_round_win_04','he').src,/ragna_round_win_04_he\.mp3$/);
   assert.match(read('../dist/duel/ragna.js'),/createAuthoredController\(RAGNA_SPEC/);
   assert.match(read('../dist/duel/edrin.js'),/createAuthoredController\(EDRIN_SPEC/);
@@ -210,7 +210,7 @@ test('baseline: stern by default, energized when close, focused (not afraid) on 
 
 test('generic bot dialogue is suppressed for Ragna like every authored character',()=>{
   const app=read('../dist/app.js');
-  assert.match(app,/if\(!isAuthoredDuel\(\)\)\{\n    if\(stop\)showQuip/);
+  assert.match(app,/if\(!isAuthoredDuel\(\)&&!keshSpoke\)\{\n    if\(stop\)showQuip/);
   assert.match(app,/function setDuelReaction\(kind,text=null,force=false\)\{if\(session\?\.mode!=='duel'\|\|isAuthoredDuel\(\)\)return;/);
 });
 
@@ -245,12 +245,12 @@ test('her AI is aggressive and competent: beats the tavern bots, holds fewer pow
   assert.ok(PRESSURE_PROFILE.holdCurse<VETERAN_PROFILE.holdCurse&&PRESSURE_PROFILE.holdWild<VETERAN_PROFILE.holdWild&&PRESSURE_PROFILE.pressure>0&&VETERAN_PROFILE.pressure===0);
 });
 
-test('the duel table offers only the three voiced regulars plus a random draw of the others',()=>{
+test('the duel table offers only the four voiced regulars plus a random draw of the others',()=>{
   const app=read('../dist/app.js');
   assert.match(app,/VOICED_OPPONENTS\.map\(id=>displayOpponent\(getDuelOpponent\(id\)\)\)/);
   assert.match(app,/data-random-opponent/);
   assert.match(app,/DUEL_OPPONENTS\.filter\(item=>!AUTHORED_CHARACTERS\[item\.id\]\)/);
-  assert.equal(DUEL_OPPONENTS.filter(item=>!AUTHORED_CHARACTERS[item.id]).length,10);
+  assert.equal(DUEL_OPPONENTS.filter(item=>!AUTHORED_CHARACTERS[item.id]).length,9);
   // Home menu order: Duel, Tavern Match, Quick Play.
   const home=app.slice(app.indexOf('function homeHTML'),app.indexOf('function duelSelectHTML'));
   const order=['duel-choice','tavern-choice','quick-choice'].map(name=>home.indexOf(`home-choice ${name}`));
