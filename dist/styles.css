@@ -541,7 +541,8 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
 .portrait-card .character-art-stage{position:absolute;left:-30%;top:4%;width:160%;height:auto;aspect-ratio:2/3}
 .portrait-card .character-art{object-fit:cover;object-position:50% 0}
 .portrait-card:after{content:"";position:absolute;inset:0;border-radius:4px;box-shadow:inset 0 0 0 3px #ead9af,inset 0 0 0 4px #694c2eaa,inset 0 -14px 12px -8px #1a0d0599}
-.resume-seat{position:relative;display:flex;align-items:center;gap:10px;width:100%;margin:0 0 12px;padding:7px 14px 7px 8px;border:0;border-radius:1px;color:var(--ink);text-align:start;transform:rotate(-.6deg);box-shadow:inset 0 0 14px #a27a4238,0 2px 0 #0003,0 8px 12px -2px #000b;transition:transform .18s ease}
+/* The kept seat is centred as one group (cards + words), so the slip reads balanced over the menu at any width. */
+.resume-seat{position:relative;display:flex;align-items:center;justify-content:center;gap:12px;width:100%;margin:0 0 12px;padding:7px 12px;border:0;border-radius:1px;color:var(--ink);text-align:start;transform:rotate(-.6deg);box-shadow:inset 0 0 14px #a27a4238,0 2px 0 #0003,0 8px 12px -2px #000b;transition:transform .18s ease}
 [dir=rtl] .resume-seat{transform:rotate(.6deg)}
 .resume-seat:hover,.resume-seat:focus-visible{transform:rotate(-.6deg) translateY(-2px)}
 .resume-seat+.home-choice:before{display:none}
@@ -596,7 +597,7 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
   .seat-props{display:block}
   .home-choices{width:min(100%,600px);gap:10px}
   .screen-home{--sign-w:min(70vw,460px)}
-  .resume-seat{margin-bottom:18px;padding:10px 20px 10px 12px}
+  .resume-seat{margin-bottom:18px;padding:10px 16px;gap:16px}
   .resume-copy strong{font-size:24px}
   .resume-copy small{font-size:16px}
   .home-choice{min-height:116px;gap:22px}
