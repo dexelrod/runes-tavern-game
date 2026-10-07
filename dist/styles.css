@@ -464,6 +464,11 @@ html[lang=he] :is(.sheet-lede,.setting-label,.rule-card p,.rule-scoring p,.stand
 .setting-label{display:flex;flex:1;align-items:baseline;gap:8px;min-width:0;font:500 17px/1.25 var(--display)}
 .setting-label:after{content:"";flex:1;min-width:12px;border-bottom:1.5px dotted #6a4b2c55}
 .language-row{padding-top:4px}
+/* A three-way ink choice: the label on its own line, the choices beneath it, aligned with the switches. */
+.choice-row{flex-wrap:wrap;row-gap:0}
+.choice-row .setting-label{flex:1 0 100%}
+.choice-row .ink-choice{flex:1 0 100%;flex-wrap:wrap;justify-content:flex-end}
+.choice-row .ink-choice button{font-size:16px;padding:0 6px}
 .audio-row{flex-wrap:wrap}
 .audio-row .setting-label{flex:0 1 auto;white-space:nowrap}
 .audio-row .setting-label:after{display:none}
@@ -879,12 +884,14 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
 .duel-figure .character-kesh.character-art-stage{height:calc(var(--fig-h) * 1.22);translate:0 0}
 .portrait-card .character-kesh.character-art-stage{left:-50%;top:3%;width:200%}
 .duel-seat.opponent-kesh .seat-props{display:none}
+/* Heights are capped so the highest point of any pose stays inside the seat (nothing above the head is clipped):
+   height ≤ 1 / (rim line − top of the art), both as fractions of the canvas. */
 /* ── Voiced guests at a Tavern table: each seat portrait is the character's live
       expression art, cropped per canvas so heads sit at the regulars' scale. ── */
-.seat-figure.guest-kesh>img{height:calc(var(--fig-h) * 1.2);translate:0 9%;object-position:50% 91%}
-.seat-figure.guest-ragna>img{height:calc(var(--fig-h) * 1.22);translate:0 11%;object-position:50% 89%}
-.seat-figure.guest-edrin>img{height:calc(var(--fig-h) * 1.9);translate:0 44%;object-position:50% 56%}
-.seat-figure.guest-bramm>img{height:calc(var(--fig-h) * 1.9);translate:0 44%;object-position:50% 56%}
+.seat-figure.guest-kesh>img{height:calc(var(--fig-h) * 1.09);translate:0 9%;object-position:50% 91%}
+.seat-figure.guest-ragna>img{height:calc(var(--fig-h) * 1.1);translate:0 11%;object-position:50% 89%}
+.seat-figure.guest-edrin>img{height:calc(var(--fig-h) * 1.84);translate:0 44%;object-position:50% 56%}
+.seat-figure.guest-bramm>img{height:calc(var(--fig-h) * 1.84);translate:0 44%;object-position:50% 56%}
 
 /* ── Duel table: one voiced regular at a time, sitting across from you. ── */
 .screen-duel{--rim:calc(58% + clamp(0px,(100vw - 600px) * .06,32px));--rim-curve:2%;--stage-top:calc(var(--safe-top) + clamp(96px,12vh,112px))}

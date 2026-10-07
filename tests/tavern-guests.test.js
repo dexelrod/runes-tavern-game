@@ -4,7 +4,7 @@ import test from 'node:test';
 import { TAVERN_BANTER, TAVERN_GUEST_POOLS, TAVERN_TIMING, allTavernVoices, createTavernDirector, guestHasVoice, reactionFor } from '../dist/duel/tavern-director.js';
 import { AUTHORED_CHARACTERS } from '../dist/duel/characters.js';
 import { mulberry32 } from '../dist/game-engine/cards.js';
-import { TAVERN_GUEST_ODDS, VOICED_TAVERN_GUESTS, createTavernMatch, restoreSession, serializeSession, tavernGuestsFor } from '../dist/game-engine/match.js';
+import { TAVERN_GUEST_ODDS, TAVERN_GUEST_PAIRS, VOICED_TAVERN_GUESTS, createTavernMatch, restoreSession, serializeSession, tavernGuestsFor } from '../dist/game-engine/match.js';
 import { chooseBotAction } from '../dist/game-ai/bot.js';
 import { TAVERN_PRESSURE_PROFILE, TAVERN_VETERAN_PROFILE, PRESSURE_PROFILE, VETERAN_PROFILE } from '../dist/game-ai/veteran.js';
 import { applyAction, createInitialState } from '../dist/game-engine/engine.js';
@@ -138,18 +138,38 @@ test('semantic safety: every line is true for the seat that says it',()=>{
   const muted=always({p2:'bramm'}).event('one_card',{actor:'p0',muted:true});assert.equal(muted.lines.length,0);assert.ok(muted.faces.length>=0);
 });
 
-test('appearance: about 30% of evenings one guest, about 7% two, never three; restored saves keep them',()=>{
-  assert.deepEqual(TAVERN_GUEST_ODDS,{one:.3,two:.07});
-  const counts=[0,0,0,0];for(let seed=0;seed<6000;seed++)counts[tavernGuestsFor(seed).filter(p=>p.voiced).length]++;
-  assert.ok(counts[1]/6000>.27&&counts[1]/6000<.33&&counts[2]/6000>.05&&counts[2]/6000<.09&&counts[3]===0,counts.join());
+test('appearance: "Sometimes" seats guests on about a third of evenings, mostly as a pair; "Every evening" always seats two or three; restored saves keep them',()=>{
+  assert.deepEqual(JSON.parse(JSON.stringify(TAVERN_GUEST_ODDS)),{sometimes:{one:.08,two:.27,three:0},often:{one:0,two:.75,three:.25}});
+  const count=mode=>{const c=[0,0,0,0];for(let seed=0;seed<6000;seed++)c[tavernGuestsFor(seed,{mode}).filter(p=>p.voiced).length]++;return c.map(n=>n/6000);};
+  const some=count('sometimes');assert.ok(some[1]>.06&&some[1]<.1&&some[2]>.24&&some[2]<.3&&some[3]===0,some.join());
+  const often=count('often');assert.ok(often[0]===0&&often[1]===0&&often[2]>.71&&often[3]>.21,often.join());
+  assert.ok(count('off')[0]===1);
   const m=createTavernMatch({seed:11,guests:['bramm','ragna']});const back=restoreSession(JSON.parse(JSON.stringify(serializeSession?serializeSession(m):m)));
   assert.deepEqual(back.roster.map(p=>p.nameKey),m.roster.map(p=>p.nameKey));
   assert.deepEqual(m.roster.filter(p=>p.voiced).map(p=>p.nameKey).toSorted(),['bramm','ragna']);
-  const app=read('../dist/app.js');assert.match(app,/createTavernMatch\(\{seed:Date\.now\(\),voicedGuests:settings\.tavernGuests!==false,guests\}\)/);
-  assert.match(app,/toggle\(c\.tavernGuests,'tavernGuests'\)/);assert.match(read('../dist/platform/storage.js'),/tavernGuests:true/);
+  const trio=createTavernMatch({seed:12,guests:['bramm','ragna','kesh']});assert.equal(trio.roster.filter(p=>p.voiced).length,3);
+  const app=read('../dist/app.js');assert.match(app,/createTavernMatch\(\{seed:Date\.now\(\),guestMode:settings\.tavernGuestMode,guests\}\)/);
+  assert.match(app,/data-guest-mode="\$\{mode\}"/);assert.match(read('../dist/platform/storage.js'),/tavernGuestMode:'sometimes'/);
   assert.match(app,/session\.tavernDirector=tavernGuests\.director\.snapshot\(\)/,'the director\'s memory (lines used, banters) is saved with the match');
 });
 
+test('pairs who can banter are strongly preferred, and the pair table matches the banter list',()=>{
+  const shared={};for(const b of TAVERN_BANTER){const key=[b.a[0],b.b[0]].sort().join('+');shared[key]=(shared[key]||0)+1;}
+  const guests=VOICED_TAVERN_GUESTS.map(g=>g.nameKey);for(let i=0;i<guests.length;i++)for(let j=i+1;j<guests.length;j++){const key=[guests[i],guests[j]].sort().join('+');assert.equal(TAVERN_GUEST_PAIRS[key],shared[key]||0,key);}
+  let banterPairs=0,pairs=0;for(let seed=0;seed<6000;seed++){const g=tavernGuestsFor(seed,{mode:'often'}).filter(p=>p.voiced).map(p=>p.nameKey);if(g.length!==2)continue;pairs++;if(TAVERN_GUEST_PAIRS[g.toSorted().join('+')])banterPairs++;}
+  assert.ok(banterPairs/pairs>.9,`${(100*banterPairs/pairs).toFixed(1)}% of pairs can trade lines`);
+});
+
+test('settings: an older "off" switch stays off; anything unknown becomes "Sometimes"',()=>{
+  const store={};globalThis.localStorage={getItem:k=>store[k]??null,setItem:(k,v)=>{store[k]=String(v);}};
+  return import('../dist/platform/storage.js').then(({loadSettings})=>{
+    store['taki-pocket-settings']=JSON.stringify({tavernGuests:false});assert.equal(loadSettings().tavernGuestMode,'off');
+    store['taki-pocket-settings']=JSON.stringify({tavernGuests:true});assert.equal(loadSettings().tavernGuestMode,'sometimes');
+    store['taki-pocket-settings']=JSON.stringify({tavernGuestMode:'often'});assert.equal(loadSettings().tavernGuestMode,'often');
+    store['taki-pocket-settings']=JSON.stringify({tavernGuestMode:'loud'});assert.equal(loadSettings().tavernGuestMode,'sometimes');
+    assert.equal('tavernGuests' in loadSettings(),false);
+  });
+});
 test('table-strength AI for guests: personality without a boss seat',t=>{
   // Seeded so the measured win rate is the same on every run (CI included).
   const savedRandom=Math.random;Math.random=seeded(20261007);t.after(()=>{Math.random=savedRandom;});

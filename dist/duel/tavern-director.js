@@ -81,8 +81,8 @@ export const TAVERN_TRIGGER_CHANCE=Object.freeze({
   round_win:.35,round_loss:.12,match_win:.85,match_loss:.5
 });
 const HIGH=new Set(['other_one_card','own_one_card']),RESULT=new Set(['round_win','round_loss','match_win','match_loss']),INTRO='intro';
-// Two guests share the moments, they do not double them.
-export const TWO_GUEST_SCALE=.6;
+// Two or three guests share the moments; they do not double (or triple) them.
+export const TWO_GUEST_SCALE=.6,THREE_GUEST_SCALE=.45;
 // One ordinary line per hand for the whole table, one last-card line per hand, and at most three
 // non-result lines per guest per match (two when two guests share the table): a guest says
 // roughly 2–5 things over five hands, and a banter is a once-in-a-while treat.
@@ -130,7 +130,7 @@ export const allTavernVoices=guest=>[...new Set(Object.values(TAVERN_GUEST_POOLS
 // `seats` maps seat id → guest id (e.g. {p2:'ragna',p3:'bramm'}).
 export function createTavernDirector({seats={},random=Math.random,now=()=>Date.now(),locale=()=>'en',initial=null}={}){
   const guestSeats=Object.entries(seats),bySeat=new Map(guestSeats),seatOf=Object.fromEntries(guestSeats.map(([seat,id])=>[id,seat]));
-  const scale=guestSeats.length>=2?TWO_GUEST_SCALE:1,T=TAVERN_TIMING;
+  const scale=guestSeats.length>=3?THREE_GUEST_SCALE:guestSeats.length===2?TWO_GUEST_SCALE:1,T=TAVERN_TIMING;
   const used=new Set(initial?.used||[]),usedWords=new Set(initial?.usedWords||[]),banters=new Set(initial?.banters||[]),casualBy={...(initial?.casualBy||{})};
   let lastSpokenAt=-Infinity,lastBanterAt=-Infinity,eventsSince=99,eventsThisRound=0,casualThisRound=0,highThisRound=0,shouts=initial?.shouts||0,lastFaceAt={},log=[...(initial?.log||[])];
   const words=(guest,voice)=>reactionFor(guest,voice)?.caption?.toLowerCase().replace(/[^a-z ]/g,'').trim();

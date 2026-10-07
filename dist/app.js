@@ -76,7 +76,7 @@ const isKeshDuel=()=>authoredPack()?.id==='kesh';
 let tavernGuests=null,tavernIdleTimer=null;
 const isVoicedGuest=player=>!!player&&VOICED_GUEST_KEYS.includes(player.nameKey);
 const guestSeatOf=id=>tavernGuests?Object.keys(tavernGuests.seats).find(seat=>tavernGuests.seats[seat].id===id)||null:null;
-const guestsMuted=()=>settings.tavernGuests===false||!settings.dialogue;
+const guestsMuted=()=>settings.tavernGuestMode==='off'||!settings.dialogue;
 // The rune-stone tell is decided together with his real decision, before he plays.
 // `keshTellPending`: he consulted the stone before his last move and the table has
 // not answered yet. `keshPenaltyOnHuman`: the player faced a Curse when they acted.
@@ -204,7 +204,7 @@ function beginDeckArrival(){
 const preloadWithin=(promise,ms=5000)=>Promise.race([promise.catch(()=>null),new Promise(resolve=>setTimeout(resolve,ms))]);
 async function startSession(mode='tavern',saved=null,{guests=null}={}){
   characterController=null;tavernGuests=null;resetKeshTellMemory();clearCharacterTimers();
-  const fresh=()=>mode==='tavern'?createTavernMatch({seed:Date.now(),voicedGuests:settings.tavernGuests!==false,guests}):mode==='duel'?createDuelSession({seed:Date.now(),opponent:getDuelOpponent(settings.duelOpponent)}):createQuickSession({playerCount:settings.playerCount,seed:Date.now()});
+  const fresh=()=>mode==='tavern'?createTavernMatch({seed:Date.now(),guestMode:settings.tavernGuestMode,guests}):mode==='duel'?createDuelSession({seed:Date.now(),opponent:getDuelOpponent(settings.duelOpponent)}):createQuickSession({playerCount:settings.playerCount,seed:Date.now()});
   let next;try{next=saved?restoreSession(saved):fresh();}catch{clearMatch();next=fresh();}
   // Expressions decode before the character sits down; voices warm in the background.
   if(next.mode==='duel'&&authoredCharacter(next.opponentId))await preloadWithin(authoredCharacter(next.opponentId).preload());
@@ -991,12 +991,14 @@ function sheetHTML(){
 }
 function settingsHTML(){
   const en=isEnglish(),c=en
-    ?{title:'Settings',language:'Language',sound:'Sound',gameSounds:'Game sounds',music:'Music',ambience:'Tavern ambience',gameplay:'Table',dialogue:'Character voices & reactions',tavernGuests:'Voiced characters at the Tavern',captions:'Captions',hints:'Highlight playable cards',tableMessages:'Hide table messages',accessibility:'Comfort',haptics:'Vibration',motion:'Reduce motion',contrast:'High card contrast',close:'Done',on:'On',off:'Off'}
-    :{title:'הגדרות',language:'שפה',sound:'צליל',gameSounds:'צלילי משחק',music:'מוזיקה',ambience:'אווירת פונדק',gameplay:'שולחן',dialogue:'קולות ותגובות של דמויות',tavernGuests:'דמויות מדברות במשחק הפונדק',captions:'כתוביות',hints:'הדגשת קלפים שאפשר לשחק',tableMessages:'הסתרת הודעות שולחן',accessibility:'נוחות',haptics:'רטט',motion:'צמצום תנועה',contrast:'ניגודיות גבוהה בקלפים',close:'סיום',on:'פועל',off:'כבוי'};
+    ?{title:'Settings',language:'Language',sound:'Sound',gameSounds:'Game sounds',music:'Music',ambience:'Tavern ambience',gameplay:'Table',dialogue:'Character voices & reactions',tavernGuests:'Voiced characters at the Tavern',guestModes:{off:'Off',sometimes:'Sometimes',often:'Every evening'},captions:'Captions',hints:'Highlight playable cards',tableMessages:'Hide table messages',accessibility:'Comfort',haptics:'Vibration',motion:'Reduce motion',contrast:'High card contrast',close:'Done',on:'On',off:'Off'}
+    :{title:'הגדרות',language:'שפה',sound:'צליל',gameSounds:'צלילי משחק',music:'מוזיקה',ambience:'אווירת פונדק',gameplay:'שולחן',dialogue:'קולות ותגובות של דמויות',tavernGuests:'דמויות מדברות במשחק הפונדק',guestModes:{off:'כבוי',sometimes:'לפעמים',often:'בכל ערב'},captions:'כתוביות',hints:'הדגשת קלפים שאפשר לשחק',tableMessages:'הסתרת הודעות שולחן',accessibility:'נוחות',haptics:'רטט',motion:'צמצום תנועה',contrast:'ניגודיות גבוהה בקלפים',close:'סיום',on:'פועל',off:'כבוי'};
   const toggle=(label,key)=>`<div class="setting-row toggle-row"><span class="setting-label" id="setting-${key}">${label}</span><button class="switch ${settings[key]?'on':''}" role="switch" data-toggle="${key}" aria-labelledby="setting-${key}" aria-checked="${!!settings[key]}"><i aria-hidden="true"></i><span class="switch-state">${settings[key]?c.on:c.off}</span></button></div>`;
   const audio=(label,key,volumeKey)=>{const value=Math.round((settings[volumeKey]??0)*100);return `<div class="setting-row audio-row ${settings[key]?'':'muted'}"><span class="setting-label" id="setting-${key}">${label}</span><div class="audio-controls"><input id="volume-${volumeKey}" type="range" min="0" max="100" step="5" value="${value}" style="--value:${value}%" data-volume="${volumeKey}" data-channel="${key}" aria-labelledby="setting-${key}" aria-valuetext="${value}%"><output for="volume-${volumeKey}"><bdi>${value}%</bdi></output><button class="switch ${settings[key]?'on':''}" role="switch" data-toggle="${key}" aria-labelledby="setting-${key}" aria-checked="${!!settings[key]}"><i aria-hidden="true"></i><span class="switch-state">${settings[key]?c.on:c.off}</span></button></div></div>`;};
   const fromPause=view==='game';
-  const body=`<div class="setting-row language-row"><span class="setting-label" id="setting-language">${c.language}</span><div class="ink-choice" role="radiogroup" aria-labelledby="setting-language"><button role="radio" data-language="he" aria-checked="${settings.language==='he'}" class="${settings.language==='he'?'on':''}" lang="he">עברית</button><i aria-hidden="true">·</i><button role="radio" data-language="en" aria-checked="${settings.language==='en'}" class="${settings.language==='en'?'on':''}" lang="en">English</button></div></div><section class="settings-section"><h3>${c.sound}</h3>${audio(c.gameSounds,'sound','sfxVolume')}${audio(c.music,'music','musicVolume')}${audio(c.ambience,'ambience','ambienceVolume')}</section><section class="settings-section"><h3>${c.gameplay}</h3>${toggle(c.dialogue,'dialogue')}${toggle(c.tavernGuests,'tavernGuests')}${toggle(c.captions,'captions')}${toggle(c.hints,'playableHints')}${toggle(c.tableMessages,'hideTableMessages')}</section><section class="settings-section"><h3>${c.accessibility}</h3>${toggle(c.haptics,'haptics')}${toggle(c.motion,'reducedMotion')}${toggle(c.contrast,'highContrastCards')}</section><p class="build-mark">RUNES v${APP_VERSION}</p><div class="sheet-actions"><button class="secondary-button" data-close-sheet>${fromPause?(en?'Back to the pause menu':'חזרה לתפריט'):c.close}</button></div>`;
+  // Off · Sometimes · Every evening — how often the voiced cast sits in at a Tavern Match.
+  const guestModeRow=`<div class="setting-row choice-row guest-mode-row"><span class="setting-label" id="setting-guest-mode">${c.tavernGuests}</span><div class="ink-choice" role="radiogroup" aria-labelledby="setting-guest-mode">${['off','sometimes','often'].map(mode=>`<button role="radio" data-guest-mode="${mode}" aria-checked="${settings.tavernGuestMode===mode}" class="${settings.tavernGuestMode===mode?'on':''}">${c.guestModes[mode]}</button>`).join('<i aria-hidden="true">·</i>')}</div></div>`;
+  const body=`<div class="setting-row language-row"><span class="setting-label" id="setting-language">${c.language}</span><div class="ink-choice" role="radiogroup" aria-labelledby="setting-language"><button role="radio" data-language="he" aria-checked="${settings.language==='he'}" class="${settings.language==='he'?'on':''}" lang="he">עברית</button><i aria-hidden="true">·</i><button role="radio" data-language="en" aria-checked="${settings.language==='en'}" class="${settings.language==='en'?'on':''}" lang="en">English</button></div></div><section class="settings-section"><h3>${c.sound}</h3>${audio(c.gameSounds,'sound','sfxVolume')}${audio(c.music,'music','musicVolume')}${audio(c.ambience,'ambience','ambienceVolume')}</section><section class="settings-section"><h3>${c.gameplay}</h3>${toggle(c.dialogue,'dialogue')}${guestModeRow}${toggle(c.captions,'captions')}${toggle(c.hints,'playableHints')}${toggle(c.tableMessages,'hideTableMessages')}</section><section class="settings-section"><h3>${c.accessibility}</h3>${toggle(c.haptics,'haptics')}${toggle(c.motion,'reducedMotion')}${toggle(c.contrast,'highContrastCards')}</section><p class="build-mark">RUNES v${APP_VERSION}</p><div class="sheet-actions"><button class="secondary-button" data-close-sheet>${fromPause?(en?'Back to the pause menu':'חזרה לתפריט'):c.close}</button></div>`;
   return sheetFrame('settings','settings-title',c.title,body,{closeLabel:en?'Close settings':'לסגור את ההגדרות'});
 }
 
@@ -1067,10 +1069,10 @@ function bind(){
   root.querySelectorAll('[data-close-sheet]').forEach(b=>b.onclick=closeSheet);
   root.querySelectorAll('[data-pause-nav]').forEach(b=>b.onclick=()=>{sheet=b.dataset.pauseNav;render();focusSheet();});
   root.querySelector('[data-sheet-backdrop]')?.addEventListener('click',event=>{if(event.target===event.currentTarget)closeSheet();});
+  root.querySelectorAll('[data-guest-mode]').forEach(b=>b.onclick=()=>{const mode=b.dataset.guestMode;settings.tavernGuestMode=mode;saveSettings(settings);if(mode==='off'&&tavernGuests?.speaking)audioSystem.stopVoice();render();requestAnimationFrame(()=>root.querySelector(`[data-guest-mode="${mode}"]`)?.focus({preventScroll:true}));});
   root.querySelectorAll('[data-language]').forEach(b=>b.onclick=()=>{const language=b.dataset.language;settings.language=language;hint='';screenReaderLine='';captionLine='';saveSettings(settings);if(isAuthoredDuel())void audioSystem.preloadVoice(language,Object.keys(authoredPack().voiceLibrary));render();requestAnimationFrame(()=>root.querySelector(`[data-language="${language}"]`)?.focus({preventScroll:true}));});
   root.querySelectorAll('[data-toggle]').forEach(b=>b.onclick=()=>{
     const key=b.dataset.toggle;settings[key]=!settings[key];saveSettings(settings);audioSystem.setSettings(settings);
-    if(key==='tavernGuests'&&!settings.tavernGuests&&tavernGuests?.speaking)audioSystem.stopVoice();
     if(key==='ambience'){if(settings.ambience)audioSystem.startAmbience();else audioSystem.stopAmbience();}
     if(key==='music'){if(settings.music)audioSystem.startMusic();else audioSystem.stopMusic();}
     if(key==='sound'&&settings.sound)audioSystem.play('cardPlaySoft');
@@ -1224,7 +1226,7 @@ window.KeshDebug=characterDebug('kesh',{
 // Tavern Match; say/banter/face force a line, an exchange or a face; event(type,context)
 // replays a table event through the director exactly as play would.
 window.TavernDebug=Object.freeze({
-  startWith:(ids=[])=>{clearMatch();return startSession('tavern',null,{guests:ids.slice(0,2)});},
+  startWith:(ids=[])=>{clearMatch();return startSession('tavern',null,{guests:ids.slice(0,3)});},
   guests:()=>tavernGuests?Object.fromEntries(Object.entries(tavernGuests.seats).map(([seat,item])=>[seat,{id:item.id,face:item.face}])):null,
   state:()=>tavernGuests?{...tavernGuests.director.snapshot(),speaking:tavernGuests.speaking,muted:guestsMuted(),locale:settings.language}:null,
   cooldown:()=>tavernGuests?.director.cooldown()||null,

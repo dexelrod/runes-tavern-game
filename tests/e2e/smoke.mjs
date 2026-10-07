@@ -132,9 +132,9 @@ console.log('Tavern Match: voiced guests, and the Settings switch');
   const log=await page.evaluate(()=>window.TavernDebug.state().log.map(item=>item.voice));check(log.every(voice=>/^(ragna|kesh)_/.test(voice)),`only the seated guests speak (${log.join(', ')})`);
   check((await snapshot(page)).voiceInterruptions===0,'no voice ever cut across another');
   check(errors.length===0,`no console errors (${errors.join(' | ')})`);await context.close();}
-{const {page,context,errors}=await open({width:1366,height:768},{language:'en',tavernGuests:false});let any=false;
+{const {page,context,errors}=await open({width:1366,height:768},{language:'en',tavernGuestMode:'off'});let any=false;
   for(let i=0;i<6;i++){await page.click('[data-tavern]');await page.waitForTimeout(700);if(await page.locator('.guest-figure').count())any=true;await page.click('[data-open="pause"]');await page.click('.pause-sheet [data-home]');await page.waitForTimeout(300);}
-  check(!any,'with the Settings switch off, no voiced guest sits down');
+  check(!any,'with the Settings choice "Off", no voiced guest sits down');
   check(errors.length===0,`no console errors (${errors.join(' | ')})`);await context.close();}
 
 await browser.close();

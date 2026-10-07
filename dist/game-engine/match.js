@@ -15,7 +15,7 @@ export const TAVERN_REGULARS=Object.freeze([
   {name:'ראסק',nameKey:'rusk',kind:'ai',archetype:'mysterious',house:'yellow'}
 ]);
 // The voiced cast drinks in the same tavern. Now and then one of them (rarely
-// two) happens to be playing tonight. Their Tavern archetypes are table-strength
+// two, or three) happens to be playing tonight. Their Tavern archetypes are table-strength
 // versions of their Duel play: personality comes from the voice, not a boss AI.
 export const VOICED_TAVERN_GUESTS=Object.freeze([
   {name:'בראם',nameKey:'bramm',kind:'ai',archetype:'mercenary',house:'red',voiced:true},
@@ -24,19 +24,36 @@ export const VOICED_TAVERN_GUESTS=Object.freeze([
   {name:'קֶשׁ',nameKey:'kesh',kind:'ai',archetype:'traveler',house:'blue',voiced:true}
 ]);
 export const VOICED_GUEST_KEYS=Object.freeze(VOICED_TAVERN_GUESTS.map(guest=>guest.nameKey));
-// Tuning: share of new evenings with one voiced guest, and with two. Never three.
-// TAVERN_GUESTS_ENABLED is the code-level kill switch (the player's own switch is in Settings).
+// Settings → "Voiced characters at the Tavern": off · sometimes (default) · often ("Every evening").
+// Tuning: share of new evenings by number of voiced guests. When guests come, they
+// usually come as company — a pair rather than one alone — and "Every evening"
+// always seats two, now and then three.
+// TAVERN_GUESTS_ENABLED is the code-level kill switch (the player's own choice is in Settings).
 export const TAVERN_GUESTS_ENABLED=true;
-export const TAVERN_GUEST_ODDS=Object.freeze({one:.3,two:.07});
+export const TAVERN_GUEST_MODES=Object.freeze(['off','sometimes','often']);
+export const TAVERN_GUEST_ODDS=Object.freeze({sometimes:Object.freeze({one:.08,two:.27,three:0}),often:Object.freeze({one:0,two:.75,three:.25})});
+// How many curated banter exchanges each pair shares (duel/tavern-director.js →
+// TAVERN_BANTER; a test keeps the two in step). Pairs who can trade lines are
+// strongly preferred: weight 1 + 3 × exchanges, so a pair with none is rare.
+export const TAVERN_GUEST_PAIRS=Object.freeze({'bramm+edrin':3,'bramm+kesh':2,'bramm+ragna':3,'edrin+kesh':0,'edrin+ragna':4,'kesh+ragna':0});
+const pairKey=(a,b)=>[a,b].sort().join('+'),pairWeight=(a,b)=>1+3*(TAVERN_GUEST_PAIRS[pairKey(a,b)]||0);
 const HUMAN_SEAT=Object.freeze({id:'p0',name:'אתם',nameKey:'you',kind:'human',archetype:'wanderer',house:'yellow'});
-export function tavernGuestsFor(seed,{voiced=true,guests=null}={}){
+const combos=(items,k)=>k===0?[[]]:items.flatMap((item,i)=>combos(items.slice(i+1),k-1).map(rest=>[item,...rest]));
+export function tavernGuestsFor(seed,{mode='sometimes',voiced=true,guests=null}={}){
   let value=(seed>>>0)||1;const next=()=>{value=Math.imul(value^(value>>>15),0x2c1b3c6d)>>>0;value=(value+0x9e3779b9)>>>0;return value;};
-  const voicedPool=[...VOICED_TAVERN_GUESTS],regulars=[...TAVERN_REGULARS],seated=[];
+  const regulars=[...TAVERN_REGULARS];let seated=[];
+  if(!voiced)mode='off';
   // `guests` (debug/QA) names the voiced guests outright; otherwise the evening rolls for them.
-  let count=0;
-  if(guests)for(const key of guests.slice(0,2)){const guest=voicedPool.find(item=>item.nameKey===key);if(guest){seated.push(guest);voicedPool.splice(voicedPool.indexOf(guest),1);}}
-  else if(voiced&&TAVERN_GUESTS_ENABLED){const roll=next()/2**32;count=roll<TAVERN_GUEST_ODDS.two?2:roll<TAVERN_GUEST_ODDS.two+TAVERN_GUEST_ODDS.one?1:0;}
-  for(let i=0;i<count;i++)seated.push(voicedPool.splice(next()%voicedPool.length,1)[0]);
+  if(guests)seated=VOICED_TAVERN_GUESTS.filter(item=>guests.slice(0,3).includes(item.nameKey));
+  else if(TAVERN_GUESTS_ENABLED&&TAVERN_GUEST_ODDS[mode]){
+    const odds=TAVERN_GUEST_ODDS[mode],roll=next()/2**32,count=roll<odds.three?3:roll<odds.three+odds.two?2:roll<odds.three+odds.two+odds.one?1:0;
+    if(count){
+      // Every possible group of that size, weighted by how many banter pairs it contains.
+      const groups=combos(VOICED_TAVERN_GUESTS,count),weights=groups.map(group=>count===1?1:combos(group,2).reduce((sum,[a,b])=>sum+pairWeight(a.nameKey,b.nameKey),0));
+      let pick=next()/2**32*weights.reduce((a,b)=>a+b,0),index=0;while(index<groups.length-1&&(pick-=weights[index])>=0)index++;
+      seated=[...groups[index]];
+    }
+  }
   while(seated.length<3)seated.push(regulars.splice(next()%regulars.length,1)[0]);
   // Shuffle the seats so a guest can sit anywhere at the table.
   for(let i=seated.length-1;i>0;i--){const j=next()%(i+1);[seated[i],seated[j]]=[seated[j],seated[i]];}
@@ -47,8 +64,8 @@ export const TAVERN_ROSTER=Object.freeze([HUMAN_SEAT,...TAVERN_REGULARS.slice(0,
 const freshRoster=roster=>roster.map(({hand,...player})=>({...player}));
 const scoreMap=roster=>Object.fromEntries(roster.map(p=>[p.id,0]));
 
-export function createTavernMatch({seed=Date.now(),roster=null,voicedGuests=true,guests=null}={}){
-  const players=freshRoster(roster||[HUMAN_SEAT,...tavernGuestsFor(seed,{voiced:voicedGuests,guests})].map((player,index)=>({...player,id:`p${index}`})));
+export function createTavernMatch({seed=Date.now(),roster=null,voicedGuests=true,guestMode='sometimes',guests=null}={}){
+  const players=freshRoster(roster||[HUMAN_SEAT,...tavernGuestsFor(seed,{voiced:voicedGuests,mode:guestMode,guests})].map((player,index)=>({...player,id:`p${index}`})));
   return {version:MATCH_VERSION,mode:'tavern',phase:'round',round:1,totalRounds:5,suddenDeath:false,seed,scores:scoreMap(players),roster:players,results:[],championId:null,game:createInitialState({playerCount:4,players,seed})};
 }
 
