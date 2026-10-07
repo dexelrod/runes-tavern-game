@@ -17,6 +17,9 @@ import { mulberry32 } from '../dist/game-engine/cards.js';
 import { VOICED_TAVERN_GUESTS, createDuelSession } from '../dist/game-engine/match.js';
 
 const read=path=>fs.readFileSync(new URL(path,import.meta.url),'utf8');
+// The planner's look-ahead stops on a think budget measured with performance.now(): freeze that clock in
+// tests so every machine (CI included) imagines the same number of hands and the results are identical.
+const freezeThinkClock=t=>{const saved=globalThis.performance.now;globalThis.performance.now=()=>0;t.after(()=>{globalThis.performance.now=saved;});};
 const seeded=seed=>mulberry32(seed);
 const line=id=>GORVAN_REACTIONS.find(item=>item.id===id);
 
@@ -135,7 +138,7 @@ test('in Hebrew a Gorvan exchange is text only — never a one-sided voiced half
 });
 
 test('his AI is patient, fair and beatable',t=>{
-  const savedRandom=Math.random;Math.random=seeded(20261007);t.after(()=>{Math.random=savedRandom;});
+  freezeThinkClock(t);const savedRandom=Math.random;Math.random=seeded(20261007);t.after(()=>{Math.random=savedRandom;});
   let checked=0;
   for(let seed=1;seed<=8;seed++){
     let state=createInitialState({playerCount:2,seed:seed*911,players:[{id:'p0',name:'You',kind:'human',archetype:'wanderer'},{id:'p1',name:'Gorvan',kind:'ai',archetype:'noble'}]});

@@ -17,6 +17,9 @@ import { mulberry32 } from '../dist/game-engine/cards.js';
 import { VOICED_TAVERN_GUESTS, createDuelSession, createTavernMatch } from '../dist/game-engine/match.js';
 
 const read=path=>fs.readFileSync(new URL(path,import.meta.url),'utf8');
+// The planner's look-ahead stops on a think budget measured with performance.now(): freeze that clock in
+// tests so every machine (CI included) imagines the same number of hands and the results are identical.
+const freezeThinkClock=t=>{const saved=globalThis.performance.now;globalThis.performance.now=()=>0;t.after(()=>{globalThis.performance.now=saved;});};
 const seeded=seed=>mulberry32(seed);
 const ready=(clock=()=>60000,random=()=>0)=>{const v=createVeyraController({random,now:clock});for(let i=0;i<5;i++)v.observe('own_move');return v;};
 
@@ -175,7 +178,8 @@ test('omens are read generously but honestly — only from public facts',()=>{
   assert.ok(veyraOmenEvent({counts:{p0:5,p1:2},previousCounts:{p0:3,p1:5}}).leadFlip);
 });
 
-test('omen frequency: noticeable and recurring, not constant; she is wrong about as often as she is right',()=>{
+test('omen frequency: noticeable and recurring, not constant; she is wrong about as often as she is right',t=>{
+  freezeThinkClock(t);
   const savedRandom=Math.random;Math.random=seeded(20261007);
   try{
     for(const mode of ['duel','tavern']){
@@ -241,7 +245,8 @@ test('banter with Kesh, Ragna and Edrin: authored sequences, each one performanc
   const app=read('../dist/app.js');assert.match(app,/function performGuestLines\(lines/);assert.match(app,/if\(index>=lines\.length\)\{guests\.speaking=false;/);
 });
 
-test('her AI is fair: identical choices whatever the hidden cards are',()=>{
+test('her AI is fair: identical choices whatever the hidden cards are',t=>{
+  freezeThinkClock(t);
   let checked=0;
   for(let seed=1;seed<=12;seed++){
     let state=createInitialState({playerCount:2,seed:seed*733,players:[{id:'p0',name:'You',kind:'human',archetype:'wanderer'},{id:'p1',name:'Veyra',kind:'ai',archetype:'witch'}]});
@@ -259,7 +264,7 @@ test('her AI is fair: identical choices whatever the hidden cards are',()=>{
 });
 
 test('her AI is control, competent and beatable: she keeps her answers for the moment that needs them',t=>{
-  const savedRandom=Math.random;Math.random=seeded(20261007);t.after(()=>{Math.random=savedRandom;});
+  freezeThinkClock(t);const savedRandom=Math.random;Math.random=seeded(20261007);t.after(()=>{Math.random=savedRandom;});
   let wins=0,games=0;
   for(let seed=1;seed<=100;seed++){
     const opponent=seed%2?'mercenary':'hunter',first=seed%4<2,players=[{id:'p0',name:'A',kind:'ai',archetype:first?'witch':opponent},{id:'p1',name:'B',kind:'ai',archetype:first?opponent:'witch'}];

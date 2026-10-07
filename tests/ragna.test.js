@@ -234,6 +234,8 @@ test('her AI is fair: identical choices whatever the hidden cards are',()=>{
 
 test('her AI is aggressive and competent: beats the tavern bots, holds fewer power cards than Edrin',t=>{
   // Seeded so the measured win rate is the same on every run (CI included).
+  // Freeze the planner's think-budget clock too, so every machine imagines the same number of hands.
+  const savedNow=globalThis.performance.now;globalThis.performance.now=()=>0;t.after(()=>{globalThis.performance.now=savedNow;});
   const savedRandom=Math.random;Math.random=seeded(20261007);t.after(()=>{Math.random=savedRandom;});
   let wins=0,games=0;
   for(let seed=1;seed<=120;seed++){
