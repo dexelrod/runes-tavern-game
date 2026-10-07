@@ -186,7 +186,8 @@ html[lang=he] :is(.sheet-lede,.setting-label,.rule-card p,.rule-scoring p,.stand
 .seat>*{direction:var(--dir,ltr)}
 .seat:not(.has-figure){padding-top:var(--fig-h)}
 .seat-figure{position:relative;width:100%;height:var(--fig-h);display:flex;justify-content:center;align-items:flex-end;overflow:hidden;pointer-events:none}
-.seat-figure>img{display:block;height:calc(var(--fig-h) * 1.06);width:auto;max-width:150%;object-fit:contain;object-position:50% 0;translate:0 6%;filter:brightness(.82) saturate(.9) drop-shadow(0 6px 8px #0009);transition:filter .5s ease}
+/* Never cropped at the sides: a portrait wider than its seat shrinks to fit, scaling about the line where the table rim crosses it so the figure stays seated. */
+.seat-figure>img{display:block;height:calc(var(--fig-h) * 1.06);width:auto;max-width:100%;object-fit:contain;object-position:50% 94%;translate:0 6%;filter:brightness(.82) saturate(.9) drop-shadow(0 6px 8px #0009);transition:filter .5s ease}
 .seat.active .seat-figure>img{filter:brightness(1.02) saturate(1) drop-shadow(0 6px 10px #000a)}
 .sprite-figure .duel-sprite{display:block;width:calc(var(--fig-h) * 1.08);height:calc(var(--fig-h) * 1.08);flex:0 0 auto;background:var(--sprite-sheet,url('./assets/duel-opponents.png')) no-repeat;background-size:500% 500%;background-position:var(--sprite-x) var(--sprite-y);translate:0 9%;filter:brightness(.82) saturate(.9) drop-shadow(0 6px 8px #0009);transition:filter .5s ease;-webkit-mask-image:radial-gradient(ellipse 50% 92% at 50% 45%,#000 62%,transparent 100%);mask-image:radial-gradient(ellipse 50% 92% at 50% 45%,#000 62%,transparent 100%)}
 .seat.active .sprite-figure .duel-sprite{filter:brightness(1.02) saturate(1) drop-shadow(0 6px 10px #000a)}
@@ -880,11 +881,10 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
 .duel-seat.opponent-kesh .seat-props{display:none}
 /* ── Voiced guests at a Tavern table: each seat portrait is the character's live
       expression art, cropped per canvas so heads sit at the regulars' scale. ── */
-.seat-figure.guest-figure>img{max-width:none}
-.seat-figure.guest-kesh>img{height:calc(var(--fig-h) * 1.2);translate:0 9%}
-.seat-figure.guest-ragna>img{height:calc(var(--fig-h) * 1.22);translate:0 11%}
-.seat-figure.guest-edrin>img{height:calc(var(--fig-h) * 1.9);translate:0 44%}
-.seat-figure.guest-bramm>img{height:calc(var(--fig-h) * 1.9);translate:0 44%}
+.seat-figure.guest-kesh>img{height:calc(var(--fig-h) * 1.2);translate:0 9%;object-position:50% 91%}
+.seat-figure.guest-ragna>img{height:calc(var(--fig-h) * 1.22);translate:0 11%;object-position:50% 89%}
+.seat-figure.guest-edrin>img{height:calc(var(--fig-h) * 1.9);translate:0 44%;object-position:50% 56%}
+.seat-figure.guest-bramm>img{height:calc(var(--fig-h) * 1.9);translate:0 44%;object-position:50% 56%}
 
 /* ── Duel table: one voiced regular at a time, sitting across from you. ── */
 .screen-duel{--rim:calc(58% + clamp(0px,(100vw - 600px) * .06,32px));--rim-curve:2%;--stage-top:calc(var(--safe-top) + clamp(96px,12vh,112px))}
