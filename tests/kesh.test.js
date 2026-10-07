@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { KESH_EXPRESSIONS, KESH_REACTIONS, KESH_SCRIPT, KESH_STATES, KESH_TELL, KESH_VOICE_LIBRARY, createKeshController, keshDecisionIsMajor, keshEventFor, keshExpressionURL, keshTavernEventFor, keshTellFor, resolveKeshReaction, resolveKeshVoice } from '../dist/duel/kesh.js';
+import { KESH_EXPRESSIONS, KESH_REACTIONS, KESH_SCRIPT, KESH_STATES, KESH_TELL, KESH_VOICE_LIBRARY, createKeshController, keshDecisionIsMajor, keshEventFor, keshExpressionURL, keshTellFor, resolveKeshReaction, resolveKeshVoice } from '../dist/duel/kesh.js';
 import { createEdrinController } from '../dist/duel/edrin.js';
 import { createRagnaController } from '../dist/duel/ragna.js';
 import { AUTHORED_CHARACTERS, VOICED_OPPONENTS, resolveCharacterVoice } from '../dist/duel/characters.js';
@@ -11,7 +11,7 @@ import { chooseBotAction } from '../dist/game-ai/bot.js';
 import { OMEN_PROFILE, VETERAN_PROFILE, chooseVeteranAction, omenColour, veteranColour } from '../dist/game-ai/veteran.js';
 import { applyAction, createInitialState, currentPlayer } from '../dist/game-engine/engine.js';
 import { mulberry32 } from '../dist/game-engine/cards.js';
-import { TAVERN_REGULARS, createDuelSession, createTavernMatch } from '../dist/game-engine/match.js';
+import { TAVERN_REGULARS, VOICED_TAVERN_GUESTS, createDuelSession, createTavernMatch } from '../dist/game-engine/match.js';
 
 const read=path=>fs.readFileSync(new URL(path,import.meta.url),'utf8');
 const seeded=seed=>mulberry32(seed);
@@ -57,7 +57,7 @@ test('one framework: Kesh plugs into the shared registry, the shared controller 
   for(const pool of Object.values(getDuelOpponent('kesh').dialoguePools))assert.equal(pool.length,0,'no generic quips');
   for(const pool of Object.values(localizeDuelOpponent(getDuelOpponent('kesh'),'en').dialoguePools))assert.equal(pool.length,0,'no generic English quips either');
   assert.equal(createDuelSession({seed:3,opponent:getDuelOpponent('kesh')}).game.players[1].archetype,'traveler');
-  assert.equal(TAVERN_REGULARS.find(p=>p.nameKey==='kesh').archetype,'traveler');
+  assert.equal(VOICED_TAVERN_GUESTS.find(p=>p.nameKey==='kesh').archetype,'traveler');assert.ok(!TAVERN_REGULARS.some(p=>p.nameKey==='kesh'),'at the Tavern he is a voiced guest now, not an ordinary regular');
 });
 
 test('Kesh is separated from Rusk and the old shared quip pool',()=>{
@@ -68,9 +68,9 @@ test('Kesh is separated from Rusk and the old shared quip pool',()=>{
   assert.equal(getDuelOpponent('rusk').archetype,'mysterious');
   for(const pool of Object.values(localizeDuelOpponent(getDuelOpponent('rusk'),'en').dialoguePools))for(const text of pool)assert.doesNotMatch(text,/wind|fire|road|river|sign/i);
   // His seat never takes a generic line, and generic speakers skip him.
-  assert.match(app,/function botLine\(playerId,trigger\)\{const player=state\.players\.find\(p=>p\.id===playerId\);if\(player\?\.nameKey==='kesh'\)return null;/);
+  assert.match(app,/function botLine\(playerId,trigger\)\{const player=state\.players\.find\(p=>p\.id===playerId\);if\(isVoicedGuest\(player\)\)return null;/);
   assert.match(app,/if\(!isAuthoredDuel\(\)&&!keshSpoke\)\{/);
-  assert.ok((app.match(/p\.nameKey!=='kesh'/g)||[]).length>=4,'generic speakers are chosen from the other regulars');
+  assert.ok((app.match(/!isVoicedGuest\(p\)/g)||[]).length>=4,'generic speakers are chosen from the other regulars');
 });
 
 test('anti-repetition: never the same recording or the same words twice running; EN and HE are one reaction',()=>{
@@ -204,17 +204,6 @@ test('event classifier: genuine swings only, and the signs can be wrong',()=>{
   for(let seed=1;seed<=60;seed++){const r=createKeshController({random:seeded(seed)}).react('king',{own:true},true);if(r)assert.equal(r.voice,'kesh_king_01');}
 });
 
-test('tavern classifier: his own moments and the table\'s big ones; everything else only counts',()=>{
-  const counts={p0:5,p1:5,p2:5,p3:5};
-  assert.equal(keshTavernEventFor({keshId:'p2',counts:{...counts,p3:1},oldCounts:counts,played:{playerId:'p3'}})[0],'player_one_card');
-  assert.equal(keshTavernEventFor({keshId:'p2',counts:{...counts,p2:1},oldCounts:counts,played:{playerId:'p2'}})[0],'kesh_one_card');
-  assert.equal(keshTavernEventFor({keshId:'p2',counts,oldCounts:counts,stop:{skipped:'p2'},played:{playerId:'p1'},playedCard:{type:'stop'}})[0],'skip');
-  assert.equal(keshTavernEventFor({keshId:'p2',counts,oldCounts:counts,stop:{skipped:'p3'},played:{playerId:'p1'},playedCard:{type:'stop'}})[0],'player_neutral_move');
-  assert.equal(keshTavernEventFor({keshId:'p2',counts,oldCounts:counts,penalty:{playerId:'p2',amount:2},tellPending:true})[0],'omen_failed');
-  assert.equal(keshTavernEventFor({keshId:'p2',counts,oldCounts:counts,penalty:{playerId:'p0',amount:4}})[0],'curse');
-  assert.equal(keshTavernEventFor({keshId:'p2',counts,oldCounts:counts,penalty:{playerId:'p0',amount:2}}),null,'a small Curse elsewhere is not his business');
-});
-
 test('his face: calm by default, closer when the hands run short, watchful on the player\'s last card',()=>{
   const kesh=createKeshController({random:()=>0});
   assert.equal(kesh.defaultExpression(),'default_observant');
@@ -277,30 +266,18 @@ test('Kesh plays his own way in every mode, old saves included',()=>{
   const state=createInitialState({playerCount:2,seed:5,players});
   if(currentPlayer(state).id==='p1'){const action=chooseBotAction(state);assert.ok(action.type);}
   assert.match(read('../dist/game-ai/bot.js'),/player\.archetype==='traveler'\|\|\(player\.archetype==='mysterious'&&player\.nameKey==='kesh'\)/);
-  let seen=false;for(let seed=0;seed<200&&!seen;seed++){const m=createTavernMatch({seed});const k=m.roster.find(p=>p.nameKey==='kesh');if(k){seen=true;assert.equal(k.archetype,'traveler');}}assert.ok(seen);
+  const m=createTavernMatch({seed:7,guests:['kesh']});assert.equal(m.roster.find(p=>p.nameKey==='kesh').archetype,'traveler');
 });
 
 test('old Kesh art is migrated: no seated portrait, no sprite reactions, new art preloaded with a time limit',()=>{
   assert.ok(!fs.existsSync(new URL('../dist/assets/characters/table/kesh-seated.webp',import.meta.url)));
   const app=read('../dist/app.js'),sw=read('../dist/sw.js');
   assert.doesNotMatch(app+sw,/kesh-seated/);assert.match(sw,/'\.\/duel\/kesh\.js'/);
-  assert.match(app,/player\.nameKey==='kesh'\)\{const face=/);
-  assert.match(app,/await preloadWithin\(preloadKeshExpressions\(\)\)/);
+  assert.match(app,/isVoicedGuest\(player\)\)\{const pack=AUTHORED_CHARACTERS\[player\.nameKey\],face=/);
+  assert.match(app,/await preloadWithin\(Promise\.all\(tavernGuestIds\.map\(id=>AUTHORED_CHARACTERS\[id\]\.preload\(\)\)\)\)/);
   assert.match(app,/await preloadWithin\(authoredCharacter\(next\.opponentId\)\.preload\(\)\)/);
   assert.deepEqual(getDuelOpponent('kesh').sprites,{});
   // His table props: the clay cup only; the stone lives in his hand.
   assert.match(app,/kesh:\['ceramicCup'\]/);
 });
 
-test('at a Tavern table he is quieter still, and voices only your last card',()=>{
-  let duel=0,tavern=0;
-  for(let seed=1;seed<=300;seed++){
-    let clock=0;const d=createKeshController({random:seeded(seed),now:()=>clock}),t=createKeshController({random:seeded(seed),now:()=>clock});
-    for(let i=0;i<6;i++){d.observe('kesh_move');t.observe('kesh_move');}clock=60000;
-    if(d.react('skip',{}))duel++;if(t.react('skip',{tavern:true}))tavern++;
-  }
-  assert.ok(tavern<duel*.7,`tavern ${tavern} vs duel ${duel}`);
-  assert.equal(ready().react('player_one_card',{tavern:true,who:'p2'}),null,'another regular on one card: a look, not a line');
-  assert.ok(ready().react('player_one_card',{tavern:true,who:'p0'}));
-  assert.equal(ready().observe('player_one_card',{tavern:true,who:'p2'}).expression,'player_one_card');
-});

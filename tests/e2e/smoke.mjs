@@ -74,7 +74,7 @@ console.log('Tavern Match: two scored rounds');
 
 console.log('Duel vs Bramm: one round, English');
 {const {page,context,errors}=await open({width:390,height:844},{language:'en'},true);
-  await page.click('[data-duel]');await page.click('[data-duel-go="0"]');await page.click('.duel-sit[data-opponent="bramm"]');await page.waitForTimeout(1500);
+  await page.click('[data-duel]');await page.click('[data-duel-go="0"]');await page.click('.duel-sit[data-opponent="bramm"]');await page.waitForSelector('.duel-seat.opponent-bramm .character-art',{timeout:10000}).catch(()=>{});
   check(await page.locator('.duel-seat.opponent-bramm .character-art').isVisible(),'Bramm sits at the table');
   check(await playRound(page),'duel round reaches the result slip');
   check(errors.length===0,`no console errors (${errors.join(' | ')})`);await context.close();}
@@ -122,6 +122,19 @@ for(const language of ['he','en']){const {page,context,errors}=await open({width
   check(await page.locator('.duel-seat .speech:not(.character-speech)').count()===0,'no generic bot bubble at Kesh\'s seat');
   check(await playRound(page),'duel round reaches the result slip');
   const said=await page.evaluate(()=>window.KeshDebug.history().map(item=>item.voice));check(said.every(voice=>/^kesh_/.test(voice)),'only his own authored lines');
+  check(errors.length===0,`no console errors (${errors.join(' | ')})`);await context.close();}
+
+console.log('Tavern Match: voiced guests, and the Settings switch');
+{const {page,context,errors}=await open({width:1366,height:768},{language:'en',captions:true});
+  await page.evaluate(()=>window.TavernDebug.startWith(['ragna','kesh']));await page.waitForSelector('.seat-figure.guest-ragna img',{timeout:10000}).catch(()=>{});
+  check(await page.locator('.seat-figure.guest-ragna img').count()===1&&await page.locator('.seat-figure.guest-kesh img').count()===1,'two guests sit at the table with their live faces');
+  check(await playRound(page),'a round with guests reaches the result slip');
+  const log=await page.evaluate(()=>window.TavernDebug.state().log.map(item=>item.voice));check(log.every(voice=>/^(ragna|kesh)_/.test(voice)),`only the seated guests speak (${log.join(', ')})`);
+  check((await snapshot(page)).voiceInterruptions===0,'no voice ever cut across another');
+  check(errors.length===0,`no console errors (${errors.join(' | ')})`);await context.close();}
+{const {page,context,errors}=await open({width:1366,height:768},{language:'en',tavernGuests:false});let any=false;
+  for(let i=0;i<6;i++){await page.click('[data-tavern]');await page.waitForTimeout(700);if(await page.locator('.guest-figure').count())any=true;await page.click('[data-open="pause"]');await page.click('.pause-sheet [data-home]');await page.waitForTimeout(300);}
+  check(!any,'with the Settings switch off, no voiced guest sits down');
   check(errors.length===0,`no console errors (${errors.join(' | ')})`);await context.close();}
 
 await browser.close();

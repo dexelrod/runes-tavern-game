@@ -1,5 +1,5 @@
 const SETTINGS='taki-pocket-settings'; const MATCH='taki-pocket-match';
-export const defaults={language:'en',playerCount:3,difficulty:'normal',sound:true,ambience:true,music:true,sfxVolume:.9,ambienceVolume:.18,musicVolume:.14,dialogue:true,captions:false,haptics:true,reducedMotion:false,highContrastCards:false,playableHints:true,hideTableMessages:true,tutorial:true,duelOpponent:'ron',duelRecords:{}};
+export const defaults={language:'en',playerCount:3,difficulty:'normal',sound:true,ambience:true,music:true,sfxVolume:.9,ambienceVolume:.18,musicVolume:.14,dialogue:true,tavernGuests:true,captions:false,haptics:true,reducedMotion:false,highContrastCards:false,playableHints:true,hideTableMessages:true,tutorial:true,duelOpponent:'ron',duelRecords:{}};
 export function loadSettings(){try{const loaded={...defaults,...JSON.parse(localStorage.getItem(SETTINGS)||'{}')};if(![2,3,4,6].includes(loaded.playerCount))loaded.playerCount=defaults.playerCount;if(!['he','en'].includes(loaded.language))loaded.language=defaults.language;return loaded;}catch{return {...defaults};}}
 export function saveSettings(value){localStorage.setItem(SETTINGS,JSON.stringify(value));}
 export function saveMatch(state){localStorage.setItem(MATCH,JSON.stringify(state));}

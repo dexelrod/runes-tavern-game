@@ -878,8 +878,13 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
 .duel-figure .character-kesh.character-art-stage{height:calc(var(--fig-h) * 1.22);translate:0 0}
 .portrait-card .character-kesh.character-art-stage{left:-50%;top:3%;width:200%}
 .duel-seat.opponent-kesh .seat-props{display:none}
-/* At a Tavern table his seat portrait is the same live expression art. */
-.seat-figure.kesh-figure>img{height:calc(var(--fig-h) * 1.2);max-width:none;translate:0 9%}
+/* ── Voiced guests at a Tavern table: each seat portrait is the character's live
+      expression art, cropped per canvas so heads sit at the regulars' scale. ── */
+.seat-figure.guest-figure>img{max-width:none}
+.seat-figure.guest-kesh>img{height:calc(var(--fig-h) * 1.2);translate:0 9%}
+.seat-figure.guest-ragna>img{height:calc(var(--fig-h) * 1.22);translate:0 11%}
+.seat-figure.guest-edrin>img{height:calc(var(--fig-h) * 1.9);translate:0 44%}
+.seat-figure.guest-bramm>img{height:calc(var(--fig-h) * 1.9);translate:0 44%}
 
 /* ── Duel table: one voiced regular at a time, sitting across from you. ── */
 .screen-duel{--rim:calc(58% + clamp(0px,(100vw - 600px) * .06,32px));--rim-curve:2%;--stage-top:calc(var(--safe-top) + clamp(96px,12vh,112px))}

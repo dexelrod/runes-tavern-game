@@ -1,33 +1,54 @@
 import { createInitialState, restoreState, serializeState } from './engine.js';
 
 export const MATCH_VERSION=1;
-// The five regulars who can sit at a Tavern Match. Each evening three of them
-// take the seats (seeded, so a saved match always restores the same table).
+// The ordinary regulars who can sit at a Tavern Match (seeded, so a saved match
+// always restores the same table).
 export const TAVERN_REGULARS=Object.freeze([
   {name:'איילה',nameKey:'aila',kind:'ai',archetype:'hunter',house:'green'},
   {name:'רון',nameKey:'ron',kind:'ai',archetype:'bard',house:'red'},
   {name:'בראן',nameKey:'bran',kind:'ai',archetype:'mercenary',house:'blue'},
   {name:'סֶלָה',nameKey:'sela',kind:'ai',archetype:'scholar',house:'yellow'},
-  {name:'קֶשׁ',nameKey:'kesh',kind:'ai',archetype:'traveler',house:'blue'},
   {name:'רודריק',nameKey:'roderic',kind:'ai',archetype:'mercenary',house:'red'},
   {name:'ליאו',nameKey:'lio',kind:'ai',archetype:'bard',house:'yellow'},
   {name:'מוגרת׳',nameKey:'mograth',kind:'ai',archetype:'mercenary',house:'green'},
   {name:'הארו',nameKey:'harrow',kind:'ai',archetype:'hunter',house:'blue'},
   {name:'ראסק',nameKey:'rusk',kind:'ai',archetype:'mysterious',house:'yellow'}
 ]);
+// The voiced cast drinks in the same tavern. Now and then one of them (rarely
+// two) happens to be playing tonight. Their Tavern archetypes are table-strength
+// versions of their Duel play: personality comes from the voice, not a boss AI.
+export const VOICED_TAVERN_GUESTS=Object.freeze([
+  {name:'בראם',nameKey:'bramm',kind:'ai',archetype:'mercenary',house:'red',voiced:true},
+  {name:'אדרין',nameKey:'edrin',kind:'ai',archetype:'tavern-veteran',house:'green',voiced:true},
+  {name:'ראגנה',nameKey:'ragna',kind:'ai',archetype:'tavern-warrior',house:'blue',voiced:true},
+  {name:'קֶשׁ',nameKey:'kesh',kind:'ai',archetype:'traveler',house:'blue',voiced:true}
+]);
+export const VOICED_GUEST_KEYS=Object.freeze(VOICED_TAVERN_GUESTS.map(guest=>guest.nameKey));
+// Tuning: share of new evenings with one voiced guest, and with two. Never three.
+// TAVERN_GUESTS_ENABLED is the code-level kill switch (the player's own switch is in Settings).
+export const TAVERN_GUESTS_ENABLED=true;
+export const TAVERN_GUEST_ODDS=Object.freeze({one:.3,two:.07});
 const HUMAN_SEAT=Object.freeze({id:'p0',name:'אתם',nameKey:'you',kind:'human',archetype:'wanderer',house:'yellow'});
-export function tavernGuestsFor(seed){
-  const pool=[...TAVERN_REGULARS],guests=[];let value=(seed>>>0)||1;
-  while(guests.length<3){value=Math.imul(value^(value>>>15),0x2c1b3c6d)>>>0;value=(value+0x9e3779b9)>>>0;guests.push(pool.splice(value%pool.length,1)[0]);}
-  return guests;
+export function tavernGuestsFor(seed,{voiced=true,guests=null}={}){
+  let value=(seed>>>0)||1;const next=()=>{value=Math.imul(value^(value>>>15),0x2c1b3c6d)>>>0;value=(value+0x9e3779b9)>>>0;return value;};
+  const voicedPool=[...VOICED_TAVERN_GUESTS],regulars=[...TAVERN_REGULARS],seated=[];
+  // `guests` (debug/QA) names the voiced guests outright; otherwise the evening rolls for them.
+  let count=0;
+  if(guests)for(const key of guests.slice(0,2)){const guest=voicedPool.find(item=>item.nameKey===key);if(guest){seated.push(guest);voicedPool.splice(voicedPool.indexOf(guest),1);}}
+  else if(voiced&&TAVERN_GUESTS_ENABLED){const roll=next()/2**32;count=roll<TAVERN_GUEST_ODDS.two?2:roll<TAVERN_GUEST_ODDS.two+TAVERN_GUEST_ODDS.one?1:0;}
+  for(let i=0;i<count;i++)seated.push(voicedPool.splice(next()%voicedPool.length,1)[0]);
+  while(seated.length<3)seated.push(regulars.splice(next()%regulars.length,1)[0]);
+  // Shuffle the seats so a guest can sit anywhere at the table.
+  for(let i=seated.length-1;i>0;i--){const j=next()%(i+1);[seated[i],seated[j]]=[seated[j],seated[i]];}
+  return seated;
 }
 export const TAVERN_ROSTER=Object.freeze([HUMAN_SEAT,...TAVERN_REGULARS.slice(0,3)].map((player,index)=>Object.freeze({...player,id:`p${index}`})));
 
 const freshRoster=roster=>roster.map(({hand,...player})=>({...player}));
 const scoreMap=roster=>Object.fromEntries(roster.map(p=>[p.id,0]));
 
-export function createTavernMatch({seed=Date.now(),roster=null}={}){
-  const players=freshRoster(roster||[HUMAN_SEAT,...tavernGuestsFor(seed)].map((player,index)=>({...player,id:`p${index}`})));
+export function createTavernMatch({seed=Date.now(),roster=null,voicedGuests=true,guests=null}={}){
+  const players=freshRoster(roster||[HUMAN_SEAT,...tavernGuestsFor(seed,{voiced:voicedGuests,guests})].map((player,index)=>({...player,id:`p${index}`})));
   return {version:MATCH_VERSION,mode:'tavern',phase:'round',round:1,totalRounds:5,suddenDeath:false,seed,scores:scoreMap(players),roster:players,results:[],championId:null,game:createInitialState({playerCount:4,players,seed})};
 }
 

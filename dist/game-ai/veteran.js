@@ -303,3 +303,9 @@ export const OMEN_PROFILE=Object.freeze({
   jitter:2.5,mistakeRate:.04,mistakeWindow:6,
   omenBias:3,omenPick:9
 });
+
+// Voiced guests at a Tavern table play table-strength versions of their Duel AI:
+// the same fair judgement and personality weights, without the look-ahead, and a
+// few more human slips. Personality, not a boss fight in one seat.
+export const TAVERN_VETERAN_PROFILE=Object.freeze({...VETERAN_PROFILE,samples:0,mistakeRate:.12});
+export const TAVERN_PRESSURE_PROFILE=Object.freeze({...PRESSURE_PROFILE,samples:0,mistakeRate:.1});

@@ -43,7 +43,7 @@ export class AudioSystem{
     this.context=null;this.channelGains={};this.buffers=new Map();this.loads=new Map();this.activeSfx=new Map();this.lastPlayed=new Map();this.lastCardPlayVariation=null;this.timers=new Set();
     this.ambienceNode=null;this.ambienceRequest=0;this.ambienceIndex=Math.floor(Math.random()*AMBIENCE_TRACKS.length);
     this.musicNode=null;this.musicRequest=0;this.musicIndex=Math.floor(Math.random()*MUSIC_TRACKS.length);
-    this.voiceSource=null;this.voicePriority=0;this.voiceLocked=false;this.voiceRequest=0;this.voiceOnEnded=null;
+    this.voiceSource=null;this.voicePriority=0;this.voiceLocked=false;this.voiceRequest=0;this.voiceOnEnded=null;this.voiceName=null;this.voiceInterruptions=0;
   }
   setSettings(settings={}){
     this.channelEnabled.sfx=settings.sound!==false;this.channelEnabled.ambience=settings.ambience!==false;this.channelEnabled.music=settings.music!==false;this.channelEnabled.voice=settings.sound!==false&&settings.dialogue!==false;
@@ -81,11 +81,11 @@ export class AudioSystem{
   makeSource(buffer,channel,{volume=1,rate=1,loop=false}={}){const context=this.ensureContext(),channelGain=this.channelGains[channel];if(!context||!channelGain)return null;const source=context.createBufferSource(),gain=context.createGain();source.buffer=buffer;source.loop=loop;source.playbackRate.value=rate;gain.gain.value=clamp(volume);source.connect(gain);gain.connect(channelGain);return {source,gain,buffer,channel,loop,stopped:false,paused:false};}
   async playVoice(name,{priority='LOW',volume=1,onEnded=null,locked=false,locale='en'}={}){
     if(!this.enabled||!this.channelEnabled.voice||this.channels.voice<=0)return null;const rank=VOICE_PRIORITY[priority]||VOICE_PRIORITY.LOW;if(this.voiceSource&&(this.voiceLocked||rank<this.voicePriority))return null;
-    const request=++this.voiceRequest,buffer=await this.loadVoice(name,locale);if(!buffer||request!==this.voiceRequest||!this.channelEnabled.voice)return null;if(this.voiceSource)this.stopVoice({restoreMusic:false});const node=this.makeSource(buffer,'voice',{volume});if(!node)return null;
-    this.voiceSource=node;this.voicePriority=rank;this.voiceLocked=locked;this.voiceOnEnded=onEnded;this.duckMusic(.79,110);
-    node.source.onended=()=>{if(this.voiceSource!==node)return;this.voiceSource=null;this.voicePriority=0;this.voiceLocked=false;const callback=this.voiceOnEnded;this.voiceOnEnded=null;this.duckMusic(1,260);callback?.(buffer.duration||0);};try{node.source.start(0);return {...node,duration:buffer.duration||0};}catch{this.voiceSource=null;this.voicePriority=0;this.voiceLocked=false;return null;}
+    const request=++this.voiceRequest,buffer=await this.loadVoice(name,locale);if(!buffer||request!==this.voiceRequest||!this.channelEnabled.voice)return null;if(this.voiceSource){this.voiceInterruptions++;this.stopVoice({restoreMusic:false});}const node=this.makeSource(buffer,'voice',{volume});if(!node)return null;
+    this.voiceSource=node;this.voiceName=name;this.voicePriority=rank;this.voiceLocked=locked;this.voiceOnEnded=onEnded;this.duckMusic(.79,110);
+    node.source.onended=()=>{if(this.voiceSource!==node)return;this.voiceSource=null;this.voiceName=null;this.voicePriority=0;this.voiceLocked=false;const callback=this.voiceOnEnded;this.voiceOnEnded=null;this.duckMusic(1,260);callback?.(buffer.duration||0);};try{node.source.start(0);return {...node,duration:buffer.duration||0};}catch{this.voiceSource=null;this.voicePriority=0;this.voiceLocked=false;return null;}
   }
-  stopVoice({restoreMusic=true}={}){this.voiceRequest++;const node=this.voiceSource;this.voiceSource=null;this.voicePriority=0;this.voiceLocked=false;this.voiceOnEnded=null;if(node){node.stopped=true;try{node.source.onended=null;node.source.stop(0);}catch{}}if(restoreMusic)this.duckMusic(1,180);}
+  stopVoice({restoreMusic=true}={}){this.voiceRequest++;const node=this.voiceSource;this.voiceSource=null;this.voiceName=null;this.voicePriority=0;this.voiceLocked=false;this.voiceOnEnded=null;if(node){node.stopped=true;try{node.source.onended=null;node.source.stop(0);}catch{}}if(restoreMusic)this.duckMusic(1,180);}
   play(name,{delay=0,volume=1,rate=1}={}){
     if(delay>0){const timer=setTimeout(()=>{this.timers.delete(timer);void this.play(name,{volume,rate});},delay);this.timers.add(timer);return timer;}const definition=SOUND_LIBRARY[name];if(!definition||!this.enabled||!this.channelEnabled.sfx)return null;
     const stamp=globalThis.performance?.now?.()??Date.now(),last=this.lastPlayed.get(name)||-Infinity;if(stamp-last<(definition.cooldown||0))return null;const active=this.activeSfx.get(name)||new Set();for(const node of [...active])if(node.stopped)active.delete(node);if(active.size>=(definition.maxVoices||1))return null;

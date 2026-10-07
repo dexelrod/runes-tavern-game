@@ -142,13 +142,10 @@ v98 brought his ordinary pace in line with the rest of the table, so only weight
 
 ## Tavern Match
 
-- His seat portrait is his live expression art.
-- Card events at the table go through `keshTavernEventFor`. When Kesh speaks, the generic regulars stay quiet for that update, and he never talks over another voice or bubble.
-- He is one regular of four there, so his casual chances are **halved**.
-- He only *voices* a last card that is yours. For the other regulars he just looks.
-- No generic quip may cut across his line or bubble.
-- Results: he may say a round line when he wins (75%) or when you win (30%). At the end of the evening he takes a match line if he is champion, or 70% of the time if you are.
-- The bubble behaves as in a Duel: captions on shows the exact line; captions off is voice only. If the voice can't play (sound off), the words still show.
+As of v101, Kesh is no longer one of the ordinary Tavern regulars. He appears at the Tavern only as one of the four **voiced guests**, alongside Bramm, Edrin and Ragna. He uses the shared guest system and the table-wide speech director; see `TAVERN_GUESTS.md`.
+
+- His seat portrait is still his live expression art.
+- His rune-stone tell works at the Tavern table too. Its omen lines play only during a real tell.
 
 ## Debug (browser console)
 

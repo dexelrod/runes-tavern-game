@@ -314,28 +314,6 @@ export function keshEventFor({played=null,playedCard=null,stop=null,stack=null,p
   return null;
 }
 
-// The same idea at a Tavern table (four seats). Kesh reacts to what happens to
-// him and to the table's big moments; everyone else's ordinary plays only count
-// toward his cooldown. `counts`/`oldCounts` are hand sizes by seat id.
-export function keshTavernEventFor({keshId,played=null,playedCard=null,stop=null,stack=null,penalty=null,draw=null,reverse=null,counts={},oldCounts={},tellPending=false}={}){
-  const mine=counts[keshId],ownMove=played?.playerId===keshId;
-  const reachedOne=Object.keys(counts).find(id=>id!==keshId&&counts[id]===1&&(oldCounts[id]??counts[id])>1);
-  if(reachedOne)return ['player_one_card',{who:reachedOne}];
-  if((oldCounts[keshId]??mine)>1&&mine===1)return ['kesh_one_card',{}];
-  if(tellPending&&(penalty?.playerId===keshId||stop?.skipped===keshId))return ['omen_failed',{told:true}];
-  if(penalty?.playerId===keshId&&(penalty.amount||0)>=4)return ['setback',{haul:true,amount:penalty.amount}];
-  if(penalty?.playerId===keshId)return ['kesh_draw',{amount:penalty.amount||2,forced:true}];
-  if(stop?.skipped===keshId)return ['skip',{}];
-  if(penalty&&(penalty.amount||0)>=4)return ['curse',{amount:penalty.amount}];
-  if(draw?.playerId===keshId)return ['kesh_draw',{amount:1,forced:false}];
-  if(playedCard?.type==='king')return ['king',{own:ownMove,broke:false}];
-  if(reverse)return ['reverse',{own:ownMove}];
-  if(ownMove&&(stack||['plus2','superTaki'].includes(playedCard?.type)))return ['kesh_good_move',{keshCount:mine,big:true}];
-  if(ownMove)return ['kesh_move',{}];
-  if(played)return ['player_neutral_move',{}];
-  return null;
-}
-
 const CASUAL_GAP=13500;
 const KESH_SPEC=Object.freeze({
   reactions:KESH_REACTIONS,visuals:VISUALS,uncounted:UNCOUNTED,states:KESH_STATES,
@@ -348,8 +326,6 @@ const KESH_SPEC=Object.freeze({
   counters:{omens:0,stillHere:0,tells:0,recentRemarks:[]},
   hasVoice,
   probabilityOf(reaction,context){
-    // At a Tavern table he is one regular of four: half as ready to speak.
-    if(context.tavern&&reaction.priority!=='CRITICAL')return KESH_SPEC.probabilityOf(reaction,{...context,tavern:false})*.5;
     if(reaction.trigger==='player_one_card'&&context.persist)return .2;
     if(reaction.trigger==='kesh_draw')return context.forced?.16:.05;
     if(reaction.trigger==='player_good_move'&&context.big)return .28;
@@ -366,8 +342,6 @@ const KESH_SPEC=Object.freeze({
     // The player still holds the turn and may go out right now: he only watches.
     if(trigger==='player_one_card'&&context.playerStillToPlay)return true;
     if(trigger==='player_one_card'&&context.persist&&quiet<CASUAL_GAP)return true;
-    // At a Tavern table he only voices a last card that is yours; for the others he just looks.
-    if(context.tavern&&trigger==='player_one_card'&&context.who&&context.who!=='p0')return true;
     return false;
   },
   enrich(trigger,context,counters){return {...context,recentRemarks:counters.recentRemarks||[]};},
