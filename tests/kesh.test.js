@@ -240,7 +240,9 @@ test('his AI is fair: identical choices whatever the hidden cards are',()=>{
   assert.ok(checked>80);
 });
 
-test('his AI is balanced: competitive with the tavern bots, below Edrin, a little superstitious, never sloppy',()=>{
+test('his AI is balanced: competitive with the tavern bots, below Edrin, a little superstitious, never sloppy',t=>{
+  // Seeded so the measured win rate is the same on every run (CI included).
+  const savedRandom=Math.random;Math.random=seeded(20261007);t.after(()=>{Math.random=savedRandom;});
   let wins=0,games=0;
   for(let seed=1;seed<=120;seed++){
     const opponent=seed%2?'mercenary':'hunter',keshFirst=seed%4<2,players=[{id:'p0',name:'A',kind:'ai',archetype:keshFirst?'traveler':opponent},{id:'p1',name:'B',kind:'ai',archetype:keshFirst?opponent:'traveler'}];

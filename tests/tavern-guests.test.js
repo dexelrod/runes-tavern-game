@@ -150,7 +150,9 @@ test('appearance: about 30% of evenings one guest, about 7% two, never three; re
   assert.match(app,/session\.tavernDirector=tavernGuests\.director\.snapshot\(\)/,'the director\'s memory (lines used, banters) is saved with the match');
 });
 
-test('table-strength AI for guests: personality without a boss seat',()=>{
+test('table-strength AI for guests: personality without a boss seat',t=>{
+  // Seeded so the measured win rate is the same on every run (CI included).
+  const savedRandom=Math.random;Math.random=seeded(20261007);t.after(()=>{Math.random=savedRandom;});
   assert.equal(VOICED_TAVERN_GUESTS.find(g=>g.nameKey==='edrin').archetype,'tavern-veteran');assert.equal(VOICED_TAVERN_GUESTS.find(g=>g.nameKey==='ragna').archetype,'tavern-warrior');
   assert.equal(TAVERN_VETERAN_PROFILE.samples,0);assert.equal(TAVERN_PRESSURE_PROFILE.samples,0);
   assert.ok(TAVERN_VETERAN_PROFILE.mistakeRate>VETERAN_PROFILE.mistakeRate&&TAVERN_PRESSURE_PROFILE.mistakeRate>PRESSURE_PROFILE.mistakeRate);
