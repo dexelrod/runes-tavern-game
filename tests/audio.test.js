@@ -4,7 +4,7 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { AMBIENCE_TRACKS, AudioSystem, CARD_PLAY_VARIATIONS, MUSIC_TRACKS, SOUND_LIBRARY } from '../dist/platform/audio.js';
 
-const expectedSounds=['cardPlay','cardPlayVariation1','cardPlayVariation2','cardPlayVariation3','cardPlayVariation4','cardPlayVariation5','cardPlaySoft','cardDraw','drawMultiple','shuffle','deckPutDown','takiOpen','takiClose','colorChange','stopSkip','kingPlay','quickstepPlay','reverse','plusCard','lastCard','winHand','loseHand'];
+const expectedSounds=['cardPlay','cardPlayVariation1','cardPlayVariation2','cardPlayVariation3','cardPlayVariation4','cardPlayVariation5','cardPlaySoft','cardDraw','drawMultiple','shuffle','deckPutDown','takiOpen','takiClose','colorChange','stopSkip','kingPlay','quickstepPlay','reverse','plusCard','lastCard','winHand','loseHand','gorvanEntrance','gorvanPulse','gorvanAccent','gorvanCurse'];
 
 class Param{constructor(value=1){this.value=value;}cancelScheduledValues(){}setTargetAtTime(value){this.value=value;}setValueAtTime(value){this.value=value;}linearRampToValueAtTime(value){this.value=value;}}
 class Gain{constructor(){this.gain=new Param();}connect(){} }
@@ -12,9 +12,9 @@ class Source{constructor(){this.loop=false;this.playbackRate={value:1};this.star
 class Context{constructor(){this.destination={};this.currentTime=0;this.state='running';this.sources=[];}createGain(){return new Gain();}createBufferSource(){const source=new Source();this.sources.push(source);return source;}createBuffer(numberOfChannels,length,sampleRate){const data=Array.from({length:numberOfChannels},()=>new Float32Array(length));return{numberOfChannels,length,sampleRate,duration:length/sampleRate,getChannelData:channel=>data[channel],copyToChannel:(source,channel,offset)=>data[channel].set(source,offset)};}decodeAudioData(){const length=480;return Promise.resolve({duration:.01,length,numberOfChannels:2,sampleRate:48000,getChannelData:()=>new Float32Array(length)});}resume(){return Promise.resolve();}}
 const withWebAudio=async callback=>{const Native=globalThis.AudioContext,nativeFetch=globalThis.fetch;globalThis.AudioContext=Context;globalThis.fetch=async()=>({ok:true,arrayBuffer:async()=>new ArrayBuffer(8)});try{return await callback();}finally{globalThis.AudioContext=Native;globalThis.fetch=nativeFetch;}};
 
-test('custom sound library exposes every gameplay cue, five ambience loops and four soundtrack entries',()=>{assert.deepEqual(Object.keys(SOUND_LIBRARY),expectedSounds);assert.equal(AMBIENCE_TRACKS.length,5);assert.equal(MUSIC_TRACKS.length,4);assert.equal(CARD_PLAY_VARIATIONS.length,6);const musicFiles=MUSIC_TRACKS.flat();assert.equal(musicFiles.length,10);assert.equal(new Set([...Object.values(SOUND_LIBRARY).map(sound=>sound.src),...AMBIENCE_TRACKS,...musicFiles]).size,37);});
+test('custom sound library exposes every gameplay cue, five ambience loops and four soundtrack entries',()=>{assert.deepEqual(Object.keys(SOUND_LIBRARY),expectedSounds);assert.equal(AMBIENCE_TRACKS.length,5);assert.equal(MUSIC_TRACKS.length,4);assert.equal(CARD_PLAY_VARIATIONS.length,6);const musicFiles=MUSIC_TRACKS.flat();assert.equal(musicFiles.length,10);assert.equal(new Set([...Object.values(SOUND_LIBRARY).map(sound=>sound.src),...AMBIENCE_TRACKS,...musicFiles]).size,41);});
 
-test('every registered sound is a readable audio asset',()=>{for(const url of [...Object.values(SOUND_LIBRARY).map(sound=>sound.src),...AMBIENCE_TRACKS,...MUSIC_TRACKS.flat()]){const bytes=fs.readFileSync(fileURLToPath(url));assert.ok(bytes.length>44);if(url.endsWith('.wav')){assert.equal(bytes.subarray(0,4).toString(),'RIFF');assert.equal(bytes.subarray(8,12).toString(),'WAVE');}else{assert.ok(url.endsWith('.m4a'));assert.equal(bytes.subarray(4,8).toString(),'ftyp');}}});
+test('every registered sound is a readable audio asset',()=>{for(const url of [...Object.values(SOUND_LIBRARY).map(sound=>sound.src),...AMBIENCE_TRACKS,...MUSIC_TRACKS.flat()]){const bytes=fs.readFileSync(fileURLToPath(url));assert.ok(bytes.length>44);if(url.endsWith('.wav')){assert.equal(bytes.subarray(0,4).toString(),'RIFF');assert.equal(bytes.subarray(8,12).toString(),'WAVE');}else if(url.endsWith('.mp3')){assert.ok(bytes.subarray(0,3).toString()==='ID3'||(bytes[0]===0xff&&(bytes[1]&0xe0)===0xe0),url);}else{assert.ok(url.endsWith('.m4a'));assert.equal(bytes.subarray(4,8).toString(),'ftyp');}}});
 
 test('all channels use Web Audio without constructing HTMLAudioElement',async()=>withWebAudio(async()=>{const system=new AudioSystem();system.prime();await system.playSfxBuffer('cardPlay',SOUND_LIBRARY.cardPlay,{volume:1,rate:1},new Set());await system.startMusic();await system.startAmbience();assert.ok(system.context instanceof Context);assert.equal(system.musicNode.source.started,true);assert.equal(system.musicNode.loop,true);assert.equal(system.ambienceNode.source.started,true);assert.equal(system.context.sources.length>=3,true);}));
 
@@ -36,4 +36,12 @@ test('a missing Hebrew Bramm file is excluded without requesting it or falling b
   const Native=globalThis.AudioContext,nativeFetch=globalThis.fetch,requested=[];globalThis.AudioContext=Context;globalThis.fetch=async url=>{requested.push(String(url));return{ok:false,arrayBuffer:async()=>new ArrayBuffer(0)};};
   try{const system=new AudioSystem();system.setSettings({sound:true,dialogue:true});assert.equal(await system.playVoice('bramm_win_05',{locale:'he'}),null);assert.deepEqual(requested,[]);}
   finally{globalThis.AudioContext=Native;globalThis.fetch=nativeFetch;}
+});
+
+test('Gorvan\'s presence cues are SFX, quieter than the card sounds they accompany, and never repeat quickly',()=>{
+  for(const name of ['gorvanEntrance','gorvanPulse','gorvanAccent','gorvanCurse']){const sound=SOUND_LIBRARY[name];assert.equal(sound.channel,'sfx',`${name} belongs under SFX, not voice`);assert.equal(sound.maxVoices,1);assert.ok(sound.cooldown>=3500,`${name} cannot stack`);assert.match(sound.src,/assets\/gorvan\/sfx\/gorvan_sfx_/);}
+  assert.ok(SOUND_LIBRARY.gorvanCurse.volume<SOUND_LIBRARY.plusCard.volume,'his Curse layers under the ordinary Curse sound');
+  assert.ok(SOUND_LIBRARY.gorvanPulse.volume<.5&&SOUND_LIBRARY.gorvanEntrance.volume<=.5);
+  // The filename the owner asked to keep.
+  assert.match(SOUND_LIBRARY.gorvanAccent.src,/gorvan_sfx_brutal_card_accent\.mp3$/);
 });

@@ -114,7 +114,7 @@ test('every new match against Bramm opens with his voiced introduction',()=>{
   const app=fs.readFileSync(new URL('../dist/app.js',import.meta.url),'utf8');
   // Bramm's intro never depends on whether you have met him before (Edrin's does).
   assert.match(app,/if\(isBrammDuel\(\)\)runCharacter\('intro',\{\},true\);else/);
-  assert.match(app,/if\(!saved\)\{const epoch=sessionEpoch,firstEncounter=[^;]+;const timer=setTimeout\(\(\)=>\{if\(epoch!==sessionEpoch\)return;if\(isBrammDuel\(\)\)runCharacter\('intro',\{\},true\);/);
+  assert.match(app,/if\(!saved\)\{const epoch=sessionEpoch,firstEncounter=[^;]+;[\s\S]{0,900}?const timer=setTimeout\(\(\)=>\{if\(epoch!==sessionEpoch\)return;if\(isBrammDuel\(\)\)runCharacter\('intro',\{\},true\);/);
   const bramm=createBrammController({random:()=>0});assert.ok(bramm.react('intro',{},true).voice.startsWith('bramm_intro_'));
 });
 

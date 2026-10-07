@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import test from 'node:test';
 import { TAVERN_BANTER, TAVERN_GUEST_POOLS, TAVERN_TIMING, allTavernVoices, createTavernDirector, guestHasVoice, reactionFor } from '../dist/duel/tavern-director.js';
+import { BANTER_RECORDINGS } from '../dist/duel/banter.js';
 import { AUTHORED_CHARACTERS } from '../dist/duel/characters.js';
 import { mulberry32 } from '../dist/game-engine/cards.js';
 import { TAVERN_GUEST_ODDS, TAVERN_GUEST_PAIRS, VOICED_TAVERN_GUESTS, createTavernMatch, restoreSession, serializeSession, tavernGuestsFor } from '../dist/game-engine/match.js';
@@ -21,7 +22,11 @@ const APPROVED={
   ragna:['intro_03','idle_01','idle_02','idle_03','idle_04','noise_01','player_good_move_01','player_good_move_02','player_good_move_03','good_move_01','good_move_02','good_move_03','player_draw_02','draw_01','draw_02','draw_03','self_mistake_01','player_one_card_01','player_one_card_02','player_one_card_03','player_one_card_04','one_card_01','one_card_02','one_card_03','round_win_01','round_win_02','round_win_04','round_loss_01','round_loss_02','round_loss_03','match_win_01','match_win_03','match_loss_01','match_loss_03'],
   bramm:['intro_01','intro_02','taunt_01','taunt_02','mock_move_01','mock_move_02','player_good_move_01','player_good_move_02','player_draw_01','bramm_good_move_01','bramm_good_move_02','bramm_draw_02','excuse_01','excuse_02','player_one_card_01','player_one_card_03','player_one_card_05','player_one_card_06','player_one_card_07','loss_01','round_win_01','round_win_02','round_win_03','round_win_04','win_01','win_02','win_04','win_06','win_07','win_09','win_10','match_loss_01','match_loss_02','match_loss_03','idle_01','idle_02']
 };
-const FORBIDDEN=['ragna_intro_01','ragna_intro_02','ragna_intro_04','ragna_round_win_03','ragna_match_win_02','ragna_match_loss_02','bramm_intro_03','bramm_bramm_draw_01','bramm_win_03','bramm_win_05','bramm_win_08','bramm_player_one_card_02'];
+// v104: Veyra's whole authored set (her two English-only takes drop out in Hebrew by
+// themselves), and Gorvan's set except the title lines, which are kept for his banter.
+APPROVED.veyra=['intro_01','intro_02','intro_03','intro_04','idle_01','idle_02','idle_03','idle_04','player_good_move_01','player_good_move_02','player_good_move_03','good_move_01','good_move_02','good_move_03','player_draw_01','player_draw_02','draw_01','draw_02','draw_03','player_one_card_01','player_one_card_02','player_one_card_03','player_one_card_04','one_card_01','one_card_02','one_card_03','omen_01','omen_02','omen_03','omen_04','omen_hit_01','omen_hit_02','omen_hit_03','omen_hit_04','omen_miss_01','omen_miss_02','omen_miss_03','omen_miss_04','curse_01','curse_02','stop_01','stop_02','king_02','round_win_01','round_win_02','round_win_03','round_loss_01','round_loss_02','round_loss_03','match_win_01','match_win_02','match_win_03','match_loss_01','match_loss_02','match_loss_03'];
+APPROVED.gorvan=['intro_01','intro_02','intro_03','intro_04','idle_01','idle_02','idle_03','idle_04','flavor_02','flavor_04','player_good_move_01','player_good_move_02','player_good_move_03','player_good_move_04','good_move_01','good_move_02','good_move_03','good_move_04','player_draw_01','player_draw_03','draw_01','draw_02','draw_03','player_one_card_01','player_one_card_02','player_one_card_03','player_one_card_04','one_card_01','one_card_02','one_card_03','curse_01','curse_02','curse_received_01','stop_01','stop_02','king_01','king_02','round_win_01','round_win_02','round_win_03','round_loss_01','round_loss_02','round_loss_03','match_win_01','match_win_02','match_win_03','match_win_04','match_loss_01','match_loss_02','match_loss_03','match_loss_04'];
+const FORBIDDEN=['veyra_reverse_01','veyra_reverse_02','veyra_king_01','ragna_banter_veyra_01b','veyra_banter_ragna_01c','gorvan_reverse_01','gorvan_reverse_02','ragna_intro_01','ragna_intro_02','ragna_intro_04','ragna_round_win_03','ragna_match_win_02','ragna_match_loss_02','bramm_intro_03','bramm_bramm_draw_01','bramm_win_03','bramm_win_05','bramm_win_08','bramm_player_one_card_02'];
 
 test('Tavern pools are exactly the approved allowlist; nothing else can ever play',()=>{
   for(const [guest,ids] of Object.entries(APPROVED)){
@@ -29,10 +34,16 @@ test('Tavern pools are exactly the approved allowlist; nothing else can ever pla
     assert.deepEqual([...pooled].toSorted(),ids.map(id=>`${guest}_${id}`).filter(v=>v!=='ragna_idle_05').toSorted(),guest);
     for(const voice of allTavernVoices(guest)){assert.ok(reactionFor(guest,voice),`${voice} is a real recording`);}
   }
-  const everything=Object.values(TAVERN_GUEST_POOLS).flatMap(p=>Object.values(p).flat()).concat(TAVERN_BANTER.flatMap(b=>[b.a[1],b.b[1]]),['ragna_idle_05']);
+  const followUps=['ragna_idle_05','gorvan_idle_05','gorvan_flavor_03'];
+  const everything=Object.values(TAVERN_GUEST_POOLS).flatMap(p=>Object.values(p).flat()).concat(TAVERN_BANTER.flatMap(b=>b.lines.map(([,voice])=>voice)),followUps);
   for(const voice of FORBIDDEN)assert.ok(!everything.includes(voice),`${voice} must not be used at the Tavern`);
-  // Banter only uses allowlisted lines.
-  for(const b of TAVERN_BANTER)for(const [guest,voice] of [b.a,b.b])assert.ok(Object.values(TAVERN_GUEST_POOLS[guest]).flat().includes(voice),`${b.id}: ${voice}`);
+  // Banter uses allowlisted lines, a guest's own existing recordings reused on purpose (Gorvan's replies),
+  // or a dedicated banter recording spoken by the right guest.
+  for(const b of TAVERN_BANTER)for(const [guest,voice] of b.lines){
+    const own=!!AUTHORED_CHARACTERS[guest].voiceLibrary[voice],dedicated=BANTER_RECORDINGS[voice]?.speaker===guest;
+    assert.ok(Object.values(TAVERN_GUEST_POOLS[guest]).flat().includes(voice)||(guest==='gorvan'&&own)||dedicated,`${b.id}: ${voice}`);
+    assert.ok(voice.startsWith(`${guest}_`),`${b.id}: ${voice} is spoken by ${guest}`);
+  }
   // Every allowlisted take exists on disk in each language it was recorded in.
   for(const guest of Object.keys(APPROVED))for(const voice of allTavernVoices(guest))for(const locale of ['en','he']){const v=AUTHORED_CHARACTERS[guest].resolveVoice(voice,locale);if(v)assert.ok(fs.statSync(new URL(v.src)).size>1024,`${voice} ${locale}`);}
 });
@@ -63,13 +74,13 @@ function playMatch(seats,{seed=1,locale='en',muted=false}={}){
   }
   return {said,plans,director};
 }
-const PAIRS=[['bramm','ragna'],['bramm','edrin'],['bramm','kesh'],['ragna','edrin'],['ragna','kesh'],['edrin','kesh']];
+const PAIRS=[['bramm','ragna'],['bramm','edrin'],['bramm','kesh'],['ragna','edrin'],['ragna','kesh'],['edrin','kesh'],['veyra','kesh'],['veyra','ragna'],['veyra','edrin'],['veyra','bramm'],['gorvan','bramm'],['gorvan','ragna'],['gorvan','edrin'],['gorvan','kesh'],['gorvan','veyra']];
 
 test('restraint: a single guest speaks a handful of times a match; Edrin least of all',()=>{
-  for(const guest of ['bramm','edrin','ragna','kesh'])for(const locale of ['en','he']){
+  for(const guest of ['bramm','edrin','ragna','kesh','veyra','gorvan'])for(const locale of ['en','he']){
     let total=0;for(let seed=1;seed<=60;seed++)total+=playMatch({p2:guest},{seed,locale}).said.length;
     const avg=total/60;assert.ok(avg>=1.5&&avg<=6.5,`${guest} ${locale}: ${avg.toFixed(2)} lines a match`);
-    if(guest==='edrin')assert.ok(avg<=4.5,`Edrin is the quietest (${avg.toFixed(2)})`);
+    if(guest==='edrin'||guest==='gorvan')assert.ok(avg<=4.5,`${guest} is among the quietest (${avg.toFixed(2)})`);
   }
 });
 
@@ -85,7 +96,8 @@ test('never two lines at once, never a repeat within a match, one line per event
     const {said,plans}=playMatch({p1:a,p3:b},{seed});
     const voices=said.map(line=>line.voice).filter(v=>v!=='ragna_idle_05');
     assert.equal(new Set(voices).size,voices.length,`${a}+${b} seed ${seed}: a line repeated`);
-    for(const {plan} of plans){if(plan.lines.length===2)assert.ok(plan.banter||plan.lines[1].voice==='ragna_idle_05','two lines only as a banter or Ragna\'s "Thank you."');assert.ok(plan.lines.length<=2);}
+    // Several lines only as one banter, or a guest's own two-beat performance (Ragna's "Thank you.", Gorvan's retractions).
+    for(const {plan} of plans){if(plan.lines.length>=2)assert.ok(plan.banter||['ragna_idle_05','gorvan_idle_05','gorvan_flavor_03'].includes(plan.lines[1].voice),'several lines only as a banter or a two-beat performance');assert.ok(plan.lines.length<=3);if(!plan.banter)assert.ok(plan.lines.length<=2);}
   }
   // While anything is playing, nothing else starts.
   const d=createTavernDirector({seats:{p1:'bramm'},random:()=>0,now:()=>99999});
@@ -154,7 +166,7 @@ test('appearance: "Sometimes" seats guests on about a third of evenings, mostly 
 });
 
 test('pairs who can banter are strongly preferred, and the pair table matches the banter list',()=>{
-  const shared={};for(const b of TAVERN_BANTER){const key=[b.a[0],b.b[0]].sort().join('+');shared[key]=(shared[key]||0)+1;}
+  const shared={};for(const b of TAVERN_BANTER){const key=[...new Set(b.lines.map(([guest])=>guest))].sort().join('+');shared[key]=(shared[key]||0)+1;}
   const guests=VOICED_TAVERN_GUESTS.map(g=>g.nameKey);for(let i=0;i<guests.length;i++)for(let j=i+1;j<guests.length;j++){const key=[guests[i],guests[j]].sort().join('+');assert.equal(TAVERN_GUEST_PAIRS[key],shared[key]||0,key);}
   let banterPairs=0,pairs=0;for(let seed=0;seed<6000;seed++){const g=tavernGuestsFor(seed,{mode:'often'}).filter(p=>p.voiced).map(p=>p.nameKey);if(g.length!==2)continue;pairs++;if(TAVERN_GUEST_PAIRS[g.toSorted().join('+')])banterPairs++;}
   assert.ok(banterPairs/pairs>.9,`${(100*banterPairs/pairs).toFixed(1)}% of pairs can trade lines`);

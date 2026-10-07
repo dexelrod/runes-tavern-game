@@ -21,7 +21,9 @@ export const VOICED_TAVERN_GUESTS=Object.freeze([
   {name:'בראם',nameKey:'bramm',kind:'ai',archetype:'mercenary',house:'red',voiced:true},
   {name:'אדרין',nameKey:'edrin',kind:'ai',archetype:'tavern-veteran',house:'green',voiced:true},
   {name:'ראגנה',nameKey:'ragna',kind:'ai',archetype:'tavern-warrior',house:'blue',voiced:true},
-  {name:'קֶשׁ',nameKey:'kesh',kind:'ai',archetype:'traveler',house:'blue',voiced:true}
+  {name:'קֶשׁ',nameKey:'kesh',kind:'ai',archetype:'traveler',house:'blue',voiced:true},
+  {name:'ויירה',nameKey:'veyra',kind:'ai',archetype:'tavern-witch',house:'green',voiced:true},
+  {name:'גורבן',nameKey:'gorvan',kind:'ai',archetype:'tavern-noble',house:'red',voiced:true}
 ]);
 export const VOICED_GUEST_KEYS=Object.freeze(VOICED_TAVERN_GUESTS.map(guest=>guest.nameKey));
 // Settings → "Voiced characters at the Tavern": off · sometimes (default) · often ("Every evening").
@@ -35,8 +37,12 @@ export const TAVERN_GUEST_ODDS=Object.freeze({sometimes:Object.freeze({one:.08,t
 // How many curated banter exchanges each pair shares (duel/tavern-director.js →
 // TAVERN_BANTER; a test keeps the two in step). Pairs who can trade lines are
 // strongly preferred: weight 1 + 3 × exchanges, so a pair with none is rare.
-export const TAVERN_GUEST_PAIRS=Object.freeze({'bramm+edrin':3,'bramm+kesh':2,'bramm+ragna':3,'edrin+kesh':0,'edrin+ragna':4,'kesh+ragna':0});
-const pairKey=(a,b)=>[a,b].sort().join('+'),pairWeight=(a,b)=>1+3*(TAVERN_GUEST_PAIRS[pairKey(a,b)]||0);
+export const TAVERN_GUEST_PAIRS=Object.freeze({'bramm+edrin':3,'bramm+kesh':2,'bramm+ragna':3,'edrin+kesh':0,'edrin+ragna':4,'kesh+ragna':0,
+  'kesh+veyra':2,'ragna+veyra':1,'edrin+veyra':1,'bramm+veyra':0,
+  'bramm+gorvan':3,'edrin+gorvan':2,'gorvan+ragna':2,'gorvan+kesh':2,'gorvan+veyra':3});
+// A little extra weight for established chemistry the owner especially wants heard (Veyra and Kesh).
+export const TAVERN_PAIR_CHEMISTRY=Object.freeze({'kesh+veyra':1.6});
+const pairKey=(a,b)=>[a,b].sort().join('+'),pairWeight=(a,b)=>(1+3*(TAVERN_GUEST_PAIRS[pairKey(a,b)]||0))*(TAVERN_PAIR_CHEMISTRY[pairKey(a,b)]||1);
 const HUMAN_SEAT=Object.freeze({id:'p0',name:'אתם',nameKey:'you',kind:'human',archetype:'wanderer',house:'yellow'});
 const combos=(items,k)=>k===0?[[]]:items.flatMap((item,i)=>combos(items.slice(i+1),k-1).map(rest=>[item,...rest]));
 export function tavernGuestsFor(seed,{mode='sometimes',voiced=true,guests=null}={}){
@@ -76,7 +82,7 @@ export function createQuickSession({playerCount=3,seed=Date.now()}={}){
 
 export function createDuelSession({seed=Date.now(),opponent}={}){
   if(!opponent?.id)throw new Error('Duel opponent is required');
-  const duelHouses={ron:'red',aila:'green',bran:'blue',sela:'yellow',kesh:'blue',roderic:'red',lio:'yellow',mograth:'green',harrow:'blue',rusk:'yellow',bramm:'red',edrin:'green',ragna:'blue'};
+  const duelHouses={ron:'red',aila:'green',bran:'blue',sela:'yellow',kesh:'blue',roderic:'red',lio:'yellow',mograth:'green',harrow:'blue',rusk:'yellow',bramm:'red',edrin:'green',ragna:'blue',veyra:'green',gorvan:'red'};
   const players=[{id:'p0',name:'אתם',nameKey:'you',kind:'human',archetype:'wanderer',house:'yellow'},{id:'p1',name:opponent.name,nameKey:opponent.id,kind:'ai',archetype:opponent.archetype,house:duelHouses[opponent.id]||'blue',duelOpponentId:opponent.id}];
   return {version:MATCH_VERSION,mode:'duel',phase:'round',round:1,totalRounds:5,suddenDeath:false,seed,opponentId:opponent.id,scores:scoreMap(players),roster:freshRoster(players),results:[],championId:null,game:createInitialState({playerCount:2,players,seed})};
 }
@@ -111,7 +117,7 @@ export function standings(match){return match.roster.map(player=>({...player,sco
 export function serializeSession(match){return JSON.stringify(match);}
 export function restoreSession(json){
   const raw=typeof json==='string'?JSON.parse(json):structuredClone(json);
-  if(raw?.game&&raw.version===MATCH_VERSION){if(raw.mode==='quick'&&raw.game.players?.length>6)throw new Error('Unsupported quick-game player count');raw.game=restoreState(serializeState(raw.game));const keys={אתם:'you',איילה:'aila',רון:'ron',בראן:'bran','סֶלָה':'sela','קֶשׁ':'kesh',רודריק:'roderic',ליאו:'lio','מוגרת׳':'mograth',הארו:'harrow',ראסק:'rusk',בראם:'bramm',אדרין:'edrin'};for(const group of [raw.roster||[],raw.game.players||[]])for(const player of group)player.nameKey||=player.duelOpponentId||keys[player.name];return raw;}
+  if(raw?.game&&raw.version===MATCH_VERSION){if(raw.mode==='quick'&&raw.game.players?.length>6)throw new Error('Unsupported quick-game player count');raw.game=restoreState(serializeState(raw.game));const keys={אתם:'you',איילה:'aila',רון:'ron',בראן:'bran','סֶלָה':'sela','קֶשׁ':'kesh',רודריק:'roderic',ליאו:'lio','מוגרת׳':'mograth',הארו:'harrow',ראסק:'rusk',בראם:'bramm',אדרין:'edrin',ראגנה:'ragna',ויירה:'veyra',גורבן:'gorvan'};for(const group of [raw.roster||[],raw.game.players||[]])for(const player of group)player.nameKey||=player.duelOpponentId||keys[player.name];return raw;}
   if(raw?.players)return createQuickSessionFromLegacy(raw);
   throw new Error('Unsupported saved session');
 }

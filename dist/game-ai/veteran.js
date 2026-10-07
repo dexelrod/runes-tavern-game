@@ -62,7 +62,10 @@ export function omenColour(state){
 function tableView(state,me,P=null){
   const others=state.players.filter(p=>p.id!==me.id),opp=Math.min(...others.map(p=>p.hand.length));
   const threat=others.find(p=>p.hand.length===opp),gaps=observedGaps(state,me.id).get(threat?.id)||new Set();
-  return {opp,gaps,twoPlayer:state.players.length===2,danger:opp<=2,omen:P?.omenBias?omenColour(state):null};
+  // Who plays next, and who would play next if the order turned (public card counts only).
+  const n=state.players.length,index=state.players.findIndex(p=>p.id===me.id),dir=state.direction||1;
+  const nextCount=state.players[(index+dir+n)%n]?.hand.length??opp,prevCount=state.players[(index-dir+n)%n]?.hand.length??opp;
+  return {opp,gaps,twoPlayer:n===2,danger:opp<=2,nextCount,prevCount,omen:P?.omenBias?omenColour(state):null};
 }
 
 function colourCounts(cards){const counts=Object.fromEntries(COLORS.map(c=>[c,0]));for(const card of cards)if(counts[card.color]!==undefined)counts[card.color]++;return counts;}
@@ -101,6 +104,12 @@ function scoreCard(card,state,me,view,P){
   // Pressure profiles (Ragna) keep the tempo up and punish a short hand.
   if(P.actionTempo&&[TYPES.STOP,TYPES.PLUS,TYPES.PLUS2,TYPES.TAKI].includes(card.type)&&canFollow)score+=P.actionTempo;
   if(P.pressure&&view.opp<=3&&[TYPES.STOP,TYPES.PLUS2,TYPES.TAKI,TYPES.SUPER_TAKI].includes(card.type))score+=P.pressure*(view.opp<=1?1.5:1);
+  // Control profiles (Veyra, Gorvan) keep their answers — a Shield, a Curse, a King —
+  // for the moment that needs one, then spend them without hesitation.
+  if(P.holdStop&&card.type===TYPES.STOP&&!view.danger&&view.opp>3)score-=P.holdStop;
+  if(P.disrupt&&view.opp<=2&&[TYPES.STOP,TYPES.PLUS2,TYPES.KING].includes(card.type))score+=P.disrupt*(view.opp<=1?1.4:1);
+  // At a busy table a Turnabout sends the turn away from a player about to go out.
+  if(P.redirect&&card.type===TYPES.REVERSE&&!view.twoPlayer)score+=view.nextCount<=2&&view.prevCount>2?P.redirect:view.nextCount>3?-P.redirect*.3:0;
   // Plan the finish: never strand a lone Quickstep, and keep a wild as the closer.
   if(n===1&&after[0].type===TYPES.PLUS)score-=20;
   if(!isWild(card)&&n<=2&&wildsLeft)score+=5;
@@ -309,3 +318,30 @@ export const OMEN_PROFILE=Object.freeze({
 // few more human slips. Personality, not a boss fight in one seat.
 export const TAVERN_VETERAN_PROFILE=Object.freeze({...VETERAN_PROFILE,samples:0,mistakeRate:.12});
 export const TAVERN_PRESSURE_PROFILE=Object.freeze({...PRESSURE_PROFILE,samples:0,mistakeRate:.1});
+
+// Veyra: control. The same fair, public-information planner, tuned to disrupt
+// momentum: she keeps a Shield, a Curse or a King back while the table is calm and
+// spends them hard when someone gets close; at a busy table she turns the order
+// away from a player about to go out. A competent, calm player — her chaos is in
+// how she reads the table, never in the cards she chooses. A short look-ahead
+// (fewer imagined hands than Edrin), a rare close second choice.
+export const CONTROL_PROFILE=Object.freeze({
+  ...VETERAN_PROFILE,
+  samples:6,minSamples:3,thinkBudgetMs:28,
+  holdWild:12,holdKing:13,holdCurse:9,curseMidgame:6,curseDanger:30,
+  holdStop:5,disrupt:10,redirect:7,
+  jitter:1.8,mistakeRate:.06,mistakeWindow:5
+});
+// Gorvan: patient. He is comfortable waiting: the most reluctant of the cast to spend
+// a Rune, a King or a Curse early, and the least likely to panic. When a hand gets
+// dangerous he answers it, precisely. Steady rather than sharp; very few slips.
+export const PATIENT_PROFILE=Object.freeze({
+  ...VETERAN_PROFILE,
+  samples:8,minSamples:4,thinkBudgetMs:30,
+  holdWild:17,holdKing:15,holdCurse:10,curseMidgame:4,curseDanger:29,
+  holdStop:4,disrupt:8,redirect:4,
+  jitter:1,mistakeRate:.05,mistakeWindow:5
+});
+// At a Tavern table: their judgement without the look-ahead, and a few more slips.
+export const TAVERN_CONTROL_PROFILE=Object.freeze({...CONTROL_PROFILE,samples:0,mistakeRate:.1});
+export const TAVERN_PATIENT_PROFILE=Object.freeze({...PATIENT_PROFILE,samples:0,mistakeRate:.09});

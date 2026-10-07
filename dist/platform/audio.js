@@ -3,6 +3,7 @@ import { characterForVoice, resolveCharacterVoice } from '../duel/characters.js'
 const normalizeVoiceLocale=locale=>locale==='he'?'he':'en';
 
 const asset=name=>new URL(`../assets/audio/${name}`,import.meta.url).href;
+const gorvanSfx=name=>new URL(`../assets/gorvan/sfx/${name}`,import.meta.url).href;
 const clamp=value=>Math.max(0,Math.min(1,value));
 
 export const SOUND_LIBRARY=Object.freeze({
@@ -27,7 +28,13 @@ export const SOUND_LIBRARY=Object.freeze({
   plusCard:{src:asset('plus-card.wav'),channel:'sfx',volume:.72,cooldown:220,maxVoices:1},
   lastCard:{src:asset('last-card.wav'),channel:'sfx',volume:.72,cooldown:550,maxVoices:1},
   winHand:{src:asset('win-hand.wav'),channel:'sfx',volume:.82,cooldown:1800,maxVoices:1},
-  loseHand:{src:asset('lose-hand.wav'),channel:'sfx',volume:.78,cooldown:1800,maxVoices:1}
+  loseHand:{src:asset('lose-hand.wav'),channel:'sfx',volume:.78,cooldown:1800,maxVoices:1},
+  // Gorvan's presence (v104): character accents on the SFX channel, kept under the card
+  // sounds they accompany. Never spells; used sparingly by app.js (gorvanAccents).
+  gorvanEntrance:{src:gorvanSfx('gorvan_sfx_entrance_sting.mp3'),channel:'sfx',volume:.5,cooldown:60000,maxVoices:1},
+  gorvanPulse:{src:gorvanSfx('gorvan_sfx_one_card_pulse.mp3'),channel:'sfx',volume:.3,cooldown:9000,maxVoices:1},
+  gorvanAccent:{src:gorvanSfx('gorvan_sfx_brutal_card_accent.mp3'),channel:'sfx',volume:1,cooldown:4000,maxVoices:1},
+  gorvanCurse:{src:gorvanSfx('gorvan_sfx_curse.mp3'),channel:'sfx',volume:.36,cooldown:3500,maxVoices:1}
 });
 
 export const CARD_PLAY_VARIATIONS=Object.freeze(['cardPlay','cardPlayVariation1','cardPlayVariation2','cardPlayVariation3','cardPlayVariation4','cardPlayVariation5']);

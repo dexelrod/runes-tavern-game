@@ -44,6 +44,9 @@ export const DUEL_OPPONENTS=Object.freeze([
   Object.freeze({id:'edrin',name:'אדרין',gender:'m',archetype:'veteran',descriptor:'הקבוע הוותיק · ידידותי, קצת שתוי',row:3,props:{drink:'ספל פיוטר',snack:'',token:''},aiStyle:'veteran',cardPlayStyle:'quiet',artMode:'expressions',sprites:{},dialoguePools:Object.freeze({pleased:[],annoyed:[],surprised:[],drink:[]}),reactionWeights:Object.freeze({pleased:0,annoyed:0,surprised:0,drink:0}),idleFrequency:21000}),
   // Ragna: authored like Bramm and Edrin (duel/ragna.js); generic pools stay empty.
   Object.freeze({id:'ragna',name:'ראגנה',gender:'f',archetype:'warrior',descriptor:'הלוחמת מהצפון · ישירה, חמת מזג, תמיד מעלה את ההימור',row:2,props:{drink:'',snack:'',token:''},aiStyle:'aggressive',cardPlayStyle:'thunk',artMode:'expressions',sprites:{},dialoguePools:Object.freeze({pleased:[],annoyed:[],surprised:[],drink:[]}),reactionWeights:Object.freeze({pleased:0,annoyed:0,surprised:0,drink:0}),idleFrequency:22000}),
+  // Veyra and Gorvan (v104): authored packs (duel/veyra.js, duel/gorvan.js); generic pools stay empty.
+  Object.freeze({id:'veyra',name:'ויירה',gender:'f',archetype:'witch',descriptor:'קוראת הסימנים · אובססיבית, חדה, מתווכחת עם היקום',row:0,props:{drink:'',snack:'',token:'עצמות חרוטות'},aiStyle:'control',cardPlayStyle:'measured',artMode:'expressions',sprites:{},dialoguePools:Object.freeze({pleased:[],annoyed:[],surprised:[],drink:[]}),reactionWeights:Object.freeze({pleased:0,annoyed:0,surprised:0,drink:0}),idleFrequency:21000}),
+  Object.freeze({id:'gorvan',name:'גורבן',gender:'m',archetype:'noble',descriptor:'לורד, בעל כורחו · רגוע, מנומס, אף פעם לא ממהר',row:0,props:{drink:'',snack:'',token:''},aiStyle:'patient',cardPlayStyle:'quiet',artMode:'expressions',sprites:{},dialoguePools:Object.freeze({pleased:[],annoyed:[],surprised:[],drink:[]}),reactionWeights:Object.freeze({pleased:0,annoyed:0,surprised:0,drink:0}),idleFrequency:27000}),
   Object.freeze({id:'bramm',name:'בראם',gender:'m',archetype:'mercenary',descriptor:'הבלתי־מנוצח · רברבן, תחרותי וקולני',row:2,props:{drink:'ספל כבד',snack:'לחם',token:'אסימון ברזל'},aiStyle:'aggressive',cardPlayStyle:'thunk',artMode:'expressions',sprites:{},dialoguePools:Object.freeze({pleased:[],annoyed:[],surprised:[],drink:[]}),reactionWeights:Object.freeze({pleased:0,annoyed:0,surprised:0,drink:0}),idleFrequency:26000})
 ]);
 
@@ -61,7 +64,9 @@ const DUEL_EN=Object.freeze({
   rusk:{name:'Rusk',descriptor:'The Trader · Quiet and watchful',dialoguePools:{pleased:['…','Naturally.','Good merchandise.'],annoyed:['Noted.','That will cost you.','Hm.'],surprised:['Interesting.','Not bad at all.','Ears up.'],drink:['Just watching.','Long night.']}},
   edrin:{name:'Edrin',descriptor:'The Old Regular · Friendly, a little tipsy',dialoguePools:{pleased:[],annoyed:[],surprised:[],drink:[]}},
   ragna:{name:'Ragna',descriptor:'The Northern Warrior · Blunt, fierce, raises the stakes',dialoguePools:{pleased:[],annoyed:[],surprised:[],drink:[]}},
-  bramm:{name:'Bramm',descriptor:'The Unbeaten · Boastful, competitive, and loud',dialoguePools:{pleased:[],annoyed:[],surprised:[],drink:[]}}
+  bramm:{name:'Bramm',descriptor:'The Unbeaten · Boastful, competitive, and loud',dialoguePools:{pleased:[],annoyed:[],surprised:[],drink:[]}},
+  veyra:{name:'Veyra',descriptor:'The Omen-Reader · Obsessive, sharp, argues with the universe',dialoguePools:{pleased:[],annoyed:[],surprised:[],drink:[]}},
+  gorvan:{name:'Gorvan',descriptor:'Lord, reluctantly · Calm, polite, never in a hurry',dialoguePools:{pleased:[],annoyed:[],surprised:[],drink:[]}}
 });
 export function localizeDuelOpponent(opponent,language='he'){return language==='en'?{...opponent,...DUEL_EN[opponent.id]}:opponent;}
 export function duelSpriteStyle(opponent,state='idle'){const sprite=opponent.sprites[state]||opponent.sprites.idle;if(!sprite)return'';return `--sprite-x:${sprite.column*25}%;--sprite-y:${sprite.row*25}%${sprite.sheet==='b'?`;--sprite-sheet:url('${DUEL_SHEETS.b}')`:''}`;}

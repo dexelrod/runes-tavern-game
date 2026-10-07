@@ -1,8 +1,10 @@
-# Voiced guests at the Tavern — integration notes (v101, updated v103)
+# Voiced guests at the Tavern — integration notes (v101, updated v103, v104)
 
-Now and then Bramm, Edrin, Ragna or Kesh happens to be playing at a Tavern Match, usually in company. They say a handful of approved lines, pull faces at what happens around them, and, rarely, two of them trade lines. The aim is "Bramm happened to be in tonight", not a character mode.
+Now and then Bramm, Edrin, Ragna, Kesh, Veyra or Gorvan happens to be playing at a Tavern Match, usually in company. They say a handful of approved lines, pull faces at what happens around them, and, rarely, two of them trade lines. The aim is "Bramm happened to be in tonight", not a character mode.
 
 Only existing recordings are used. No new dialogue or audio was created.
+
+**v104:** Veyra and Gorvan joined the guests (see `VEYRA_INTEGRATION.md` and `GORVAN_INTEGRATION.md`). Banter is now a data-driven **sequence of any length** (`lines`), played as one performance, with dedicated banter recordings catalogued in `dist/duel/banter.js`. Exchanges recorded only in English (every Gorvan conversation) run as Hebrew text only in Hebrew. With voiced guests at the table, the ordinary regulars' text quips come half as often.
 
 ## Turning it off / reverting
 
@@ -16,16 +18,21 @@ Only existing recordings are used. No new dialogue or audio was created.
 
 | Piece | File | Notes |
 |---|---|---|
-| Guest roster and odds | `dist/game-engine/match.js` | <ul><li>`VOICED_TAVERN_GUESTS`, `TAVERN_GUEST_MODES`, `TAVERN_GUEST_ODDS` (per mode), `TAVERN_GUEST_PAIRS` (banter exchanges per pair) and `TAVERN_GUESTS_ENABLED`.</li><li>`tavernGuestsFor(seed,{mode,guests})` seeds the guests and shuffles the seats, so a saved match restores the same table.</li><li>The ordinary regulars are now the nine unvoiced ones. Kesh moved to the guests.</li></ul> |
-| Director | `dist/duel/tavern-director.js` | <ul><li>One table-wide speech coordinator. Each guest is data: their Tavern allowlist (`TAVERN_GUEST_POOLS`), talkativeness (`TAVERN_GUEST_TALK`) and faces (`FACES`, `RESULT_FACES`).</li><li>Table events (`move`, `good_move`, `draw`, `penalty`, `skip`, `king`, `reverse`, `one_card`, `idle`, `slow`, `intro`, `round_end`, `match_end`, Kesh's `omen` / `omen_failed`) arrive with *who did it* and *who it hit*. Each seat reads the event from its own side (`own_*` / `other_*`).</li><li>The director returns **at most one line or one banter per event**, plus silent faces.</li></ul> |
+| Guest roster and odds | `dist/game-engine/match.js` | <ul><li>`VOICED_TAVERN_GUESTS`, `TAVERN_GUEST_MODES`, `TAVERN_GUEST_ODDS` (per mode), `TAVERN_GUEST_PAIRS` (banter exchanges per pair), `TAVERN_PAIR_CHEMISTRY` (v104: a little extra weight for Veyra + Kesh) and `TAVERN_GUESTS_ENABLED`.</li><li>`tavernGuestsFor(seed,{mode,guests})` seeds the guests and shuffles the seats, so a saved match restores the same table.</li><li>The ordinary regulars are now the nine unvoiced ones. Kesh moved to the guests.</li></ul> |
+| Banter catalog (v104) | `dist/duel/banter.js` | Dedicated banter recordings: speaker, exact authored text in both languages, the speaker's face for the line, and which takes exist. `resolveCharacterVoice` falls back to it, so banter plays through the one voice path. |
+| Director | `dist/duel/tavern-director.js` | <ul><li>One table-wide speech coordinator. Each guest is data: their Tavern allowlist (`TAVERN_GUEST_POOLS`), talkativeness (`TAVERN_GUEST_TALK`) and faces (`FACES`, `RESULT_FACES`, `FACE_RATE`).</li><li>`VOICE_WHEN` holds lines that are only true in a particular moment (Veyra's omen lines, Gorvan's "enough of kings").</li><li>Table events (`move`, `good_move`, `draw`, `penalty`, `skip`, `king`, `reverse`, `one_card`, `idle`, `slow`, `intro`, `round_end`, `match_end`, Kesh's `omen` / `omen_failed`) arrive with *who did it* and *who it hit*. Each seat reads the event from its own side (`own_*` / `other_*`).</li><li>The director returns **at most one line or one banter per event**, plus silent faces.</li></ul> |
 | App wiring | `dist/app.js` | <ul><li>`setupTavernGuests`, `tavernObserve` (one table update becomes one event with actor and victim) and `tavernEvent`.</li><li>`performGuestLines` plays lines one at a time through the single `speakCharacterVoice` path; a banter's second line waits for the first to end.</li><li>Guest seat faces, the idle tick, Edrin's occasional dawdle, and the director's memory saved with the match.</li></ul> |
-| AI | `dist/game-ai/veteran.js`, `bot.js` | <ul><li>`TAVERN_VETERAN_PROFILE` (Edrin) and `TAVERN_PRESSURE_PROFILE` (Ragna): their Duel judgement without the look-ahead, plus a few more slips.</li><li>Bramm plays his usual mercenary style; Kesh his omen profile.</li></ul> |
+| AI | `dist/game-ai/veteran.js`, `bot.js` | <ul><li>`TAVERN_VETERAN_PROFILE` (Edrin), `TAVERN_PRESSURE_PROFILE` (Ragna), `TAVERN_CONTROL_PROFILE` (Veyra) and `TAVERN_PATIENT_PROFILE` (Gorvan): their Duel judgement without the look-ahead, plus a few more slips.</li><li>Bramm plays his usual mercenary style; Kesh his omen profile.</li></ul> |
 | Settings | `dist/platform/storage.js`, `app.js` | `tavernGuestMode:'sometimes'` default (with migration from the old boolean), and a three-way ink choice under **Table**. |
 | Styles | `dist/styles.css` | Per-guest seat framing: `.seat-figure.guest-<id>`. |
 | Audio | `dist/platform/audio.js` | Exposes `voiceName` and an interruption counter for QA. Playback behaviour is unchanged: Web Audio game sound, no media element, no Now Playing. |
 | Kesh | `dist/duel/kesh.js` | His Tavern-only code (`keshTavernEventFor` and the Tavern damping) was removed. He now uses the shared guest system like the others. |
 
-## Who sits down
+## Who sits down (v104: six guests)
+
+With six guests, a two-guest evening in "Sometimes" is one of: Edrin + Ragna 13%, Veyra + Kesh 10%, Bramm + Gorvan 10%, Bramm + Edrin 9%, Bramm + Ragna 9%, Veyra + Gorvan 9%, Bramm + Kesh 8%, Gorvan + Kesh 7%, Edrin + Gorvan 7%, Gorvan + Ragna 7%, Veyra + Ragna 4%, Veyra + Edrin 4%; the three pairs with no banter about 1% each. The table below is unchanged.
+
+### Original notes (v103)
 
 | Setting | No guest | One | Two | Three |
 |---|---|---|---|---|
@@ -47,7 +54,8 @@ Only existing recordings are used. No new dialogue or audio was created.
   - Nothing starts while a voice is playing or a guest bubble is showing.
 - **Repeats:** every recording is heard at most once a match, and identical words never come back, even from a different file.
 - **Shared moments:** two or three guests share the moments. Each roll is scaled by 0.6 for two guests and 0.45 for three, and one roll serves the whole table.
-- **Talkativeness:** Edrin is the quietest (0.6×); Bramm is a little louder (1.15×).
+- **Talkativeness:** Gorvan is the quietest (0.5×), then Edrin (0.6×); Bramm is a little louder (1.15×).
+- **Veyra's omens** (v104) keep their own small allowance (they don't spend her two or three ordinary lines), but still wait their turn on the single voice: a declaration is the hand's one ordinary line; a miss may come later in the same hand; a sign that lands waits for any voice in progress, then plays.
 - **Generic regulars' text quips** never come from a guest's seat, never start while a guest is speaking, and are skipped for any update where a guest spoke.
 - **Results**
   - The winning guest may speak at round end (35%).
@@ -93,10 +101,11 @@ These follow the owner's list exactly, with the deviations below.
   - win 01, 02, 04, 06, 07, 09, 10;
   - match loss 01–03.
 
-## Banter (two beats, existing recordings only)
+## Banter (authored sequences, each one performance)
 
 **The rules:**
-- Speaker A plays to the end; after a natural 0.6–1.5 s pause, B answers.
+- Each line plays to the end; after a natural pause (0.6–1.5 s, or the authored timing — Kesh's "[after a pause]"), the next speaker answers. The table's one voice is reserved for the whole exchange: nothing else starts until its last line ends.
+- v104 exchanges (Veyra with Kesh, Ragna and Edrin; Gorvan with all five) are listed in `VEYRA_INTEGRATION.md` and `GORVAN_INTEGRATION.md`.
 - Each exchange happens at most once a match, and at most two exchanges per match. There's a 40 s gap between exchanges.
 - **Every line must be literally true at that moment**, or the exchange doesn't run.
 

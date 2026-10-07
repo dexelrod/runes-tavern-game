@@ -6,6 +6,9 @@ import { BRAMM_EXPRESSIONS, BRAMM_REACTIONS, BRAMM_VOICE_LIBRARY, brammExpressio
 import { RAGNA_EXPRESSIONS, RAGNA_REACTIONS, RAGNA_VOICE_LIBRARY, createRagnaController, preloadRagnaExpressions, ragnaExpressionURL, resolveRagnaReaction, resolveRagnaVoice } from './ragna.js';
 import { KESH_EXPRESSIONS, KESH_REACTIONS, KESH_VOICE_LIBRARY, createKeshController, keshExpressionURL, preloadKeshExpressions, resolveKeshReaction, resolveKeshVoice } from './kesh.js';
 import { EDRIN_EXPRESSIONS, EDRIN_REACTIONS, EDRIN_VOICE_LIBRARY, createEdrinController, edrinExpressionURL, preloadEdrinExpressions, resolveEdrinReaction, resolveEdrinVoice } from './edrin.js';
+import { VEYRA_EXPRESSIONS, VEYRA_REACTIONS, VEYRA_VOICE_LIBRARY, createVeyraController, preloadVeyraExpressions, resolveVeyraReaction, resolveVeyraVoice, veyraExpressionURL } from './veyra.js';
+import { GORVAN_EXPRESSIONS, GORVAN_REACTIONS, GORVAN_VOICE_LIBRARY, createGorvanController, gorvanExpressionURL, preloadGorvanExpressions, resolveGorvanReaction, resolveGorvanVoice } from './gorvan.js';
+import { banterSpeaker, resolveBanterVoice } from './banter.js';
 
 const bramm=Object.freeze({
   id:'bramm',label:'Bramm',
@@ -85,9 +88,55 @@ const kesh=Object.freeze({
   introDelay:1500
 });
 
-export const AUTHORED_CHARACTERS=Object.freeze({bramm,edrin,ragna,kesh});
-// The four voiced opponents offered at the duel table, in their canonical order.
-export const VOICED_OPPONENTS=Object.freeze(['bramm','edrin','ragna','kesh']);
+// Veyra and Gorvan (v104) are data-driven packs (duel/authored-pack.js). Their Duel
+// dispatch is generic: the shared classifier (duelEventFor) names the moment from
+// the character's side, `eventContext` adds what only they care about, and
+// `resultContext` feeds their round / match lines. Nothing here is per-language.
+const veyra=Object.freeze({
+  id:'veyra',label:'Veyra',
+  expressions:VEYRA_EXPRESSIONS,defaultExpression:'default_observant',expressionURL:veyraExpressionURL,preload:preloadVeyraExpressions,
+  reactions:VEYRA_REACTIONS,voiceLibrary:VEYRA_VOICE_LIBRARY,resolveReaction:resolveVeyraReaction,resolveVoice:resolveVeyraVoice,
+  createController:({initial,settings,now})=>createVeyraController({now,initial:{...(initial||{}),recentVoices:initial?.recentVoices||settings?.characterRecentVoices?.veyra||[]}}),
+  holdsExpression:controller=>!!controller?.holdsExpression?.(),
+  lead(trigger){
+    // Her face jumps first; the words tumble after it.
+    if(trigger==='player_one_card')return {delay:520};
+    if(trigger==='omen_hit')return {delay:260};
+    if(trigger==='own_one_card'||trigger==='omen_miss')return {delay:440};
+    return null;
+  },
+  idleTriggers:()=>[['idle_quiet',{}]],
+  idleFallback:(controller,context)=>controller?.observe('idle_beat',context),
+  slowPlayerAfter:12000,
+  finalResultBeat:1700,activeClock:true,
+  introDelay:1300,
+  omens:true,generic:true
+});
+
+const gorvan=Object.freeze({
+  id:'gorvan',label:'Gorvan',
+  expressions:GORVAN_EXPRESSIONS,defaultExpression:'neutral',expressionURL:gorvanExpressionURL,preload:preloadGorvanExpressions,
+  reactions:GORVAN_REACTIONS,voiceLibrary:GORVAN_VOICE_LIBRARY,resolveReaction:resolveGorvanReaction,resolveVoice:resolveGorvanVoice,
+  createController:({initial,settings,now})=>createGorvanController({now,initial:{...(initial||{}),recentVoices:initial?.recentVoices||settings?.characterRecentVoices?.gorvan||[]}}),
+  holdsExpression:controller=>!!controller?.holdsExpression?.(),
+  lead(trigger){
+    // He looks first, unhurried; the words, if any, a beat later.
+    if(trigger==='player_one_card')return {delay:760};
+    if(trigger==='own_one_card'||trigger==='curse_taken')return {delay:600};
+    return null;
+  },
+  idleTriggers:()=>[['idle_quiet',{}]],
+  idleFallback:(controller,context)=>controller?.observe('idle_beat',context),
+  slowPlayerAfter:14000,
+  finalResultBeat:1800,activeClock:true,
+  introDelay:1700,
+  generic:true
+});
+
+export const AUTHORED_CHARACTERS=Object.freeze({bramm,edrin,ragna,kesh,veyra,gorvan});
+// The voiced opponents offered at the duel table, in their canonical order.
+export const VOICED_OPPONENTS=Object.freeze(['bramm','edrin','ragna','kesh','veyra','gorvan']);
 export const authoredCharacter=id=>AUTHORED_CHARACTERS[id]||null;
-export function characterForVoice(name=''){return Object.values(AUTHORED_CHARACTERS).find(pack=>pack.voiceLibrary[name])||null;}
-export function resolveCharacterVoice(name,locale='en'){return characterForVoice(name)?.resolveVoice(name,locale)||null;}
+export function characterForVoice(name=''){return Object.values(AUTHORED_CHARACTERS).find(pack=>pack.voiceLibrary[name])||AUTHORED_CHARACTERS[banterSpeaker(name)]||null;}
+// Ordinary lines resolve through their character; dedicated banter recordings through the banter catalog.
+export function resolveCharacterVoice(name,locale='en'){const pack=Object.values(AUTHORED_CHARACTERS).find(item=>item.voiceLibrary[name]);return pack?pack.resolveVoice(name,locale):resolveBanterVoice(name,locale);}

@@ -54,7 +54,7 @@ test('bubbles use the authored transcript with acting directions removed, Hebrew
 });
 
 test('one framework: Edrin plugs into the shared registry and the single Web Audio voice path',()=>{
-  assert.deepEqual(Object.keys(AUTHORED_CHARACTERS).toSorted(),['bramm','edrin','kesh','ragna']);
+  assert.deepEqual(Object.keys(AUTHORED_CHARACTERS).toSorted(),['bramm','edrin','gorvan','kesh','ragna','veyra']);
   assert.match(resolveCharacterVoice('edrin_round_win_01','he').src,/edrin_round_win_01_he\.mp3$/);
   assert.match(resolveCharacterVoice('bramm_loss_01','en').src,/bramm_loss_01\.mp3$/);
   const app=read('../dist/app.js');
@@ -174,7 +174,7 @@ test('results: one line per hand, round pools while the match continues, match p
   assert.equal(edrin.holdsExpression(),true,'the result face holds under the result slip');edrin.beginRound();assert.equal(edrin.holdsExpression(),false);
   const app=read('../dist/app.js');
   assert.match(app,/else if\(isEdrinDuel\(\)\)runCharacter\(finalDuel\?\(opponentWon\?'match_win':'match_loss'\):\(opponentWon\?'round_win':'round_loss'\),\{\},true\);/);
-  assert.equal((app.match(/runCharacter\(finalDuel\?/g)||[]).length,3,'one result dispatch each for Edrin, Ragna and Kesh');
+  assert.equal((app.match(/runCharacter\(finalDuel\?/g)||[]).length,4,'one result dispatch each for Edrin, Ragna, Kesh, and one shared by the data-driven packs (Veyra, Gorvan)');
 });
 
 test('first win of the match favours the delayed "Oh. I won."',()=>{

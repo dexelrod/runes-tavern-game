@@ -1,6 +1,6 @@
 import { ACTIONS, applyAction, currentPlayer, getLegalCards } from '../game-engine/engine.js';
 import { COLORS, TYPES } from '../game-engine/cards.js';
-import { OMEN_PROFILE, PRESSURE_PROFILE, TAVERN_PRESSURE_PROFILE, TAVERN_VETERAN_PROFILE, chooseVeteranAction, setRolloutPolicy } from './veteran.js';
+import { CONTROL_PROFILE, OMEN_PROFILE, PATIENT_PROFILE, PRESSURE_PROFILE, TAVERN_CONTROL_PROFILE, TAVERN_PATIENT_PROFILE, TAVERN_PRESSURE_PROFILE, TAVERN_VETERAN_PROFILE, chooseVeteranAction, setRolloutPolicy } from './veteran.js';
 
 // What the last planned decision was, for presentation only (never read by the engine).
 export const lastBotDecision={playerId:null,turn:null,slip:false};
@@ -29,7 +29,8 @@ export function chooseBotAction(state){
   // Kesh plays his own way in every mode (Duel, Tavern). Older saves still list him as `mysterious`.
   if(player.archetype==='traveler'||(player.archetype==='mysterious'&&player.nameKey==='kesh')){const note={slip:false},action=chooseVeteranAction(state,{profile:OMEN_PROFILE,note});Object.assign(lastBotDecision,{playerId:player.id,turn:state.turn,slip:note.slip,type:action.type});return action;}
   // Edrin and Ragna as Tavern guests: their own judgement at table strength (slips reported, as in a Duel).
-  const tavernProfile=player.archetype==='tavern-veteran'?TAVERN_VETERAN_PROFILE:player.archetype==='tavern-warrior'?TAVERN_PRESSURE_PROFILE:null;
+  // Veyra (control) and Gorvan (patient), at the Duel table or as Tavern guests.
+  const tavernProfile=({'tavern-veteran':TAVERN_VETERAN_PROFILE,'tavern-warrior':TAVERN_PRESSURE_PROFILE,'tavern-witch':TAVERN_CONTROL_PROFILE,'tavern-noble':TAVERN_PATIENT_PROFILE,witch:CONTROL_PROFILE,noble:PATIENT_PROFILE})[player.archetype]||null;
   if(tavernProfile){const note={slip:false},action=chooseVeteranAction(state,{profile:tavernProfile,note});Object.assign(lastBotDecision,{playerId:player.id,turn:state.turn,slip:note.slip,type:action.type});return action;}
   if(player.archetype==='warrior'){const note={slip:false},action=chooseVeteranAction(state,{profile:PRESSURE_PROFILE,note});Object.assign(lastBotDecision,{playerId:player.id,turn:state.turn,slip:note.slip,type:action.type});return action;}
   if(state.awaitingColor?.playerId===player.id) return {type:ACTIONS.CHOOSE_COLOR,playerId:player.id,color:chooseColor(player.hand,state.activeColor)};

@@ -30,7 +30,8 @@ test('Kesh registers all 52 authored lines, all 40 expressions and every deliver
     }
   }
   const files=fs.readdirSync(new URL('../dist/assets/kesh/voice/',import.meta.url));
-  assert.equal(files.length,103);assert.ok(files.every(name=>name.endsWith('.mp3')));
+  // 103 takes of his own, plus his side of the Veyra (5) and Gorvan (2, English only) banter.
+  assert.equal(files.filter(name=>!name.includes('_banter_')).length,103);assert.equal(files.length,111);assert.ok(files.every(name=>name.endsWith('.mp3')));
   assert.ok(files.includes('kesh_match_win_02_he.mp3'),'the take delivered without an extension ships as .mp3');
   for(const expression of KESH_EXPRESSIONS){const bytes=fs.readFileSync(fileURLToPath(keshExpressionURL(expression)));const vp8x=bytes.indexOf('VP8X');assert.equal(bytes.subarray(8,12).toString(),'WEBP');const w=1+bytes.readUIntLE(vp8x+12,3),h=1+bytes.readUIntLE(vp8x+15,3);assert.deepEqual([w,h],[640,640],`${expression} shares the anchored canvas`);}
 });
@@ -49,7 +50,7 @@ test('bubbles show the exact authored transcript, acting directions removed, Heb
 });
 
 test('one framework: Kesh plugs into the shared registry, the shared controller and the single voice path',()=>{
-  assert.deepEqual(VOICED_OPPONENTS,['bramm','edrin','ragna','kesh']);
+  assert.deepEqual(VOICED_OPPONENTS,['bramm','edrin','ragna','kesh','veyra','gorvan']);
   assert.match(resolveCharacterVoice('kesh_omen_02','he').src,/kesh_omen_02_he\.mp3$/);
   assert.match(read('../dist/duel/kesh.js'),/createAuthoredController\(KESH_SPEC/);
   const app=read('../dist/app.js');assert.equal((app.match(/audioSystem\.playVoice\(/g)||[]).length,1,'Duel and Tavern share one voice call');assert.doesNotMatch(app,/new Audio\(|<audio/);
