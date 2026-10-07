@@ -26,7 +26,8 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout
 const APP_VERSION=new URL(import.meta.url).searchParams.get('v')||'dev';
 // Player-facing order of the four colours: Burgundy, Forest, Gold, Slate.
 const DISPLAY_COLORS=Object.freeze(['red','green','yellow','blue']);
-const colorHex={red:'#7f2635',blue:'#465f76',green:'#36583c',yellow:'#b0832f'};
+// The four inks live in styles.css (:root, and .hc-cards for High Card Contrast).
+const colorHex={red:'var(--red)',blue:'var(--blue)',green:'var(--green)',yellow:'var(--yellow)'};
 let settings=loadSettings(),session=null,state=null,transport=null,view='home',sheet=null,hint='',selected=null;
 const isPaused=()=>view==='game'&&(Boolean(sheet)||document.hidden);
 const isEnglish=()=>settings.language==='en';
@@ -40,7 +41,7 @@ function colorRuneHTML(color,className='color-rune'){return runeSVG(color,classN
 function displayName(player){if(!player)return'';if(player.id==='p0')return isEnglish()?'You':player.name;if(!isEnglish())return player.name;const key=player.nameKey||player.duelOpponentId;return key?(playerNames[key]||localizeDuelOpponent(getDuelOpponent(key),'en')?.name||player.name):(playerNames[player.name]||player.name);}
 function displayOpponent(opponent){return localizeDuelOpponent(opponent,settings.language);}
 function cardOptions(options={}){return {...options,language:settings.language};}
-let botTimer=null,eventTimer=null,quipTimer=null,roundEndTimer=null,duelReactionTimer=null,duelIdleTimer=null,deckAudioTimer=null,characterSlowTimer=null,musicRestoreTimer=null,eventBanner=null,quip=null,duelReaction='idle',lastDuelReactionAt=0,lastLogLength=0,lastCounts={},lastHands={},lastQuipAt=0,takiRun=0,lastRenderedTopId=null,sessionEpoch=0,roundResultVisible=false,incomingCardDelays=new Map(),propRattled=new Set(),screenReaderLine='',captionLine='',characterCaptionLine='',characterCaptionLocale='en',blockAiUntil=0,motionLocked=false,pendingAction=null,deckSettling=false,characterController=null,characterExpression='01_default_smug',characterPreviousExpression='01_default_smug',characterExpressionTimer=null,characterSwapTimer=null,characterSequenceTimers=[],characterControllerFor=null,edrinConsideredTurn=null,pendingBotTurn=null;
+let botTimer=null,eventTimer=null,quipTimer=null,roundEndTimer=null,duelReactionTimer=null,duelIdleTimer=null,deckAudioTimer=null,characterSlowTimer=null,musicRestoreTimer=null,eventBanner=null,quip=null,duelReaction='idle',lastDuelReactionAt=0,lastLogLength=0,lastCounts={},lastHands={},lastQuipAt=0,takiRun=0,lastRenderedTopId=null,sessionEpoch=0,roundResultVisible=false,landingCards=new Map(),propRattled=new Set(),screenReaderLine='',captionLine='',characterCaptionLine='',characterCaptionLocale='en',blockAiUntil=0,motionLocked=false,pendingAction=null,deckSettling=false,characterController=null,characterExpression='01_default_smug',characterPreviousExpression='01_default_smug',characterExpressionTimer=null,characterSwapTimer=null,characterSequenceTimers=[],characterControllerFor=null,edrinConsideredTurn=null,pendingBotTurn=null;
 const dialogueHe={
   hunter:{skip:['אה, לא. תורך.','לאן אתה חושב שאתה הולך?','שב.'],penalty:['ארבעה?!','זה מסלים מהר.','אני רואה שבחרנו באלימות.'],reverse:['חוזר אליך.','הסתובבו השולחנות.'],last:['כולם עליו.','עוד לא ניצחת.'],king:['הכתר החליט.','טוב. זה משנה דברים.']},
   bard:{skip:['בחייך.','זה היה מיותר לחלוטין.'],penalty:['אה. נפלא.','בשלב הזה פשוט תן לי את הקופה.'],reverse:['תרתי משמע.','שינוי בתוכניות.'],last:['זה נהיה מעניין.','אל תחייך עדיין.'],king:['קשה להתווכח עם כתר.','בחירה אמיצה.']},
@@ -138,7 +139,7 @@ function setSession(next){
   const keshSeat=session.mode==='tavern'?state.players.find(p=>p.nameKey==='kesh'):null;clearTimeout(keshTavern?.timer);
   keshTavern=keshSeat?{id:keshSeat.id,controller:(keshTavern?.id===keshSeat.id&&keshTavern.controller)||createKeshController({now:activeNow}),expression:'default_observant',timer:null}:null;keshPlan=null;keshTellPending=false;
   if(pack){if(!characterController||characterControllerFor!==pack.id){characterController=pack.createController({initial:next.characterPersonality||next.brammPersonality||null,settings,now:pack.activeClock?activeNow:undefined});characterControllerFor=pack.id;}characterExpression=characterController.defaultExpression();characterPreviousExpression=characterExpression;}else{characterController=null;characterControllerFor=null;characterExpression='01_default_smug';characterPreviousExpression=characterExpression;}
-  transport?.disconnect();transport=new LocalGameTransport(state);lastLogLength=state.log.length;lastCounts=Object.fromEntries(state.players.map(p=>[p.id,p.hand.length]));lastHands=Object.fromEntries(state.players.map(p=>[p.id,p.hand.map(card=>card.id)]));lastRenderedTopId=null;incomingCardDelays.clear();propRattled.clear();eventBanner=null;
+  transport?.disconnect();transport=new LocalGameTransport(state);lastLogLength=state.log.length;lastCounts=Object.fromEntries(state.players.map(p=>[p.id,p.hand.length]));lastHands=Object.fromEntries(state.players.map(p=>[p.id,p.hand.map(card=>card.id)]));lastRenderedTopId=null;landingCards.clear();propRattled.clear();eventBanner=null;
   transport.subscribeToState((nextState,action)=>{
     state=nextState;session.game=nextState;
     try{onState(action);}catch(error){console.error('Non-blocking game presentation error',error);screenReaderLine='';captionLine='';}
@@ -218,7 +219,8 @@ function submit(action){
   if(![ACTIONS.PLAY,ACTIONS.DRAW].includes(action.type)||state?.phase!=='playing'){commitAction(action);return;}
   motionLocked=true;
   const pending={action,committed:false};pendingAction=pending;
-  animateCardMovement(action).catch(error=>console.error('Card movement animation failed',error)).finally(()=>{if(pending.committed)return;pending.committed=true;pendingAction=null;motionLocked=false;commitAction(action);});
+  // Your own draw is committed first so the card can travel to the exact slot it will occupy in your sorted hand.
+  (action.type===ACTIONS.DRAW&&action.playerId==='p0'?prepareHumanDraw():animateCardMovement(action)).catch(error=>console.error('Card movement animation failed',error)).finally(()=>{if(pending.committed)return;pending.committed=true;pendingAction=null;motionLocked=false;commitAction(action);});
 }
 function flushPendingAction(){if(!pendingAction||pendingAction.committed)return;const pending=pendingAction;pending.committed=true;pendingAction=null;motionLocked=false;commitAction(pending.action);}
 function cardMotionProxy(card,mode){
@@ -230,19 +232,15 @@ function cardMotionProxy(card,mode){
   proxy.innerHTML=`<div class="travelling-inner"><div class="travelling-back"><span>${sigilHTML()}</span></div>${front}</div>`;
   document.body.append(proxy);return proxy;
 }
+const motionReduced=()=>settings.reducedMotion||matchMedia('(prefers-reduced-motion: reduce)').matches;
 function handAnchor(playerId){
-  if(playerId==='p0'){
-    const frame=root.querySelector('.hand-frame'),cards=[...root.querySelectorAll('.hand .card')];if(!frame||!cards.length)return frame||root.querySelector('.hand');
-    const f=frame.getBoundingClientRect(),mid=f.left+f.width/2;
-    return cards.reduce((best,card)=>{const r=card.getBoundingClientRect(),d=Math.abs(r.left+r.width/2-mid);return d<best.d?{card,d}:best;},{card:cards.at(-1),d:Infinity}).card;
-  }
   return root.querySelector(`[data-player-id="${playerId}"] [data-hand-anchor] i:last-child`)||root.querySelector(`[data-player-id="${playerId}"] [data-hand-anchor]`);
 }
 // Card movement is a card sliding over wood: it leaves quickly, keeps its
 // momentum, and drags to a stop on the pile with a small, final turn. No arcs,
 // no overshoot.
 function animateOneCard({source,destination,card,mode,duration,delay=0,index=0,trajectory='play'}){
-  if(settings.reducedMotion||!source||!destination)return new Promise(resolve=>setTimeout(resolve,90+delay));
+  if(motionReduced()||!source||!destination)return new Promise(resolve=>setTimeout(resolve,90+delay));
   const from=source.getBoundingClientRect(),to=destination.getBoundingClientRect();
   const startW=Math.max(24,Math.min(150,from.width||52)),startH=startW*1.4,endW=Math.max(20,Math.min(150,to.width||52)),endH=endW*1.4;
   const sx=from.left+from.width/2-startW/2,sy=from.top+from.height/2-startH/2,ex=to.left+to.width/2-endW/2,ey=to.top+to.height/2-endH/2;
@@ -256,18 +254,14 @@ function animateOneCard({source,destination,card,mode,duration,delay=0,index=0,t
 }
 async function animateCardMovement(action){
   const player=state.players.find(item=>item.id===action.playerId);if(!player)return;
-  const draw=action.type===ACTIONS.DRAW,card=draw?null:player.hand.find(item=>item.id===action.cardId);
+  const draw=action.type===ACTIONS.DRAW,card=draw?null:player.hand.find(item=>item.id===action.cardId);// draws here are opponents' (yours: prepareHumanDraw)
   const source=draw?root.querySelector('[data-draw-anchor]'):(action.playerId==='p0'?root.querySelector(`.hand [data-card-id="${action.cardId}"]`):handAnchor(action.playerId)),destination=draw?handAnchor(action.playerId):root.querySelector('[data-discard-anchor]');
   // Opponent cards turn face-up during travel and reach the discard face-up.
   // pile after landing. This avoids mobile 3D clipping and face flashes.
   const mode=draw?'back':action.playerId!=='p0'?'flip':'front';
   const count=draw?Math.min(state.activePenalty?.amount||1,8):1,duration=draw?380:action.playerId==='p0'?340:480;
   audioSystem.setSettings(settings);
-  if(draw&&state.drawPile.length===0&&state.discardPile.length>1){
-    source?.classList.add('deck-settling');audioSystem.play('shuffle');
-    await new Promise(resolve=>setTimeout(resolve,1050));
-    source?.classList.remove('deck-settling');audioSystem.play('deckPutDown');
-  }
+  if(draw)await reshuffleIfEmpty(source);
   if(draw){audioSystem.play(count>1?'drawMultiple':'cardDraw',{delay:70});source?.classList.add('drawing');destination?.classList.add('receiving-card');}
   else{
     const calmStyle=session.mode==='duel'&&action.playerId==='p1'&&['quiet','measured'].includes(currentDuelOpponent().cardPlayStyle);
@@ -278,6 +272,58 @@ async function animateCardMovement(action){
   await Promise.all(Array.from({length:count},(_,index)=>animateOneCard({source,destination,card,mode,duration,delay:index*90,index,trajectory:draw?'draw':'play'})));
   if(draw){source?.classList.remove('drawing');destination?.classList.remove('receiving-card');}
   if(!draw)source?.classList.remove('motion-source');
+}
+// An empty deck is gathered and squared from the discard before anyone can draw from it.
+async function reshuffleIfEmpty(deck){
+  if(state.drawPile.length||state.discardPile.length<=1)return;
+  deck?.classList.add('deck-settling');audioSystem.play('shuffle');
+  await new Promise(resolve=>setTimeout(resolve,1050));
+  deck?.classList.remove('deck-settling');audioSystem.play('deckPutDown');
+}
+async function prepareHumanDraw(){
+  audioSystem.setSettings(settings);await reshuffleIfEmpty(root.querySelector('[data-draw-anchor]'));
+  audioSystem.play((state.activePenalty?.amount||1)>1?'drawMultiple':'cardDraw',{delay:70});
+}
+// Deck → drawn card → your hand. The hand has already opened the card's sorted slot (FLIP in layoutHand);
+// a proxy leaves the deck face-down, turns face-up on the way, and settles exactly into that slot, at its tilt
+// and lighting, before the real card takes its place. Several cards (a Curse) follow one another.
+function flyLandingCards(){
+  if(view!=='game'||!landingCards.size)return;
+  const deck=root.querySelector('[data-draw-anchor] .card'),reduce=motionReduced()||!deck;let index=0,last=0;
+  for(const [id,entry] of landingCards){
+    if(entry.launched)continue;
+    const target=root.querySelector(`.hand [data-card-id="${id}"]`),card=state.players[0].hand.find(item=>item.id===id);
+    if(!target||!card){landingCards.delete(id);continue;}
+    entry.launched=true;
+    const land=()=>{if(landingCards.get(id)!==entry)return;landingCards.delete(id);root.querySelector(`.hand [data-card-id="${id}"]`)?.classList.remove('landing');};
+    if(reduce){land();target.animate([{opacity:0},{opacity:1}],{duration:180,easing:'ease-out'});continue;}
+    const delay=index++*110;last=delay+FLIGHT_MS;flyToHand(deck,target,card,delay).then(land);
+  }
+  if(last)blockAiUntil=Math.max(blockAiUntil,Date.now()+last+120);
+}
+const FLIGHT_MS=460;
+function flyToHand(deck,target,card,delay){
+  const t=target.getBoundingClientRect(),d=deck.getBoundingClientRect(),w=target.offsetWidth,h=target.offsetHeight;
+  // A slot scrolled out of view in a long hand: the card tucks in at the hand's edge instead of sailing off-screen.
+  const f=root.querySelector('.hand-frame')?.getBoundingClientRect(),cx=t.left+t.width/2,edge=f?Math.min(Math.max(cx,f.left+w*.35),f.right-w*.35):cx,tuck=Math.abs(edge-cx)>2;
+  const left=edge-w/2,top=t.top+t.height/2-h/2,dx=d.left+d.width/2-(left+w/2),dy=d.top+d.height/2-(top+h/2),from=deck.offsetWidth/w;
+  const tilt=parseFloat(target.style.getPropertyValue('--tilt'))||0,lit=getComputedStyle(target).filter;
+  const proxy=document.createElement('div');proxy.className='travelling-card reveal';proxy.setAttribute('aria-hidden','true');
+  proxy.innerHTML=`<div class="travelling-inner"><div class="travelling-back"><span>${sigilHTML()}</span></div><div class="travelling-front">${cardHTML(card,cardOptions({highlight:false}))}</div></div>`;
+  Object.assign(proxy.style,{left:`${left}px`,top:`${top}px`,width:`${w}px`,height:`${h}px`,visibility:'hidden'});proxy.style.setProperty('--proxy-w',`${w}px`);
+  document.body.append(proxy);
+  const inner=proxy.querySelector('.travelling-inner'),front=proxy.querySelector('.travelling-front'),timing={duration:FLIGHT_MS,delay,fill:'both'};
+  // Leaves the deck at the deck's angle, rises a touch as it turns over, and drags to a stop in the slot.
+  const flight=proxy.animate([
+    {transform:`translate(${dx}px,${dy}px) rotate(-2.5deg) scale(${from})`,filter:'none'},
+    {transform:`translate(${dx*.45}px,${dy*.45-h*.08}px) rotate(${tilt*.5-1}deg) scale(${(from+1)/2*1.05})`,filter:'none',opacity:1,offset:.45},
+    {transform:`rotate(${tilt}deg)`,filter:lit==='none'?'none':lit,opacity:tuck?0:1}
+  ],{...timing,easing:'cubic-bezier(.3,.6,.25,1)'});
+  // The turn is a 2D squeeze (no 3D backface), so no WebKit build can flash or clip it.
+  inner.animate([{transform:'scaleX(1)'},{transform:'scaleX(1)',offset:.22},{transform:'scaleX(.02)',offset:.46},{transform:'scaleX(1)',offset:.7}],timing);
+  front.animate([{opacity:0},{opacity:0,offset:.46},{opacity:1,offset:.46},{opacity:1}],timing);
+  proxy.style.visibility='';
+  return flight.finished.catch(()=>{}).then(()=>{requestAnimationFrame(()=>proxy.remove());});
 }
 function showEvent(kind,playerId=null,amount=null,cardId=null){clearTimeout(eventTimer);eventBanner={kind,playerId,targetId:playerId,amount,cardId};const epoch=sessionEpoch;eventTimer=setTimeout(()=>{if(epoch!==sessionEpoch)return;eventBanner=null;captionLine='';if(view==='game'&&!motionLocked)render();},settings.reducedMotion?300:1100);}
 const FEMININE_HE=[['אני צריך','אני צריכה'],['אני חושב','אני חושבת'],['אני מחזיר','אני מחזירה']];
@@ -334,8 +380,9 @@ function onState(action){
   const entries=state.log.slice(lastLogLength);lastLogLength=state.log.length;
   const latest=entries.at(-1),stop=entries.find(e=>e.type==='stop'),reverse=entries.find(e=>e.type==='reverse'),again=entries.find(e=>e.type==='playAgain'),penalty=entries.find(e=>e.type==='drawPenalty'),color=entries.find(e=>e.type==='color'),closed=entries.find(e=>e.type==='takiClosed'),opened=entries.find(e=>e.type==='takiOpened'),draw=entries.find(e=>e.type==='draw');
   const played=entries.findLast?.(e=>e.type==='play');const playedCard=played?state.discardPile.find(c=>c.id===played.cardId):null;
-  const arrived=[];for(const player of state.players){let order=0;const old=new Set(lastHands[player.id]||[]);for(const card of player.hand)if(!old.has(card.id)){incomingCardDelays.set(card.id,{delay:360+Math.min(order++,5)*72,started:performance.now()});arrived.push(card.id);}lastHands[player.id]=player.hand.map(card=>card.id);lastCounts[player.id]=player.hand.length;}
-  if(arrived.length){const epoch=sessionEpoch;setTimeout(()=>{if(epoch!==sessionEpoch)return;for(const id of arrived){incomingCardDelays.delete(id);root.querySelector(`[data-card-id="${id}"]`)?.classList.remove('incoming');}},settings.reducedMotion?250:1800);}
+  // A card that joins your hand keeps its sorted slot empty until it has travelled there from the deck (flyLandingCards).
+  for(const player of state.players){const old=new Set(lastHands[player.id]||[]);if(player.id==='p0')for(const card of player.hand)if(!old.has(card.id))landingCards.set(card.id,{launched:false});lastHands[player.id]=player.hand.map(card=>card.id);lastCounts[player.id]=player.hand.length;}
+  if(reverse&&state.players.length>2)ringTurnAt=performance.now();
   screenReaderLine=announce(entries);captionLine=screenReaderLine;
   const stack=entries.find(e=>e.type==='plus2');
   if(stop)showEvent('stop',stop.skipped,null,played?.cardId);else if(closed&&opened)showEvent('takiCycle',opened.playerId,null,played?.cardId);else if(closed)showEvent('takiClose',closed.playerId,null,played?.cardId);else if(opened)showEvent('takiOpen',opened.playerId,null,played?.cardId);else if(penalty)showEvent('penalty',penalty.playerId,penalty.amount);else if(draw)showEvent('draw',draw.playerId,draw.amount||1);else if(reverse)showEvent('reverse',played?.playerId,null,played?.cardId);else if(again)showEvent('plus',played?.playerId,null,played?.cardId);else if(stack)showEvent('plus2',stack.playerId,stack.amount,played?.cardId);else if(color)showEvent('color',color.playerId,null,played?.cardId);else if(playedCard?.type===TYPES.KING)showEvent('king',played.playerId,null,played.cardId);else if(played)showEvent('play',played.playerId,null,played.cardId);
@@ -788,18 +835,36 @@ const TYPE_ORDER=Object.freeze({number:0,stop:1,reverse:2,plus:3,plus2:4,taki:5,
 // The hand is shown grouped by colour, then number, then action cards, so the
 // player can scan it like a real fanned hand. Engine order is untouched.
 function sortedHand(hand){return hand.map((card,order)=>({card,order})).sort((a,b)=>(SUIT_ORDER[a.card.color]??5)-(SUIT_ORDER[b.card.color]??5)||(TYPE_ORDER[a.card.type]??9)-(TYPE_ORDER[b.card.type]??9)||(a.card.value??0)-(b.card.value??0)||a.order-b.order).map(item=>item.card);}
+// The order of play is carved into the table around the piles and inlaid with worn brass: two arcs that
+// chase each other clockwise (or, mirrored, counter-clockwise). Two players have no direction, so no ring.
+const RING_ARCS='<path class="ring-route" d="M40.2 97.9A168 104 0 0 1 345.5 78"/><path class="ring-head" d="M359.1 92.6 333.3 83.9 347.5 80.2 352.3 66.2Z"/><path class="ring-route" d="M359.8 162.1A168 104 0 0 1 54.5 182"/><path class="ring-head" d="M40.9 167.4 66.7 176.1 52.5 179.8 47.7 193.8Z"/>';
+let ringTurnAt=-1e9;
+function directionRingHTML(){
+  if(state.players.length<3)return'';
+  const lit=performance.now()-ringTurnAt<1700;
+  return `<svg class="direction-ring ${state.direction<0?'counter':''} ${lit?'lit':''}" viewBox="0 0 400 260" aria-hidden="true"><g class="ring-groove">${RING_ARCS}</g><g class="ring-inlay">${RING_ARCS}</g><g class="ring-glint"><path pathLength="100" d="M40.2 97.9A168 104 0 0 1 345.5 78"/><path pathLength="100" d="M359.8 162.1A168 104 0 0 1 54.5 182"/></g></svg>`;
+}
+// When a Turnabout reverses play, the ring turns over to its new direction and a glint runs along the
+// grooves the new way round. Re-renders resume the same animation where it was, so it always completes.
+function animateDirectionRing(){
+  const ring=root.querySelector('.direction-ring'),elapsed=performance.now()-ringTurnAt;if(!ring||elapsed>1400||motionReduced())return;
+  const now=ring.classList.contains('counter')?-1:1;
+  ring.animate([{scale:`${-now} 1`},{scale:`${now*.02} 1.05`,offset:.45},{scale:`${now} 1`}],{duration:620,easing:'cubic-bezier(.45,0,.25,1)'}).currentTime=elapsed;
+  ring.querySelectorAll('.ring-glint path').forEach(path=>{path.animate([{strokeDashoffset:14,opacity:0},{opacity:1,offset:.15},{opacity:1,offset:.8},{strokeDashoffset:-100,opacity:0}],{duration:820,delay:420,easing:'cubic-bezier(.4,0,.3,1)'}).currentTime=elapsed;});
+  if(elapsed<1700){const epoch=sessionEpoch;setTimeout(()=>{if(epoch===sessionEpoch&&view==='game'&&!motionLocked)root.querySelector('.direction-ring.lit')?.classList.remove('lit');},1700-elapsed);}
+}
 function gameHTML(){
   const en=isEnglish(),human=state.players[0],active=currentPlayer(state),opponents=state.players.slice(1,6);
   const isHumanTurn=session.phase==='round'&&state.phase==='playing'&&active.id===human.id&&!state.awaitingColor,legal=new Set(isHumanTurn?getLegalCards(state,human.id).map(c=>c.id):[]),top=topCard(state);
   const under=state.discardPile.slice(-4,-1),fresh=top.id!==lastRenderedTopId;lastRenderedTopId=top.id;
   const shown=sortedHand(human.hand);
-  const handCards=shown.map((card,i)=>{const incoming=incomingCardDelays.get(card.id);return cardHTML(card,cardOptions({legal:isHumanTurn&&legal.has(card.id),highlight:settings.playableHints,selected:selected===card.id,incoming:!!incoming,arrivalDelay:incoming?incoming.delay-(performance.now()-incoming.started):0,index:i,total:shown.length}));}).join('');
+  const handCards=shown.map((card,i)=>cardHTML(card,cardOptions({legal:isHumanTurn&&legal.has(card.id),highlight:settings.playableHints,selected:selected===card.id,landing:landingCards.has(card.id),index:i,total:shown.length}))).join('');
   const drawSuggested=isHumanTurn&&(!state.taki?.open||crossbowAwaitsPickup(state))&&legal.size===0;
   const resolvedTopColor=top.type===TYPES.CHANGE_COLOR&&state.awaitingColor?null:state.activeColor,showActiveColor=top.color==='wild'||top.type===TYPES.CHANGE_COLOR||top.type===TYPES.SUPER_TAKI||state.activeColor!==top.color;
   const figures=session.mode==='duel'||(session.mode==='tavern'&&opponents.some(p=>TAVERN_FIGURES.has(p.nameKey)||TAVERN_SPRITES.has(p.nameKey)));
   // Play-by-play notes ("Bramm takes 2", "Nothing matches — draw a card") are optional; on by default they stay hidden.
   const strip=settings.hideTableMessages?'':actionStripText();
-  const arrows=`<svg class="direction-ring ${state.direction<0?'counter':''} ${eventBanner?.kind==='reverse'?'lit':''}" viewBox="0 0 300 300" aria-hidden="true"><path class="ring-route" d="M57 181A105 105 0 0 1 226 74"/><path class="ring-head" d="m219 54 9 22-24 4"/><path class="ring-route" d="M243 119A105 105 0 0 1 74 226"/><path class="ring-head" d="m81 246-9-22 24-4"/></svg>`;
+  const arrows=directionRingHTML();
   const shellClass=['app-shell','screen-game',`mode-${session.mode}`,`seats-${opponents.length}`,figures?'with-figures':'',isAuthoredDuel()?`character-duel ${authoredPack().id}-duel`:'',session.suddenDeath?'sudden-death':'',state.taki?.open?'crossbow-armed':'',state.phase==='playing'&&state.players.some(p=>p.hand.length===1)?'one-card-tension':'',session.phase!=='round'?'round-complete':'',session.phase!=='round'&&roundResultVisible?'round-over':'',settings.reducedMotion?'reduced-motion':''].filter(Boolean).join(' ');
   return `<main class="${shellClass}" dir="${direction()}" style="--active:${colorHex[state.activeColor]||'#b78b45'};--taki-color:${colorHex[state.taki?.color]||'#b0832f'}">${worldSceneHTML(session.mode==='duel'?'duel':'game')}<section class="game ${isHumanTurn?'human-turn':'waiting'}">
     <header class="game-head"><button class="icon-button rune-menu" data-open="pause" aria-label="${en?'Pause and menu':'השהיה ותפריט'}"><i></i><i></i><i></i></button>${roundMarkerHTML()}${headScoreHTML()}</header>
@@ -810,7 +875,6 @@ function gameHTML(){
         <div class="pile discard ${fresh?'fresh':''}" data-discard-anchor style="--pile-turn:${((state.discardPile.length%7)-3)*.7}deg" role="img" aria-label="${en?`Top card: ${cardLabel(top,'en')||top.value}. Colour: ${colorName(state.activeColor)||'any'}`:`הקלף העליון: ${cardLabel(top,'he')||top.value}. צבע: ${colorName(state.activeColor)||'חופשי'}`}"><div class="discard-under">${under.map((card,i)=>`<span class="under under-${i}">${cardHTML(card,cardOptions())}</span>`).join('')}</div>${cardHTML(top,cardOptions({activeColor:resolvedTopColor}))}${showActiveColor&&state.activeColor?`<span class="active-stone ${state.activeColor}" title="${colorName(state.activeColor)}">${colorRuneHTML(state.activeColor,'active-color-rune')}</span>`:''}${statusHTML()}</div>
       </div></div>
       <div class="table-notes">${crossbowHTML()}${strip?`<div class="action-strip" role="status" aria-live="polite">${strip}</div>`:''}${captionHTML()}</div>
-      ${summaryHTML()}
       <span class="sr-only" aria-live="polite" aria-atomic="true">${screenReaderLine}</span>
     </div>
     <footer class="hand-area ${isHumanTurn?'your-turn':''}">
@@ -819,11 +883,14 @@ function gameHTML(){
       ${quip?.player==='p0'?`<div class="human-quip">${quip.text}</div>`:''}
       <div class="hand-frame"><span class="hand-overflow hand-overflow-start" aria-hidden="true"></span><div class="hand ${state.taki?.open?'taki-active':''} ${settings.playableHints?'hints':''}" data-hand-anchor role="group" aria-label="${en?`Your hand, ${cardCountLabel(shown.length)}`:`היד שלכם, ${cardCountLabel(shown.length)}`}">${handCards}</div><span class="hand-overflow hand-overflow-end" aria-hidden="true"></span></div>
     </footer>
+    ${resultStageHTML()}
   </section>${choiceHTML()}${sheetHTML()}</main>`;
 }
 /* Round results stay on the table: seats reveal their hands, coins move to
    the winner's seat, and one small tally slip in the middle carries the
    numbers and the continue control. */
+// The slip lies over the table below the seats (the open hands stay visible) and may cover your own hand, which is idle between rounds.
+function resultStageHTML(){const slip=summaryHTML();return slip?`<div class="result-stage">${slip}</div>`:'';}
 function summaryHTML(){
   if(!session||session.phase==='round'||!roundResultVisible)return'';
   const slipEnter=slipShownFor!==session.results.length?'enter':'';slipShownFor=session.results.length;
@@ -896,22 +963,22 @@ function sheetHTML(){
 }
 function settingsHTML(){
   const en=isEnglish(),c=en
-    ?{title:'Settings',language:'Language',sound:'Sound',gameSounds:'Game sounds',music:'Music',ambience:'Tavern ambience',gameplay:'Table',dialogue:'Character voices & reactions',captions:'Captions',hints:'Highlight playable cards',tableMessages:'Hide table messages',accessibility:'Comfort',haptics:'Vibration',motion:'Reduce motion',close:'Done',on:'On',off:'Off'}
-    :{title:'הגדרות',language:'שפה',sound:'צליל',gameSounds:'צלילי משחק',music:'מוזיקה',ambience:'אווירת פונדק',gameplay:'שולחן',dialogue:'קולות ותגובות של דמויות',captions:'כתוביות',hints:'הדגשת קלפים שאפשר לשחק',tableMessages:'הסתרת הודעות שולחן',accessibility:'נוחות',haptics:'רטט',motion:'צמצום תנועה',close:'סיום',on:'פועל',off:'כבוי'};
+    ?{title:'Settings',language:'Language',sound:'Sound',gameSounds:'Game sounds',music:'Music',ambience:'Tavern ambience',gameplay:'Table',dialogue:'Character voices & reactions',captions:'Captions',hints:'Highlight playable cards',tableMessages:'Hide table messages',accessibility:'Comfort',haptics:'Vibration',motion:'Reduce motion',contrast:'High card contrast',close:'Done',on:'On',off:'Off'}
+    :{title:'הגדרות',language:'שפה',sound:'צליל',gameSounds:'צלילי משחק',music:'מוזיקה',ambience:'אווירת פונדק',gameplay:'שולחן',dialogue:'קולות ותגובות של דמויות',captions:'כתוביות',hints:'הדגשת קלפים שאפשר לשחק',tableMessages:'הסתרת הודעות שולחן',accessibility:'נוחות',haptics:'רטט',motion:'צמצום תנועה',contrast:'ניגודיות גבוהה בקלפים',close:'סיום',on:'פועל',off:'כבוי'};
   const toggle=(label,key)=>`<div class="setting-row toggle-row"><span class="setting-label" id="setting-${key}">${label}</span><button class="switch ${settings[key]?'on':''}" role="switch" data-toggle="${key}" aria-labelledby="setting-${key}" aria-checked="${!!settings[key]}"><i aria-hidden="true"></i><span class="switch-state">${settings[key]?c.on:c.off}</span></button></div>`;
   const audio=(label,key,volumeKey)=>{const value=Math.round((settings[volumeKey]??0)*100);return `<div class="setting-row audio-row ${settings[key]?'':'muted'}"><span class="setting-label" id="setting-${key}">${label}</span><div class="audio-controls"><input id="volume-${volumeKey}" type="range" min="0" max="100" step="5" value="${value}" style="--value:${value}%" data-volume="${volumeKey}" data-channel="${key}" aria-labelledby="setting-${key}" aria-valuetext="${value}%"><output for="volume-${volumeKey}"><bdi>${value}%</bdi></output><button class="switch ${settings[key]?'on':''}" role="switch" data-toggle="${key}" aria-labelledby="setting-${key}" aria-checked="${!!settings[key]}"><i aria-hidden="true"></i><span class="switch-state">${settings[key]?c.on:c.off}</span></button></div></div>`;};
   const fromPause=view==='game';
-  const body=`<div class="setting-row language-row"><span class="setting-label" id="setting-language">${c.language}</span><div class="ink-choice" role="radiogroup" aria-labelledby="setting-language"><button role="radio" data-language="he" aria-checked="${settings.language==='he'}" class="${settings.language==='he'?'on':''}" lang="he">עברית</button><i aria-hidden="true">·</i><button role="radio" data-language="en" aria-checked="${settings.language==='en'}" class="${settings.language==='en'?'on':''}" lang="en">English</button></div></div><section class="settings-section"><h3>${c.sound}</h3>${audio(c.gameSounds,'sound','sfxVolume')}${audio(c.music,'music','musicVolume')}${audio(c.ambience,'ambience','ambienceVolume')}</section><section class="settings-section"><h3>${c.gameplay}</h3>${toggle(c.dialogue,'dialogue')}${toggle(c.captions,'captions')}${toggle(c.hints,'playableHints')}${toggle(c.tableMessages,'hideTableMessages')}</section><section class="settings-section"><h3>${c.accessibility}</h3>${toggle(c.haptics,'haptics')}${toggle(c.motion,'reducedMotion')}</section><p class="build-mark">RUNES v${APP_VERSION}</p><div class="sheet-actions"><button class="secondary-button" data-close-sheet>${fromPause?(en?'Back to the pause menu':'חזרה לתפריט'):c.close}</button></div>`;
+  const body=`<div class="setting-row language-row"><span class="setting-label" id="setting-language">${c.language}</span><div class="ink-choice" role="radiogroup" aria-labelledby="setting-language"><button role="radio" data-language="he" aria-checked="${settings.language==='he'}" class="${settings.language==='he'?'on':''}" lang="he">עברית</button><i aria-hidden="true">·</i><button role="radio" data-language="en" aria-checked="${settings.language==='en'}" class="${settings.language==='en'?'on':''}" lang="en">English</button></div></div><section class="settings-section"><h3>${c.sound}</h3>${audio(c.gameSounds,'sound','sfxVolume')}${audio(c.music,'music','musicVolume')}${audio(c.ambience,'ambience','ambienceVolume')}</section><section class="settings-section"><h3>${c.gameplay}</h3>${toggle(c.dialogue,'dialogue')}${toggle(c.captions,'captions')}${toggle(c.hints,'playableHints')}${toggle(c.tableMessages,'hideTableMessages')}</section><section class="settings-section"><h3>${c.accessibility}</h3>${toggle(c.haptics,'haptics')}${toggle(c.motion,'reducedMotion')}${toggle(c.contrast,'highContrastCards')}</section><p class="build-mark">RUNES v${APP_VERSION}</p><div class="sheet-actions"><button class="secondary-button" data-close-sheet>${fromPause?(en?'Back to the pause menu':'חזרה לתפריט'):c.close}</button></div>`;
   return sheetFrame('settings','settings-title',c.title,body,{closeLabel:en?'Close settings':'לסגור את ההגדרות'});
 }
 
 let handScrollLeft=0,previousHandRects=new Map(),lastRenderedView=null;
 const handFrame=()=>root.querySelector('.hand-frame');
-function captureHandLayout(){const frame=handFrame(),hand=root.querySelector('.hand');if(!frame||!hand)return;handScrollLeft=frame.scrollLeft;previousHandRects=new Map([...hand.querySelectorAll(':scope > .card')].map(card=>[card.dataset.cardId,card.getBoundingClientRect()]));}
+function captureHandLayout(){const frame=handFrame(),hand=root.querySelector('.hand');if(!frame||!hand)return;handScrollLeft=frame.scrollLeft;previousHandRects=new Map([...hand.querySelectorAll(':scope > .card')].map(card=>[card.dataset.cardId,{rect:card.getBoundingClientRect(),tilt:parseFloat(card.style.getPropertyValue('--tilt'))||0}]));}
 function render(){
   captureHandLayout();
   const characterStage=root.querySelector('.character-art-stage.character-table');
-  document.documentElement.lang=settings.language;document.documentElement.dir=direction();
+  document.documentElement.lang=settings.language;document.documentElement.dir=direction();document.documentElement.classList.toggle('hc-cards',!!settings.highContrastCards);
   document.querySelector('meta[name="description"]')?.setAttribute('content',isEnglish()?'RUNES — a card game around a tavern table: Quick Play, a five-round Tavern Match, and Duels with the regulars.':'רונות — משחק קלפים סביב שולחן פונדק: משחק מהיר, משחק פונדק בן חמישה סיבובים ודו־קרב מול הקבועים.');
   const openSheet=root.querySelector('.tavern-sheet'),sheetScroll=openSheet?{kind:openSheet.className,top:openSheet.scrollTop}:null;
   root.innerHTML=view==='home'?homeHTML():view==='duelSelect'?duelSelectHTML():gameHTML();
@@ -948,11 +1015,12 @@ function layoutHand(){
   if(browse){
     frame.scrollLeft=Math.min(handScrollLeft,Math.max(0,frame.scrollWidth-frame.clientWidth));
     // Keep a newly drawn card in view instead of letting it land off-screen.
-    const arrived=hand.querySelector('.card.incoming');
+    const arrived=hand.querySelector('.card.landing');
     if(arrived){const a=arrived.getBoundingClientRect(),f=frame.getBoundingClientRect();if(a.left<f.left||a.right>f.right)frame.scrollLeft+=a.left<f.left?a.left-f.left-12:a.right-f.right+12;}
   }
   frame.onscroll=updateHandOverflow;updateHandOverflow();
-  if(!settings.reducedMotion)cards.forEach(card=>{const before=previousHandRects.get(card.dataset.cardId);if(!before)return;const after=card.getBoundingClientRect(),dx=before.left-after.left;if(Math.abs(dx)>2)card.animate([{translate:`${dx}px 0`},{translate:'0 0'}],{duration:200,easing:'cubic-bezier(.2,.7,.3,1)'});});
+  // Cards slide to their new places (making room for an arriving card, closing a gap) instead of jumping.
+  if(!motionReduced())cards.forEach(card=>{const before=previousHandRects.get(card.dataset.cardId);if(!before)return;const after=card.getBoundingClientRect(),dx=before.rect.left+before.rect.width/2-after.left-after.width/2,dy=before.rect.top+before.rect.height/2-after.top-after.height/2,turn=before.tilt-(parseFloat(card.style.getPropertyValue('--tilt'))||0);if(Math.abs(dx)>1.5||Math.abs(dy)>1.5||Math.abs(turn)>.2)card.animate([{translate:`${dx}px ${dy}px`,rotate:`${turn}deg`},{translate:'0 0',rotate:'0deg'}],{duration:320,easing:'cubic-bezier(.25,.7,.3,1)'});});
   previousHandRects.clear();
 }
 function focusSheet(){requestAnimationFrame(()=>root.querySelector('.tavern-sheet .primary-button,.sheet-close')?.focus({preventScroll:true}));}
@@ -1004,7 +1072,7 @@ function bind(){
   root.querySelectorAll('[data-color]').forEach(b=>b.onclick=()=>{tapFeedback('color',settings);submit({type:ACTIONS.CHOOSE_COLOR,playerId:'p0',color:b.dataset.color});});
   bindHand();
   const firstGem=root.querySelector('.color-choice .gem');if(firstGem&&!root.contains(document.activeElement)||firstGem&&document.activeElement===document.body)firstGem.focus({preventScroll:true});
-  layoutHand();
+  layoutHand();flyLandingCards();animateDirectionRing();
   if(view==='game'&&roundResultVisible&&session?.phase!=='round'){animateCoinsToWinner();const slip=root.querySelector('.result-slip.enter .primary-button');if(slip&&!sheet)slip.focus({preventScroll:true});}
 }
 function bindHand(){

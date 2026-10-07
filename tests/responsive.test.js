@@ -83,3 +83,37 @@ test('install icons, favicons and the share image exist and are declared',()=>{
   assert.match(html,/og:image" content="https:\/\/[^"]+\/assets\/brand\/share\.jpg"/);
   assert.ok(existsSync(new URL('../dist/assets/brand/share.jpg',import.meta.url)));
 });
+
+test('the result slip never scrolls as a whole: its continue control stays in view at any size',()=>{
+  assert.match(app,/class="result-stage"/,'the slip lies over the table below the seats, not inside the board row');
+  const slip=css.match(/\.result-slip\{grid-row:2;([^}]*)\}/)[1];
+  assert.doesNotMatch(slip,/overflow/,'a scrolling slip hides Next round below the fold (and WebKit can skip painting the plank inside it)');
+  assert.match(slip,/max-height:100%/);
+  assert.match(css,/\.result-slip \.standings\{flex:0 1 auto\}/,'only the ledger may shrink');
+  assert.match(css,/@media \(orientation:landscape\) and \(min-width:640px\)\{\n  \.round-slip,\.final-slip\{display:grid/,'landscape slips use two columns');
+});
+
+test('a drawn card travels from the deck into its own slot in the hand',()=>{
+  assert.match(app,/function flyLandingCards\(\)/);
+  assert.match(css,/\.hand \.card\.landing\{visibility:hidden\}/,'the slot is held open until the card arrives');
+  assert.match(app,/prepareHumanDraw\(\):animateCardMovement\(action\)/,'your draw commits first so the destination slot exists');
+  assert.doesNotMatch(app,/incomingCardDelays|hand-receive/,'the old fade-in-elsewhere path is gone');
+  assert.match(app,/const motionReduced=\(\)=>settings\.reducedMotion\|\|matchMedia\('\(prefers-reduced-motion: reduce\)'\)\.matches/);
+});
+
+test('High Card Contrast is a persisted setting that recolours every card ink through one class',async()=>{
+  const {defaults}=await import('../dist/platform/storage.js');
+  assert.equal(defaults.highContrastCards,false);
+  assert.match(app,/toggle\(c\.contrast,'highContrastCards'\)/);
+  assert.match(app,/classList\.toggle\('hc-cards',!!settings\.highContrastCards\)/);
+  assert.match(css,/\.hc-cards\{--red:#[0-9a-f]{6};--green:#[0-9a-f]{6};--yellow:#[0-9a-f]{6};--blue:#[0-9a-f]{6};--tint-k:/);
+  assert.match(app,/const colorHex=\{red:'var\(--red\)'/,'table UI follows the active palette');
+});
+
+test('the direction ring is carved into the table, readable, and only shown when direction matters',()=>{
+  assert.match(app,/if\(state\.players\.length<3\)return'';/);
+  const groove=css.match(/\.ring-inlay\{([^}]*)\}/)[1];
+  const opacity=Number(groove.match(/opacity:([.\d]+)/)[1]);
+  assert.ok(opacity>=.6,'the brass inlay is visible at a glance');
+  assert.match(app,/function animateDirectionRing\(\)/);
+});

@@ -37,7 +37,7 @@ function cornerIndex(card,activeColor=null){
 }
 function suitRune(color,className='card-suit-rune'){return runeSVG(color,className);}
 
-export function cardHTML(card,{small=false,hidden=false,legal=true,highlight=true,selected=false,incoming=false,arrivalDelay=0,index=0,total=1,activeColor=null,language='he'}={}){
+export function cardHTML(card,{small=false,hidden=false,legal=true,highlight=true,selected=false,landing=false,index=0,total=1,activeColor=null,language='he'}={}){
   if(hidden) return `<div class="card card-back ${small?'small':''}" aria-label="${language==='en'?'Face-down RUNES card':'קלף רונות הפוך'}"><span class="back-sigil">${sigilHTML()}</span></div>`;
   const inherited=card.type===TYPES.SUPER_TAKI&&card.inheritedColor;
   const chosen=(card.type===TYPES.CHANGE_COLOR&&activeColor)?activeColor:null;
@@ -47,5 +47,5 @@ export function cardHTML(card,{small=false,hidden=false,legal=true,highlight=tru
   const spokenLabel=card.type===TYPES.NUMBER?`${card.value} ${spokenColor}`:`${cardLabel(card,language)}${spokenColor?' '+spokenColor:''}`;
   const rune=color!=='wild'?suitRune(color):'';
   const watermark=card.type===TYPES.NUMBER?suitRune(color,'card-rune-watermark'):'';
-  return `<button class="card ${color} type-${card.type} ${inherited?'inherited':''} ${chosen?'chosen':''} ${small?'small':''} ${legal?'legal':'quiet'} ${legal&&highlight?'playable-hint':''} ${selected?'selected':''} ${incoming?'incoming':''}" data-card-id="${card.id}" data-hand-index="${index}" data-hand-total="${total}" style="--i:${index};--arrive-delay:${arrivalDelay}ms" aria-label="${spokenLabel}" aria-disabled="${!legal}" aria-pressed="${selected}"><span class="corner top"><span class="corner-mark">${faceMark}</span>${rune}</span>${card.type===TYPES.NUMBER?`<span class="corner bottom"><span class="corner-mark">${faceMark}</span>${rune}</span>`:''}<span class="card-art">${watermark}${vectorArt(card,activeColor)}</span><span class="card-print">${cardLabel(card,language)}</span><span class="card-scratch"></span></button>`;
+  return `<button class="card ${color} type-${card.type} ${inherited?'inherited':''} ${chosen?'chosen':''} ${small?'small':''} ${legal?'legal':'quiet'} ${legal&&highlight?'playable-hint':''} ${selected?'selected':''} ${landing?'landing':''}" data-card-id="${card.id}" data-hand-index="${index}" data-hand-total="${total}" style="--i:${index}" aria-label="${spokenLabel}" aria-disabled="${!legal}" aria-pressed="${selected}"><span class="corner top"><span class="corner-mark">${faceMark}</span>${rune}</span>${card.type===TYPES.NUMBER?`<span class="corner bottom"><span class="corner-mark">${faceMark}</span>${rune}</span>`:''}<span class="card-art">${watermark}${vectorArt(card,activeColor)}</span><span class="card-print">${cardLabel(card,language)}</span><span class="card-scratch"></span></button>`;
 }
