@@ -22,9 +22,9 @@ const APPROVED={
   ragna:['intro_03','idle_01','idle_02','idle_03','idle_04','noise_01','player_good_move_01','player_good_move_02','player_good_move_03','good_move_01','good_move_02','good_move_03','player_draw_02','draw_01','draw_02','draw_03','self_mistake_01','player_one_card_01','player_one_card_02','player_one_card_03','player_one_card_04','one_card_01','one_card_02','one_card_03','round_win_01','round_win_02','round_win_04','round_loss_01','round_loss_02','round_loss_03','match_win_01','match_win_03','match_loss_01','match_loss_03'],
   bramm:['intro_01','intro_02','taunt_01','taunt_02','mock_move_01','mock_move_02','player_good_move_01','player_good_move_02','player_draw_01','bramm_good_move_01','bramm_good_move_02','bramm_draw_02','excuse_01','excuse_02','player_one_card_01','player_one_card_03','player_one_card_05','player_one_card_06','player_one_card_07','loss_01','round_win_01','round_win_02','round_win_03','round_win_04','win_01','win_02','win_04','win_06','win_07','win_09','win_10','match_loss_01','match_loss_02','match_loss_03','idle_01','idle_02']
 };
-// v104: Veyra's whole authored set (her two English-only takes drop out in Hebrew by
+// v111: Veyra's curated set (no omens; her two English-only takes drop out in Hebrew by
 // themselves), and Gorvan's set except the title lines, which are kept for his banter.
-APPROVED.veyra=['intro_01','intro_02','intro_03','intro_04','idle_01','idle_02','idle_03','idle_04','player_good_move_01','player_good_move_02','player_good_move_03','good_move_01','good_move_02','good_move_03','player_draw_01','player_draw_02','draw_01','draw_02','draw_03','player_one_card_01','player_one_card_02','player_one_card_03','player_one_card_04','one_card_01','one_card_02','one_card_03','omen_01','omen_02','omen_03','omen_04','omen_hit_01','omen_hit_02','omen_hit_03','omen_hit_04','omen_miss_01','omen_miss_02','omen_miss_03','omen_miss_04','curse_01','curse_02','stop_01','stop_02','king_02','round_win_01','round_win_02','round_win_03','round_loss_01','round_loss_02','round_loss_03','match_win_01','match_win_02','match_win_03','match_loss_01','match_loss_02','match_loss_03'];
+APPROVED.veyra=['intro_02','intro_03','intro_04','player_good_move_01','player_good_move_02','good_move_01','good_move_02','player_draw_01','player_draw_02','draw_02','player_one_card_01','player_one_card_04','one_card_01','one_card_03','curse_01','curse_02','stop_01','king_02','round_win_02','round_loss_01','round_loss_02','match_win_02','match_win_03','match_loss_02'];
 APPROVED.gorvan=['intro_01','intro_02','intro_03','intro_04','idle_01','idle_02','idle_03','idle_04','flavor_02','flavor_04','player_good_move_01','player_good_move_02','player_good_move_03','player_good_move_04','good_move_01','good_move_02','good_move_03','good_move_04','player_draw_01','player_draw_03','draw_01','draw_02','draw_03','player_one_card_01','player_one_card_02','player_one_card_03','player_one_card_04','one_card_01','one_card_02','one_card_03','curse_01','curse_02','curse_received_01','stop_01','stop_02','king_01','king_02','round_win_01','round_win_02','round_win_03','round_loss_01','round_loss_02','round_loss_03','match_win_01','match_win_02','match_win_03','match_win_04','match_loss_01','match_loss_02','match_loss_03','match_loss_04'];
 const FORBIDDEN=['veyra_reverse_01','veyra_reverse_02','veyra_king_01','ragna_banter_veyra_01b','veyra_banter_ragna_01c','gorvan_reverse_01','gorvan_reverse_02','ragna_intro_01','ragna_intro_02','ragna_intro_04','ragna_round_win_03','ragna_match_win_02','ragna_match_loss_02','bramm_intro_03','bramm_bramm_draw_01','bramm_win_03','bramm_win_05','bramm_win_08','bramm_player_one_card_02'];
 
@@ -230,8 +230,9 @@ test('v106 exchanges: each fires in its own moment and never when its words woul
   assert.equal(ready({p1:'gorvan',p2:'kesh'}).event('omen',{actor:'p2',phase:'reading'}).banter,'gorvan_kesh_future');
   assert.equal(ready({p1:'gorvan',p2:'veyra'}).event('penalty',{source:'p1',victim:'p0',amount:4,victimCount:9}).banter,'gorvan_veyra_seven');
   assert.equal(ready({p1:'gorvan',p2:'veyra'}).event('penalty',{source:'p0',victim:'p1',amount:4,victimCount:9}).banter,null,'the omens follow Gorvan\'s own brutal Curse');
-  // Every pair now has something to say; four-line exchanges arrive whole and in order.
-  for(const [pair,count] of Object.entries(TAVERN_GUEST_PAIRS))assert.ok(count>=2,`${pair} has at least two exchanges`);
+  // Every pair has something to say (v111: Veyra's omen-era exchanges with Kesh and Edrin were retired,
+  // so those two pairs keep one each); four-line exchanges arrive whole and in order.
+  for(const [pair,count] of Object.entries(TAVERN_GUEST_PAIRS))assert.ok(count>=(['kesh+veyra','edrin+veyra'].includes(pair)?1:2),`${pair} has enough exchanges`);
   const sacred=TAVERN_BANTER.find(b=>b.id==='veyra_ragna_sacred');assert.deepEqual(sacred.lines.map(l=>l[1]),['veyra_banter_ragna_02a','ragna_banter_veyra_02b','veyra_banter_ragna_02c','ragna_banter_veyra_02d']);
   // Recorded in English only: in Hebrew they run as the authored Hebrew text, silently, and only with bubbles on.
   let clock=1e6;const he=createTavernDirector({seats:{p1:'edrin',p2:'kesh'},random:()=>0,now:()=>clock,locale:()=>'he',captions:()=>true});for(let i=0;i<6;i++)he.event('move',{actor:null});
@@ -285,12 +286,13 @@ test('v108 chatter: talk between moves has its own allowance, needs only a short
 test('v109 Vol. 3: openings at the start of a hand, long talk never when someone is about to win, setbacks and late-evening gates, quick beats',()=>{
   const ready=(seats,extra={})=>{let clock=100000;const d=createTavernDirector({seats,random:()=>0,now:()=>clock,locale:()=>'en',...extra});for(let i=0;i<6;i++)d.event('move',{actor:null});return d;};
   // Openings: a new hand is a moment of its own.
-  assert.equal(ready({p1:'veyra',p2:'ragna'}).event('round_start',{minCards:8}).banter,'veyra_ragna_followed');
+  assert.equal(ready({p1:'veyra',p2:'ragna'}).event('round_start',{minCards:8}).banter,null,'v111: "Something followed me" is retired');
+  assert.equal(ready({p1:'gorvan',p2:'kesh'}).event('round_start',{minCards:8}).banter,'gorvan_kesh_old_tavern');
   assert.ok(['bramm_unbeaten','vampire_concern','edrin_ragna_wager'].includes(ready({p1:'bramm',p2:'ragna',p3:'edrin'}).event('intro',{minCards:8}).banter));
   assert.equal(ready({p1:'edrin',p2:'gorvan',p3:'veyra'}).event('round_start',{minCards:8}).banter,'vampire_concern','three-handed, all three present');
   assert.equal(TAVERN_BANTER.find(b=>b.id==='vampire_concern').lines.length,5);
   // A long conversation never starts when someone is down to their last two cards.
-  assert.equal(ready({p1:'veyra',p2:'ragna'}).event('round_start',{minCards:2}).banter,null);
+  assert.equal(ready({p1:'gorvan',p2:'kesh'}).event('round_start',{minCards:2}).banter,null);
   assert.notEqual(ready({p1:'gorvan',p2:'kesh'}).event('idle',{minCards:2}).banter,'gorvan_kesh_old_tavern');
   // Bramm's cursed table needs two real setbacks first.
   const cursed=ready({p1:'bramm',p2:'veyra'});assert.notEqual(cursed.event('idle',{minCards:8}).banter,'bramm_veyra_cursed_table');

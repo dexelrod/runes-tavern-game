@@ -115,8 +115,8 @@ test('banter: every partner; the v104 exchanges answer in lines he already has, 
   const gorvanBanter=TAVERN_BANTER.filter(b=>b.lines.some(([guest])=>guest==='gorvan'));
   const partners=new Set(gorvanBanter.flatMap(b=>b.lines.map(([guest])=>guest)).filter(g=>g!=='gorvan'));
   assert.deepEqual([...partners].toSorted(),['bramm','edrin','kesh','ragna','veyra']);
-  assert.equal(gorvanBanter.length,22);
-  const replies={gorvan_bramm_lord:'gorvan_title_01',gorvan_bramm_noble:'gorvan_curse_received_01',gorvan_bramm_again:'gorvan_title_04',gorvan_edrin_voice:'gorvan_idle_03',gorvan_edrin_relax:'gorvan_idle_02',gorvan_ragna_lord:'gorvan_title_03',gorvan_ragna_sunrise:'gorvan_idle_01',gorvan_kesh_night:'gorvan_idle_03',gorvan_kesh_patient:'gorvan_idle_01',gorvan_veyra_signs:'gorvan_idle_05',gorvan_veyra_flame:'gorvan_idle_03',gorvan_veyra_shadow:'gorvan_idle_05'};
+  assert.equal(gorvanBanter.length,21);
+  const replies={gorvan_bramm_lord:'gorvan_title_01',gorvan_bramm_noble:'gorvan_curse_received_01',gorvan_bramm_again:'gorvan_title_04',gorvan_edrin_voice:'gorvan_idle_03',gorvan_edrin_relax:'gorvan_idle_02',gorvan_ragna_lord:'gorvan_title_03',gorvan_ragna_sunrise:'gorvan_idle_01',gorvan_kesh_night:'gorvan_idle_03',gorvan_kesh_patient:'gorvan_idle_01',gorvan_veyra_flame:'gorvan_idle_03',gorvan_veyra_shadow:'gorvan_idle_05'};
   // v106: Gorvan's own banter recordings — multi-line, English only, Hebrew as subtitle text.
   const v106=['gorvan_bramm_speech','gorvan_ragna_hurry','gorvan_edrin_wine','gorvan_kesh_future','gorvan_veyra_seven','veyra_gorvan_prophecy','vampire_concern','gorvan_ragna_bedtime','gorvan_kesh_old_tavern','gorvan_edrin_remembering'];
   for(const b of gorvanBanter.filter(item=>v106.includes(item.id))){

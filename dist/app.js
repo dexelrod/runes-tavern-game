@@ -15,7 +15,7 @@ import { RAGNA_DOUBLE_LINES, debugMarkRagnaVoiceMissing, ragnaEventFor } from '.
 import { debugMarkKeshVoiceMissing, keshDebugMissingVoices, keshDecisionIsMajor, keshEventFor, keshExpressionURL, keshTellFor, keshUnrecorded } from './duel/kesh.js';
 import { allTavernVoices, createTavernDirector } from './duel/tavern-director.js';
 import { duelEventFor } from './duel/authored-pack.js';
-import { createVeyraOmenBook, debugMarkVeyraVoiceMissing, veyraDebugMissingVoices, veyraOmenEvent, VEYRA_ENGLISH_ONLY } from './duel/veyra.js';
+import { debugMarkVeyraVoiceMissing, veyraDebugMissingVoices, VEYRA_ENGLISH_ONLY } from './duel/veyra.js';
 import { debugMarkGorvanVoiceMissing } from './duel/gorvan.js';
 
 const root=document.querySelector('#app');
@@ -64,7 +64,7 @@ const dialogueEn={
 const tavernBanterHe=['יפה.','לא רע.','באמת?','כמובן.','ידעתי.','נו באמת.','זה היה אישי.','טעות.','בחירה מפוקפקת.','יש לך מזל.','עוד לא סיימתי.','היית חייב?','אני צריך עוד משקה.','הקלפים שונאים אותי.','מרשים. מעצבן, אבל מרשים.','שקט. אני חושב.','יש לי תוכנית.','לא הייתה לי תוכנית.','בדיוק לפי התוכנית.'];
 const tavernBanterEn=['Nicely done.','Not bad.','Really?','Of course.','I knew it.','Come on.','That was personal.','A mistake.','Questionable choice.','Lucky.','I’m not done.','Did you have to?','I need another drink.','The cards hate me.','Impressive. Annoying, but impressive.','Quiet. I’m thinking.','I’ve got a plan.','I didn’t have a plan.','Exactly as planned.'];
 
-function persist(){if(session){if(isAuthoredDuel()&&characterController)session.characterPersonality=characterController.snapshot();if(tavernGuests)session.tavernDirector=tavernGuests.director.snapshot();if(veyraOmens)session.veyraOmens=veyraOmens.snapshot();saveMatch(session);}}
+function persist(){if(session){if(isAuthoredDuel()&&characterController)session.characterPersonality=characterController.snapshot();if(tavernGuests)session.tavernDirector=tavernGuests.director.snapshot();saveMatch(session);}}
 function currentDuelOpponent(){return displayOpponent(getDuelOpponent(session?.opponentId||settings.duelOpponent));}
 // One framework for every authored duel character (Bramm, Edrin): the pack in
 // duel/characters.js says what differs; staging, bubbles and voice are shared.
@@ -104,12 +104,7 @@ let keshPlan=null,keshTellPending=false,keshPenaltyOnHuman=false;
 const keshTellMemory={turnsSince:99,thisRound:0,toldThisRound:false};
 function resetKeshTellMemory(round=false){keshPlan=null;keshTellPending=false;keshPenaltyOnHuman=false;keshTellMemory.thisRound=0;keshTellMemory.toldThisRound=false;if(!round)keshTellMemory.turnsSince=99;}
 const keshSeatId=()=>isKeshDuel()?'p1':guestSeatOf('kesh');
-// Veyra's omen book: one per match, wherever she sits (the Duel stage or a Tavern seat).
-// Presentation only — it reads public events and never touches the game.
-let veyraOmens=null,veyraOmensFor=null;
-const veyraSeatId=()=>isVeyraDuel()?'p1':guestSeatOf('veyra');
 const gorvanSeatId=()=>isGorvanDuel()?'p1':guestSeatOf('gorvan');
-function setupVeyraOmens(){const seat=veyraSeatId();if(!seat){veyraOmens=null;veyraOmensFor=null;return;}const key=`${session.mode}:${session.seed}`;if(veyraOmens&&veyraOmensFor===key)return;veyraOmens=createVeyraOmenBook({mode:session.mode==='duel'?'duel':'tavern',now:activeNow,initial:session.veyraOmens||null});veyraOmensFor=key;}
 // Whether a Curse was waiting when the last update began (a King that follows breaks it).
 let tablePenaltyBefore=false,penaltyOnHumanBefore=false;
 // Gorvan's sound accents: when each last played, so none ever repeats or stacks.
@@ -137,7 +132,7 @@ function performCharacterReaction(reaction,{voiceDelay=0}={}){
   if(localized.category==='result'&&!settings.reducedMotion){const stage=root.querySelector('.character-art-stage.character-table');if(stage)stage.animate([{transform:'none'},{transform:'translateY(-1.8%) scale(1.008)',offset:.35},{transform:'translateY(-1.8%) scale(1.008)',offset:.7},{transform:'none'}],{duration:2400,easing:'ease-in-out'});}
   const epoch=sessionEpoch,finish=()=>{if(epoch!==sessionEpoch)return;const timer=setTimeout(()=>{if(epoch!==sessionEpoch)return;
     // Another line (a result) has taken the stage since: it owns the face and the bubble now.
-    if(speaking&&characterSpeaking!==speaking)return;characterSpeaking=null;if(!pack.holdsExpression(characterController)){characterPreviousExpression=characterExpression;characterExpression=restingExpression(pack);}characterCaptionLine='';render();if(!localized.followUp)retryVeyraHit();},settings.reducedMotion?180:650);characterSequenceTimers.push(timer);if(localized.followUp)scheduleFollowUp(localized.followUp,epoch);},play=()=>{if(epoch!==sessionEpoch||!isAuthoredDuel())return;if(localized.voice){void speakCharacterVoice(localized,{locked:localized.category==='result',onEnded:finish}).then(node=>{if(!node){const timer=setTimeout(finish,localized.duration||2400);characterSequenceTimers.push(timer);}});}else{const timer=setTimeout(finish,localized.duration||1800);characterSequenceTimers.push(timer);}render();};
+    if(speaking&&characterSpeaking!==speaking)return;characterSpeaking=null;if(!pack.holdsExpression(characterController)){characterPreviousExpression=characterExpression;characterExpression=restingExpression(pack);}characterCaptionLine='';render();},settings.reducedMotion?180:650);characterSequenceTimers.push(timer);if(localized.followUp)scheduleFollowUp(localized.followUp,epoch);},play=()=>{if(epoch!==sessionEpoch||!isAuthoredDuel())return;if(localized.voice){void speakCharacterVoice(localized,{locked:localized.category==='result',onEnded:finish}).then(node=>{if(!node){const timer=setTimeout(finish,localized.duration||2400);characterSequenceTimers.push(timer);}});}else{const timer=setTimeout(finish,localized.duration||1800);characterSequenceTimers.push(timer);}render();};
   if(voiceDelay){const timer=setTimeout(play,settings.reducedMotion?80:voiceDelay);characterSequenceTimers.push(timer);}else play();
   return localized;
 }
@@ -166,7 +161,7 @@ function characterArtHTML(opponent,{context='table'}={}){const pack=authoredChar
 function syncCharacterStage(stage){const pack=authoredPack();if(!stage||!pack)return;const current=stage.querySelector('.character-art-current'),currentURL=pack.expressionURL(pack.expressions.includes(characterExpression)?characterExpression:pack.defaultExpression);
   // Only a new face fades in. The stage is re-inserted on every render, so an always-on animation would replay (and dim the figure) every turn.
   if(current&&current.src!==currentURL){current.src=currentURL;if(!settings.reducedMotion)current.animate([{opacity:.75},{opacity:1}],{duration:200,easing:'ease-out'});}stage.classList.remove('is-changing');}
-function scheduleDuelIdle(){clearTimeout(duelIdleTimer);if(view!=='game'||isPaused()||session?.mode!=='duel'||session.phase!=='round')return;const opponent=currentDuelOpponent(),epoch=sessionEpoch;duelIdleTimer=setTimeout(()=>{if(epoch!==sessionEpoch||view!=='game'||isPaused()||session?.mode!=='duel'||session.phase!=='round'||eventBanner)return scheduleDuelIdle();const pack=authoredPack();if(pack){const cards=state.players.map(p=>p.hand.length),ahead=cards[1]<=cards[0],concerned=cards[0]===1,quiet=state.phase==='playing'&&!concerned&&!motionLocked&&!audioSystem.voiceSource&&!characterCaptionLine&&!characterSpeaking;let spoke=false;if(quiet)for(const [trigger,context] of pack.idleTriggers({ahead})){if(runCharacter(trigger,{...context,playerOnOneCard:concerned})?.voice){spoke=true;break;}}if(!spoke&&!characterSpeaking){const beat=pack.idleFallback(characterController,{ahead,concerned,omen:veyraOmens?.active||null});if(beat)setCharacterExpression(beat.expression,settings.reducedMotion?Math.min(1400,beat.duration):beat.duration);}}else setDuelReaction('drink',opponent.dialoguePools.drink.at(Math.floor(Math.random()*opponent.dialoguePools.drink.length)),true);scheduleDuelIdle();},opponent.idleFrequency+Math.random()*9000);}
+function scheduleDuelIdle(){clearTimeout(duelIdleTimer);if(view!=='game'||isPaused()||session?.mode!=='duel'||session.phase!=='round')return;const opponent=currentDuelOpponent(),epoch=sessionEpoch;duelIdleTimer=setTimeout(()=>{if(epoch!==sessionEpoch||view!=='game'||isPaused()||session?.mode!=='duel'||session.phase!=='round'||eventBanner)return scheduleDuelIdle();const pack=authoredPack();if(pack){const cards=state.players.map(p=>p.hand.length),ahead=cards[1]<=cards[0],concerned=cards[0]===1,quiet=state.phase==='playing'&&!concerned&&!motionLocked&&!audioSystem.voiceSource&&!characterCaptionLine&&!characterSpeaking;let spoke=false;if(quiet)for(const [trigger,context] of pack.idleTriggers({ahead})){if(runCharacter(trigger,{...context,playerOnOneCard:concerned})?.voice){spoke=true;break;}}if(!spoke&&!characterSpeaking){const beat=pack.idleFallback(characterController,{ahead,concerned});if(beat)setCharacterExpression(beat.expression,settings.reducedMotion?Math.min(1400,beat.duration):beat.duration);}}else setDuelReaction('drink',opponent.dialoguePools.drink.at(Math.floor(Math.random()*opponent.dialoguePools.drink.length)),true);scheduleDuelIdle();},opponent.idleFrequency+Math.random()*9000);}
 function setDuelReaction(kind,text=null,force=false){if(session?.mode!=='duel'||isAuthoredDuel())return;const opponent=currentDuelOpponent(),weight=opponent.reactionWeights[kind]??1;if(!force&&(Date.now()-lastDuelReactionAt<4200||Math.random()>weight))return;lastDuelReactionAt=Date.now();duelReaction=kind;clearTimeout(duelReactionTimer);if(text)showQuip('p1',text,force);render();const epoch=sessionEpoch;duelReactionTimer=setTimeout(()=>{if(epoch!==sessionEpoch)return;duelReaction='idle';render();scheduleDuelIdle();},settings.reducedMotion?350:1100+Math.random()*1200);}
 function duelLine(kind){const pool=currentDuelOpponent().dialoguePools[kind]||[];return pool[Math.floor(Math.random()*pool.length)];}
 function recordDuelResult(){if(session?.mode!=='duel'||session.phase!=='matchFinished'||session.recorded)return;const id=session.opponentId,record=settings.duelRecords?.[id]||{played:0,won:0};settings.duelRecords={...(settings.duelRecords||{}),[id]:{played:record.played+1,won:record.won+(session.championId==='p0'?1:0)}};session.recorded=true;saveSettings(settings);}
@@ -174,7 +169,7 @@ function setSession(next){
   sessionEpoch++;clearTimeout(eventTimer);clearTimeout(quipTimer);clearTimeout(roundEndTimer);clearTimeout(duelReactionTimer);clearTimeout(duelIdleTimer);clearCharacterTimers();audioSystem.stopVoice();
   quip=null;duelReaction='idle';captionLine='';roundResultVisible=next.phase!=='round';session=next;state=session.game;ragnaSlip=false;
   const pack=authoredPack();
-  setupTavernGuests();setupVeyraOmens();keshPlan=null;keshTellPending=false;
+  setupTavernGuests();keshPlan=null;keshTellPending=false;
   if(pack){if(!characterController||characterControllerFor!==pack.id){characterController=pack.createController({initial:next.characterPersonality||next.brammPersonality||null,settings,now:pack.activeClock?activeNow:undefined});characterControllerFor=pack.id;}characterExpression=characterController.defaultExpression();characterPreviousExpression=characterExpression;}else{characterController=null;characterControllerFor=null;characterExpression='01_default_smug';characterPreviousExpression=characterExpression;}
   transport?.disconnect();transport=new LocalGameTransport(state);lastLogLength=state.log.length;lastCounts=Object.fromEntries(state.players.map(p=>[p.id,p.hand.length]));lastHands=Object.fromEntries(state.players.map(p=>[p.id,p.hand.map(card=>card.id)]));lastRenderedTopId=null;landingCards.clear();propRattled.clear();eventBanner=null;shieldBlock=null;clearTimeout(shieldBlockTimer);
   transport.subscribeToState((nextState,action)=>{
@@ -182,8 +177,6 @@ function setSession(next){
     try{onState(action);}catch(error){console.error('Non-blocking game presentation error',error);screenReaderLine='';captionLine='';}
     if(nextState.phase==='finished'&&session.phase==='round'){
       session=finishRound(session);const opponentWon=session.results.at(-1)?.winnerId==='p1',finalDuel=session.mode==='duel'&&session.phase==='matchFinished';
-      // An omen still open when the hand ends simply lapses (the result line owns this moment).
-      veyraOmens?.endRound();
       // An authored character speaks exactly one result line, chosen from the real match state:
       // round win / round loss while the match continues, match win / match loss at the end.
       if(isBrammDuel()&&finalDuel){
@@ -203,10 +196,12 @@ function setSession(next){
         runCharacter(finalDuel?(opponentWon?'match_win':'match_loss'):(opponentWon?'round_win':'round_loss'),{close:finalDuel?spread<=6:points<=3,told:keshTellMemory.toldThisRound},true);
       }
       else if(isGenericDuel()){
-        // Veyra, Gorvan: one result line, round or match, never both, from the real match state.
-        // Veyra's lines lean on her omens: "Unless losing was the sign." after signs that failed her.
+        // Veyra, Gorvan: at most one result line, round or match, never both, from the real match state.
+        // v111: a pack may let a round result pass with only its result face (Veyra); a match result always speaks.
         const points=session.results.at(-1)?.points||0,spread=Math.abs((session.scores?.p1||0)-(session.scores?.p0||0)),lead=(session.scores?.p1||0)>(session.scores?.p0||0);
-        runCharacter(finalDuel?(opponentWon?'match_win':'match_loss'):(opponentWon?'round_win':'round_loss'),{close:finalDuel?spread<=6:points<=3,lead,...(veyraOmens?.story()||{})},true);
+        const trigger=finalDuel?(opponentWon?'match_win':'match_loss'):(opponentWon?'round_win':'round_loss'),pack=authoredPack();
+        if(resultSpeaks(pack,trigger))runCharacter(trigger,{close:finalDuel?spread<=6:points<=3,lead},true);
+        else{characterController.setState('result');setCharacterExpression(pack.resultFaces?.[trigger]||restingExpression(pack));}
       }
       else if(session.mode==='duel'){setDuelReaction(opponentWon?'pleased':'annoyed',duelLine(opponentWon?'pleased':'annoyed'),true);}
       else if(session.mode==='tavern'&&tavernGuests){const result=session.results.at(-1);tavernEvent(session.phase==='matchFinished'?'match_end':'round_end',session.phase==='matchFinished'?{champion:session.championId}:{winner:result?.winnerId});}
@@ -220,7 +215,7 @@ function setSession(next){
 let coinsAnimatedFor=-1;
 function revealRoundResult(){roundResultVisible=true;recordDuelResult();feedback('round',settings);persist();render();}
 function startNextHand(){
-  feedback('shuffle',settings);deckSettling=true;if(isAuthoredDuel())characterController?.beginRound();resetKeshTellMemory(true);veyraOmens?.beginRound();veyraPendingHit=null;veyraCursers.clear();gorvanSfx.pulsed.clear();
+  feedback('shuffle',settings);deckSettling=true;if(isAuthoredDuel())characterController?.beginRound();resetKeshTellMemory(true);gorvanSfx.pulsed.clear();
   setSession(startNextRound(session));blockAiUntil=Date.now()+1300;if(tavernGuests){tavernGuests.director.beginRound();for(const seat of Object.keys(tavernGuests.seats))setGuestFace(seat,null);
     // v109: a new hand is a natural moment for a word or a longer conversation (the game does not wait for it).
     const epoch=sessionEpoch,timer=setTimeout(()=>{if(epoch===sessionEpoch&&!isPaused())tavernEvent('round_start',{});},settings.reducedMotion?400:1500);characterSequenceTimers.push(timer);}
@@ -250,7 +245,7 @@ const preloadWithin=(promise,ms=5000)=>Promise.race([promise.catch(()=>null),new
 // the rest a few at a time, so a phone is not asked to fetch and decode fifty files at once.
 async function warmVoices(names){const language=settings.language,first=names.filter(name=>/_intro_|_title_0/.test(name)),rest=names.filter(name=>!first.includes(name));await audioSystem.preloadVoice(language,first);for(let i=0;i<rest.length;i+=6){if(settings.language!==language)return;await audioSystem.preloadVoice(language,rest.slice(i,i+6));}}
 async function startSession(mode='tavern',saved=null,{guests=null}={}){
-  characterController=null;tavernGuests=null;veyraOmens=null;veyraOmensFor=null;veyraPendingHit=null;veyraCursers.clear();resetKeshTellMemory();clearCharacterTimers();
+  characterController=null;tavernGuests=null;resetKeshTellMemory();clearCharacterTimers();
   const fresh=()=>mode==='tavern'?createTavernMatch({seed:Date.now(),guestMode:settings.tavernGuestMode,guests}):mode==='duel'?createDuelSession({seed:Date.now(),opponent:getDuelOpponent(settings.duelOpponent)}):createQuickSession({playerCount:settings.playerCount,seed:Date.now()});
   let next;try{next=saved?restoreSession(saved):fresh();}catch{clearMatch();next=fresh();}
   // Expressions decode before the character sits down; voices warm in the background.
@@ -470,11 +465,8 @@ function onState(action){
   if(penalty?.amount>=6){propRattled.add(penalty.playerId);const epoch=sessionEpoch;setTimeout(()=>{if(epoch!==sessionEpoch)return;propRattled.delete(penalty.playerId);root.querySelector(`[data-player-id="${penalty.playerId}"]`)?.classList.remove('rattled');},520);}
   if(state.taki?.open)takiRun++;const crossbowRun=takiRun;
   // Voiced Tavern guests speak only their own allowlisted lines, and only one voice owns a moment.
-  // Veyra's omen book reads the same public update, at a Duel or a Tavern table (even the winning card).
-  const omenOutcome=veyraOmens?observeVeyraOmen({played,playedCard,stop,stack,penalty,draw,reverse,closed,previousCounts}):null;
   gorvanAccents({played,playedCard,stack,stop,previousCounts,effectDelay});
-  const keshSpoke=tavernGuests&&state.phase!=='finished'?tavernObserve({played,playedCard,stop,stack,penalty,draw,reverse,closed,crossbowRun,previousCounts,omenOutcome}):false;
-  if(tavernGuests&&!keshSpoke&&state.phase==='playing')maybeDeclareVeyraOmen();
+  const keshSpoke=tavernGuests&&state.phase!=='finished'?tavernObserve({played,playedCard,stop,stack,penalty,draw,reverse,closed,crossbowRun,previousCounts}):false;
   if(closed){if(takiRun>=3&&!isAuthoredDuel()&&!keshSpoke){const watcher=state.players.find(p=>p.kind==='ai'&&p.id!==closed.playerId&&!isVoicedGuest(p));showQuip(watcher?.id,botLine(watcher?.id,'penalty'));}takiRun=0;}
   // Generic table banter never plays over an authored character.
   if(!isAuthoredDuel()&&!keshSpoke){
@@ -531,7 +523,7 @@ function onState(action){
       if(after==='attentive'&&before==='default'&&characterExpression===shown&&!characterSpeaking)runCharacter('close_game');
       if(after!==before&&characterExpression===shown&&!characterSpeaking)setCharacterExpression(restingExpression());
     }else if(isGenericDuel()&&state.phase!=='finished'){
-      genericDuelUpdate({played,playedCard,stop,stack,penalty,draw,closed,reverse,crossbowRun,previousCounts,omenOutcome});
+      genericDuelUpdate({played,playedCard,stop,stack,penalty,draw,closed,reverse,crossbowRun,previousCounts});
     }else if(isAuthoredDuel());
     else if((penalty?.playerId==='p1'&&penalty.amount>=4)||stop?.skipped==='p1')setDuelReaction('annoyed',duelLine('annoyed'));
     else if(humanMove&&(reverse||opened||playedCard?.type===TYPES.KING||state.players[0].hand.length===1))setDuelReaction('surprised',duelLine('surprised'));
@@ -621,55 +613,24 @@ function keshFaceIs(expression){const seat=guestSeatOf('kesh'),current=isKeshDue
 function keshOmenLine(phase){if(isKeshDuel())runCharacter('omen',{phase});else if(guestSeatOf('kesh'))tavernEvent('omen',{actor:guestSeatOf('kesh'),phase});}
 // ── Veyra and Gorvan at the Duel table: the generic authored dispatch ──────────
 // One trigger per table update from the shared classifier (duel/authored-pack.js),
-// read from the character's side. Veyra's omen story takes precedence: a sign that
-// lands is her biggest moment, a sign that runs out gets argued with. Then, now and
-// then, a quiet moment becomes a new omen.
-function genericDuelUpdate({played,playedCard,stop,stack,penalty,draw,closed,reverse,crossbowRun,previousCounts,omenOutcome}){
+// read from the character's side.
+function genericDuelUpdate({played,playedCard,stop,stack,penalty,draw,closed,reverse,crossbowRun,previousCounts}){
   const humanCount=state.players[0].hand.length,ownCount=state.players[1].hand.length,oldHuman=previousCounts.p0??humanCount,oldOwn=previousCounts.p1??ownCount;
   if(oldHuman===1&&humanCount>1){const settle=characterController.oneCardRecovered();if(settle&&!characterSpeaking)setCharacterExpression(settle.expression,settle.duration);}
   const shown=characterExpression,before=characterController.snapshot().state;characterController.observeTable({humanCount,ownCount});const after=characterController.snapshot().state;
   const event=duelEventFor({played,playedCard,stop,stack,penalty,draw,closed,reverse,crossbowRun,humanCount,ownCount,oldHuman,oldOwn,cursedBefore:penaltyOnHumanBefore});
-  const context={playerOnOneCard:humanCount===1,ownTurn:currentPlayer(state).id==='p1',playerStillToPlay:currentPlayer(state).id==='p0',...(veyraOmens?.story()||{})};
-  const urgent=event&&['player_one_card','own_one_card'].includes(event[0]);
-  if(omenOutcome?.result==='hit')veyraPendingHit={kind:omenOutcome.kind,until:performance.now()+8000};
-  if(veyraPendingHit&&deliverVeyraHit());
-  else if(veyraPendingHit){if(!characterSpeaking)setCharacterExpression('omen_hit_pointing',1600);}
-  else if(omenOutcome?.result==='miss'&&!urgent)runCharacter('omen_miss',{...context,kind:omenOutcome.kind});
-  else if(event)runCharacter(event[0],{...event[1],...context});
+  const context={playerOnOneCard:humanCount===1,ownTurn:currentPlayer(state).id==='p1',playerStillToPlay:currentPlayer(state).id==='p0'};
+  if(event)runCharacter(event[0],{...event[1],...context});
   if(after==='attentive'&&before==='default'&&characterExpression===shown&&!characterSpeaking)runCharacter('close_game');
   if(after!==before&&characterExpression===shown&&!characterSpeaking)setCharacterExpression(restingExpression());
-  if(isVeyraDuel())maybeDeclareVeyraOmen();
 }
-// A sign that lands is her biggest moment, so it is never lost to bad timing: if she
-// (or anyone) is mid-line, the payoff waits for the voice to end — a few seconds at most.
-let veyraPendingHit=null;
-function deliverVeyraHit(){
-  const hit=veyraPendingHit;if(!hit)return false;
-  if(performance.now()>hit.until||session?.phase!=='round'||state?.phase!=='playing'){veyraPendingHit=null;return false;}
-  if(view!=='game'||isPaused()||audioSystem.voiceSource)return false;
-  if(isVeyraDuel()){if(characterSpeaking)return false;veyraPendingHit=null;return !!runCharacter('omen_hit',{...(veyraOmens?.story()||{}),kind:hit.kind},true);}
-  const seat=guestSeatOf('veyra');if(!seat||tavernGuests?.speaking)return false;veyraPendingHit=null;return tavernEvent('omen_hit',{actor:seat,kind:hit.kind,force:true,first:(veyraOmens?.story().hits||0)<=1});
-}
-const retryVeyraHit=()=>{if(!veyraPendingHit)return;const epoch=sessionEpoch,timer=setTimeout(()=>{if(epoch===sessionEpoch)deliverVeyraHit();},settings.reducedMotion?150:380);characterSequenceTimers.push(timer);};
-// The book watches public facts only: a Curse taken (and its colour), a Shield and its
-// colour, a Turnabout, a Curse thrown back, a King breaking a Curse.
-const veyraCursers=new Set();
-function observeVeyraOmen({played,playedCard,stop,stack,penalty,draw,reverse,closed,previousCounts}){
-  if(stack&&played)veyraCursers.add(played.playerId);
-  if(played||draw||penalty)veyraOmens.tick();
-  const top=topCard(state),counts=Object.fromEntries(state.players.map(p=>[p.id,p.hand.length]));
-  return veyraOmens.observe(veyraOmenEvent({mode:veyraOmens.mode,played,playedCard,stop,stack,penalty,draw,reverse,closed,topColor:top?.type===TYPES.PLUS2?top.color:null,activeColor:state.activeColor,counts,previousCounts,penaltyBefore:tablePenaltyBefore,cursers:[...veyraCursers]}));
-}
-// Now and then, in a quiet moment, she declares an omen. It is remembered only if
-// the table actually heard (or read) it.
-function maybeDeclareVeyraOmen(){
-  if(!veyraOmens||state?.phase!=='playing'||view!=='game'||isPaused())return false;
-  const kind=veyraOmens.wantsToDeclare({activeColor:state.activeColor,cursePending:!!state.activePenalty,tension:state.players.some(p=>p.hand.length<=1)});if(!kind)return false;
-  let spoke=false;
-  if(isVeyraDuel()){if(characterSpeaking||audioSystem.voiceSource)return false;const reaction=runCharacter('omen',{kind,...veyraOmens.story()});spoke=reaction?.trigger==='omen';}
-  else{const seat=guestSeatOf('veyra');if(seat&&!guestsMuted())spoke=tavernEvent('omen_declare',{actor:seat,kind});}
-  if(spoke)veyraOmens.declare(kind);
-  return spoke;
+// v111: whether a generic pack's result line plays. A pack may give a round result a
+// chance below one (rarer after each one said this match); a match result always speaks.
+function resultSpeaks(pack,trigger){
+  const chance=pack?.resultVoiceChance?.(trigger)??1;if(chance>=1)return true;
+  const usage=characterController?.snapshot().usage||{},pool=pack.reactions.filter(item=>item.trigger===trigger),said=pool.reduce((sum,item)=>sum+(usage[item.voice]||0),0);
+  // Never the same round line twice in a match: once the pool is spent, the face says it.
+  return said<pool.length&&Math.random()<chance*.6**said;
 }
 // Gorvan's accents: presentation, under SFX, well below the card sounds. His own Curse
 // is a touch colder; one weighty King or Shield a hand gets a restrained accent; in a
@@ -722,7 +683,7 @@ function performGuestLines(lines,{result=false,after=[]}={}){
   const step=index=>{
     if(epoch!==sessionEpoch||tavernGuests!==guests)return;
     // v107: once an exchange about the player ends, a listener may glance at them (silent face, then back).
-    if(index>=lines.length){guests.speaking=false;guests.speakingSeat=null;for(const look of after)if(look.seat)setGuestFace(look.seat,look.expression,look.duration);retryVeyraHit();return;}
+    if(index>=lines.length){guests.speaking=false;guests.speakingSeat=null;for(const look of after)if(look.seat)setGuestFace(look.seat,look.expression,look.duration);return;}
     const line=lines[index],pack=AUTHORED_CHARACTERS[line.guest],resolved=line.reaction.category==='banter'?resolveBanterLine(line.reaction):pack.resolveReaction(line.reaction,settings.language),localized=line.silent?{...resolved,voice:null}:resolved;
     guests.speakingSeat=line.seat;setGuestFace(line.seat,localized.expression,0);
     // v109: inside an exchange the next speaker comes in quickly (120 ms after a line, was 450).
@@ -747,7 +708,7 @@ function scheduleTavernIdle(delay=null){
     if(free)tavernEvent('idle',{current:currentPlayer(state).id});scheduleTavernIdle();},delay??TAVERN_CHATTER_MS[0]+Math.random()*TAVERN_CHATTER_MS[1]);
 }
 // Turn one table update into at most one table event, with who did it and to whom.
-function tavernObserve({played,playedCard,stop,stack,penalty,draw,reverse,closed,crossbowRun,previousCounts,omenOutcome=null}){
+function tavernObserve({played,playedCard,stop,stack,penalty,draw,reverse,closed,crossbowRun,previousCounts}){
   const guests=tavernGuests;if(!guests)return false;
   const counts=Object.fromEntries(state.players.map(p=>[p.id,p.hand.length])),kesh=guestSeatOf('kesh');let spoke=false;const say=(type,context)=>{spoke=tavernEvent(type,context)||spoke;};
   if(stack&&played)guests.curseBy=played.playerId;
@@ -755,9 +716,6 @@ function tavernObserve({played,playedCard,stop,stack,penalty,draw,reverse,closed
   const answered=keshTellPending&&kesh&&((played&&played.playerId!==kesh)||(draw&&draw.playerId!==kesh)||!!penalty||stop?.skipped===kesh);
   if(answered){keshTellPending=false;if(penalty?.playerId===kesh||stop?.skipped===kesh)say('omen_failed',{actor:kesh});}
   if(played?.playerId===kesh&&keshPlan?.told&&!keshPlan.consumed){keshPlan.consumed=true;keshTellPending=true;}
-  // Veyra's omen landed, or ran out: her moment comes first; the table's own event still shows on faces.
-  const veyra=guestSeatOf('veyra');
-  if(omenOutcome&&veyra){if(omenOutcome.result==='hit'){veyraPendingHit={kind:omenOutcome.kind,until:performance.now()+9000};if(deliverVeyraHit())spoke=true;else if(!tavernGuests.speaking)setGuestFace(veyra,'omen_hit_pointing',1800);}else say('omen_miss',{actor:veyra,kind:omenOutcome.kind});}
   const reached=Object.keys(counts).find(id=>counts[id]===1&&(previousCounts[id]??counts[id])>1);
   if(reached)say('one_card',{actor:reached});
   else if(penalty){say('penalty',{victim:penalty.playerId,amount:penalty.amount||2,source:guests.curseBy,victimCount:counts[penalty.playerId]});delete guests.slip[penalty.playerId];guests.curseBy=null;}
@@ -809,12 +767,12 @@ function homeHTML(){
 // you. Swipe (or use the arrows/keys) to see the others; which one is waiting
 // first changes every visit. The other nine regulars are a random draw.
 const DUEL_KICKERS=Object.freeze({
-  en:{bramm:'The house champion',edrin:'Thirty years at this table',ragna:'Wants more gold on the table',kesh:'Reads the table by its signs',veyra:'The bones have opinions',gorvan:'The house insists on “Lord”'},
-  he:{bramm:'אלוף הבית',edrin:'שלושים שנה ליד השולחן הזה',ragna:'רוצה יותר זהב על השולחן',kesh:'קורא את השולחן לפי הסימנים',veyra:'לעצמות יש דעות',gorvan:'הבית מתעקש על ״לורד״'}
+  en:{bramm:'The house champion',edrin:'Thirty years at this table',ragna:'Wants more gold on the table',kesh:'Reads the table by its signs',veyra:'Knows a proper curse when she sees one',gorvan:'The house insists on “Lord”'},
+  he:{bramm:'אלוף הבית',edrin:'שלושים שנה ליד השולחן הזה',ragna:'רוצה יותר זהב על השולחן',kesh:'קורא את השולחן לפי הסימנים',veyra:'מזהה קללה אמיתית כשהיא רואה אחת',gorvan:'הבית מתעקש על ״לורד״'}
 });
 const DUEL_HOME_LINES=Object.freeze({
-  en:{bramm:'Bramm waits. “Still unbeaten.”',edrin:'Edrin has saved you a seat.',ragna:'Ragna waits. “Sit straight.”',kesh:'Kesh waits. “The signs are quiet tonight.”',veyra:'Veyra waits. “Something is wrong already.”',gorvan:'Gorvan waits. “Shall we?”'},
-  he:{bramm:'בראם מחכה. ״עדיין בלתי־מנוצח.״',edrin:'אדרין שמר לכם מקום.',ragna:'ראגנה מחכה. ״לשבת ישר.״',kesh:'קֶשׁ מחכה. ״הסימנים שקטים הלילה.״',veyra:'ויירה מחכה. ״כבר משהו לא בסדר..״',gorvan:'גורבן מחכה. ״שנתחיל?״'}
+  en:{bramm:'Bramm waits. “Still unbeaten.”',edrin:'Edrin has saved you a seat.',ragna:'Ragna waits. “Sit straight.”',kesh:'Kesh waits. “The signs are quiet tonight.”',veyra:'Veyra waits. “Oh. This will be interesting.”',gorvan:'Gorvan waits. “Shall we?”'},
+  he:{bramm:'בראם מחכה. ״עדיין בלתי־מנוצח.״',edrin:'אדרין שמר לכם מקום.',ragna:'ראגנה מחכה. ״לשבת ישר.״',kesh:'קֶשׁ מחכה. ״הסימנים שקטים הלילה.״',veyra:'ויירה מחכה. ״או. זה הולך להיות מעניין.״',gorvan:'גורבן מחכה. ״שנתחיל?״'}
 });
 let duelIndex=Math.floor(Math.random()*VOICED_OPPONENTS.length);
 const featuredDuelOpponent=()=>VOICED_OPPONENTS[duelIndex]||VOICED_OPPONENTS[0];
@@ -913,7 +871,7 @@ const propAssets=Object.freeze({
 });
 // Each regular keeps the same things in front of them every evening, so an empty seat still says who sits there.
 // Kesh keeps only his clay cup on the table: his rune stone stays in his hand. Edrin has no drink (he keeps looking for it).
-// Veyra's bones and candle are in her hands, never on the table; Gorvan has "the usual".
+// Veyra keeps a dark bottle by her; Gorvan has "the usual".
 const SEAT_SIGNATURES=Object.freeze({
   aila:['woodenTankard','arrowhead'],ron:['ceramicCup','flute'],bran:['pewterTankard','whetstone'],sela:['pewterGoblet','inkpot'],kesh:['ceramicCup'],bramm:['bread'],ragna:['pewterTankard'],edrin:[],veyra:['darkBottle'],gorvan:['pewterGoblet'],
   roderic:['pewterTankard','dice'],lio:['ceramicCup','purse'],mograth:['horn','bread'],harrow:['woodenTankard','pipe'],rusk:['medievalFlask','map']
@@ -1302,7 +1260,7 @@ document.addEventListener('keydown',event=>{if(!sheet)return;if(event.key==='Esc
 if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 function registerWebMCP(){const context=document.modelContext;if(!context?.registerTool)return;try{void Promise.resolve(context.registerTool({name:'read_game_state',title:'Read RUNES game',description:'Read the current RUNES match status.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true,untrustedContentHint:false},execute(){return session?{mode:session.mode,phase:session.phase,round:session.round,totalRounds:session.totalRounds,suddenDeath:session.suddenDeath,scores:session.scores,currentPlayer:currentPlayer(state).name,activeColor:state.activeColor,humanCardCount:state.players[0].hand.length,opponents:state.players.slice(1).map(p=>({name:p.name,cardCount:p.hand.length}))}:{phase:'home'};}})).catch(()=>{});}catch{}}
 // Read-only snapshot for automated playtests and support; it exposes no controls.
-window.RunesQA=Object.freeze({snapshot:()=>({view,sheet,motionLocked,pendingAction:!!pendingAction,pendingBotTurn:!!pendingBotTurn,roundResultVisible,selected,hint,sessionPhase:session?.phase||null,turn:state?.turn??null,current:state?currentPlayer(state).id:null,blockAiUntil:Math.max(0,blockAiUntil-Date.now()),voice:audioSystem.voiceName||null,voiceInterruptions:audioSystem.voiceInterruptions||0,guests:tavernGuests?Object.fromEntries(Object.entries(tavernGuests.seats).map(([seat,item])=>[seat,item.id])):null,guestFaces:tavernGuests?Object.fromEntries(Object.entries(tavernGuests.seats).map(([seat,item])=>[seat,item.face])):null,guestSpeaking:!!tavernGuests?.speaking,characterExpression:isAuthoredDuel()?characterExpression:null,characterCaption:characterCaptionLine||null,quip:quip?{player:quip.player,text:quip.text,guest:!!quip.guest}:null,omen:veyraOmens?.snapshot()||null})});
+window.RunesQA=Object.freeze({snapshot:()=>({view,sheet,motionLocked,pendingAction:!!pendingAction,pendingBotTurn:!!pendingBotTurn,roundResultVisible,selected,hint,sessionPhase:session?.phase||null,turn:state?.turn??null,current:state?currentPlayer(state).id:null,blockAiUntil:Math.max(0,blockAiUntil-Date.now()),voice:audioSystem.voiceName||null,voiceInterruptions:audioSystem.voiceInterruptions||0,guests:tavernGuests?Object.fromEntries(Object.entries(tavernGuests.seats).map(([seat,item])=>[seat,item.id])):null,guestFaces:tavernGuests?Object.fromEntries(Object.entries(tavernGuests.seats).map(([seat,item])=>[seat,item.face])):null,guestSpeaking:!!tavernGuests?.speaking,characterExpression:isAuthoredDuel()?characterExpression:null,characterCaption:characterCaptionLine||null,quip:quip?{player:quip.player,text:quip.text,guest:!!quip.guest}:null})});
 // Developer hooks (console only). Each acts only while that character is at the table.
 function characterDebug(id,extra={}){
   const pack=AUTHORED_CHARACTERS[id],active=()=>authoredPack()?.id===id&&characterController;
@@ -1387,7 +1345,7 @@ window.KeshDebug=characterDebug('kesh',{
 function packDebug(id,markMissing){
   const pack=AUTHORED_CHARACTERS[id],active=()=>authoredPack()?.id===id&&characterController,seat=()=>active()?'p1':guestSeatOf(id);
   return {
-    simulateWin:()=>active()?runCharacter('match_win',{close:true,...(veyraOmens?.story()||{})},true):null,
+    simulateWin:()=>active()?runCharacter('match_win',{close:true},true):null,
     simulatePlayerOneCard:()=>active()?runCharacter('player_one_card',{},true):null,
     simulateOwnOneCard:()=>active()?runCharacter('own_one_card',{},true):null,
     simulateCurseTaken:(amount=2)=>active()?runCharacter('curse_taken',{amount},true):null,
@@ -1412,15 +1370,10 @@ function packDebug(id,markMissing){
     missingAssets:async()=>{const locale=settings.language,urls=[...pack.expressions.map(name=>[`expression:${name}`,pack.expressionURL(name)]),...Object.keys(pack.voiceLibrary).map(voice=>[`voice:${voice}:${locale}`,pack.resolveVoice(voice,locale)?.src]).filter(([,url])=>url)];const missing=[];await Promise.all(urls.map(async([label,url])=>{try{const response=await fetch(url,{method:'HEAD',cache:'no-store'});if(!response.ok)missing.push(label);}catch{missing.push(label);}}));return {locale,checked:urls.length,missing:missing.sort(),excluded:Object.keys(pack.voiceLibrary).filter(voice=>!pack.resolveVoice(voice,locale))};}
   };
 }
-// Veyra: every line in either language, every face, and the omen book — declare, land, miss.
+// Veyra: every line in either language and every face. (v111: no omen book.)
 window.VeyraDebug=characterDebug('veyra',{
   ...packDebug('veyra',debugMarkVeyraVoiceMissing),
   englishOnly:VEYRA_ENGLISH_ONLY,
-  omens:()=>veyraOmens?.snapshot()||null,
-  // Declare a given omen now (draw · red · turn · regret), as if she had just read it.
-  declareOmen:(kind='draw')=>{if(!veyraOmens)return null;const line=`veyra_${{draw:'omen_01',red:'omen_02',turn:'omen_03',regret:'omen_04'}[kind]}`;if(isVeyraDuel()){const reaction=AUTHORED_CHARACTERS.veyra.reactions.find(item=>item.voice===line);performCharacterReaction(characterController.force(reaction.id));}else if(tavernGuests){const plan=tavernGuests.director.force(line);if(plan)performGuestLines(plan.lines);}return veyraOmens.declare(kind);},
-  simulateOmenHit:()=>isVeyraDuel()?runCharacter('omen_hit',{...veyraOmens?.story()},true):tavernEvent('omen_hit',{actor:guestSeatOf('veyra')}),
-  simulateOmenMiss:()=>isVeyraDuel()?runCharacter('omen_miss',{...veyraOmens?.story()},true):tavernEvent('omen_miss',{actor:guestSeatOf('veyra')}),
   missingFallbacks:veyraDebugMissingVoices
 });
 // Gorvan: his lines (English voice; Hebrew bubbles), faces, title progression and sound accents.

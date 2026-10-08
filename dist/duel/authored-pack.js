@@ -62,7 +62,9 @@ export function duelEventFor({self='p1',played=null,playedCard=null,stop=null,st
 }
 
 // `audioFor(voice, uiLocale)` → which take plays ('en' | 'he') or null for none.
-export function createVoiceCatalog({label,folder,reactions,audioFor}){
+// `gainFor(voice, take)` (optional) → a level trim for a take that sits hotter than the
+// cast (1 = as recorded). It is applied on the single Web Audio voice path.
+export function createVoiceCatalog({label,folder,reactions,audioFor,gainFor=null}){
   const asset=name=>new URL(`../assets/${folder}/voice/${name}.mp3`,import.meta.url).href;
   const missingURL=new URL(`../assets/${folder}/voice/__missing__.mp3`,import.meta.url).href;
   const debugMissing=new Set();
@@ -74,7 +76,7 @@ export function createVoiceCatalog({label,folder,reactions,audioFor}){
   function resolveVoice(name,locale='en'){
     const definition=library[name];if(!definition)return null;
     const ui=normalizeLocale(locale),take=audioFor(name,ui);if(!take)return null;
-    return {name,locale:ui,audioLocale:take,src:debugMissing.has(name)?missingURL:definition.sources[take],caption:definition.captions[ui]??'',priority:definition.priority};
+    return {name,locale:ui,audioLocale:take,src:debugMissing.has(name)?missingURL:definition.sources[take],caption:definition.captions[ui]??'',priority:definition.priority,gain:gainFor?gainFor(name,take):1};
   }
   function resolveReaction(reaction,locale='en'){
     if(!reaction)return null;const ui=normalizeLocale(locale);

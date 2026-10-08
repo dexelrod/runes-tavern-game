@@ -19,6 +19,8 @@
 //          silent — never one voiced half — and only when bubbles are on.
 // ─────────────────────────────────────────────────────────────────────────────
 
+import { VEYRA_VOICE_TRIM } from './veyra.js';
+
 const asset=(speaker,name)=>new URL(`../assets/${speaker}/voice/${name}.mp3`,import.meta.url).href;
 
 // Dedicated banter recordings: who says them, the exact authored text (directions
@@ -27,20 +29,12 @@ const asset=(speaker,name)=>new URL(`../assets/${speaker}/voice/${name}.mp3`,imp
 const R=(voice,speaker,expression,en,he,seconds,takes=['en','he'])=>Object.freeze({voice,speaker,expression,captions:Object.freeze({en,he}),takes:Object.freeze(takes),seconds});
 export const BANTER_RECORDINGS=Object.freeze(Object.fromEntries([
   // Veyra + Kesh 01 — she shows him the flame; he is already looking.
-  R('veyra_banter_kesh_01a','veyra','banter_kesh_look','Kesh. Look at that.','קאש. תסתכל על זה.',2.35),
+  R('veyra_banter_kesh_01a','veyra','banter_explaining','Kesh. Look at that.','קאש. תסתכל על זה.',2.35),
   R('kesh_banter_veyra_01b','kesh','watching_fire','I am.','אני מסתכל.',1.57),
-  R('veyra_banter_kesh_01c','veyra','banter_kesh_incredulous',"And you're just sitting there?!",'ואתה פשוט יושב שם?!',2.04),
-  // Veyra + Kesh 02 — he finds it curious; she finds it screaming.
-  R('kesh_banter_veyra_02a','kesh','omen_reading','A curious omen.','סימן מעניין.',2.04),
-  R('veyra_banter_kesh_02b','veyra','banter_kesh_correcting',"Curious? It's screaming.",'מעניין? הוא צורח.',2.51),
-  R('kesh_banter_veyra_02c','kesh','dry_amusement','You often say that.','את אומרת את זה הרבה.',1.88),
+  R('veyra_banter_kesh_01c','veyra','banter_incredulous',"And you're just sitting there?!",'ואתה פשוט יושב שם?!',2.04),
   // Veyra + Ragna — deliberately two lines. That is the whole joke.
-  R('veyra_banter_ragna_01a','veyra','banter_ragna_flame','The flame just moved.','הלהבה זזה עכשיו.',1.88),
+  R('veyra_banter_ragna_01a','veyra','observing','The flame just moved.','הלהבה זזה עכשיו.',1.88),
   R('ragna_banter_veyra_01d','ragna','eyes_on_table','Focus.','פוקוס.',1.23),
-  // Veyra + Edrin — a great deal of signs; no idea; neither does she.
-  R('veyra_banter_edrin_01a','veyra','banter_edrin_explaining','Three bones crossed, the flame bent east, and then the King appeared. Do you understand?','שלוש עצמות הצטלבו, הלהבה נטתה מזרחה ואז הופיע המלך. ברור מה זה אומר?',5.88),
-  R('edrin_banter_veyra_01b','edrin','casual_acceptance','No idea, Veyra.','אין לי מושג מה זה אומר.',2.43),
-  R('veyra_banter_edrin_01c','veyra','banter_edrin_exasperated','Good. Neither do I.','יופי. גם לי לא.',2.12),
   // Gorvan's partners (English recordings only; Hebrew is subtitle text).
   R('bramm_banter_gorvan_01a','bramm','04_smug_challenge','Lord Gorvan.','לורד גורבן.',1.88,['en']),
   R('bramm_banter_gorvan_02a','bramm','12_mock_generous','What, too noble to drink with the rest of us?','מה, אצילי מדי בשביל לשתות עם כולנו?',4.28,['en']),
@@ -51,15 +45,14 @@ export const BANTER_RECORDINGS=Object.freeze(Object.fromEntries([
   R('ragna_banter_gorvan_02a','ragna','impatient_focus','Are you going to play before sunrise?','אתה מתכוון לשחק לפני הזריחה?',2.51,['en']),
   R('kesh_banter_gorvan_01a','kesh','close_observation','The night sits comfortably around you.','הלילה יושב סביבך בנוחות.',2.85,['en']),
   R('kesh_banter_gorvan_02a','kesh','interesting_choice','You are very patient.','יש לך הרבה סבלנות.',1.88,['en']),
-  R('veyra_banter_gorvan_01a','veyra','banter_kesh_correcting','You are making the signs difficult.','אתה מקשה על הסימנים.',2.93,['en']),
-  R('veyra_banter_gorvan_02a','veyra','banter_ragna_flame','Why is the flame leaning away from you?','למה הלהבה נוטה ממך?',2.77,['en']),
-  R('veyra_banter_gorvan_03a','veyra','omen_uneasy',"You don't have a normal shadow.",'הצל שלך לא נורמלי.',2.19,['en']),
+  R('veyra_banter_gorvan_02a','veyra','banter_explaining','Why is the flame leaning away from you?','למה הלהבה נוטה ממך?',2.77,['en']),
+  R('veyra_banter_gorvan_03a','veyra','silent_doubt',"You don't have a normal shadow.",'הצל שלך לא נורמלי.',2.19,['en']),
   // ── v106: thirteen new exchanges, recorded in English only (Hebrew is subtitle text for now) ──
   // Bramm + Veyra: the warning is obviously for everyone else; destiny smells of ale.
-  R('veyra_banter_bramm_01a','veyra','omen_uneasy','The cards are warning you.','הקלפים מנסים להזהיר אותך.',2.27,['en']),
+  R('veyra_banter_bramm_01a','veyra','silent_doubt','The cards are warning you.','הקלפים מנסים להזהיר אותך.',2.27,['en']),
   R('bramm_banter_veyra_01b','bramm','11_showing_off','They ought to warn the others.','שיזהירו את האחרים.',2.19,['en']),
   R('bramm_banter_veyra_02a','bramm','23_gloating',"One card. That's what destiny looks like.",'קלף אחד. ככה נראה הגורל.',3.87,['en']),
-  R('veyra_banter_bramm_02b','veyra','banter_edrin_exasperated',"Destiny doesn't usually smell of ale.",'בדרך כלל הגורל לא מריח מבירה.',2.85,['en']),
+  R('veyra_banter_bramm_02b','veyra','banter_dry',"Destiny doesn't usually smell of ale.",'בדרך כלל הגורל לא מריח מבירה.',2.85,['en']),
   R('bramm_banter_veyra_02c','bramm','34_drinking_relaxed','Mine does.','שלי כן.',1.23,['en']),
   // Edrin + Kesh: the stone does not know who is winning; sometimes it is just strategy.
   R('edrin_banter_kesh_01a','edrin','idle_distracted',"Does that stone know who's winning?",'האבן הזאת יודעת מי מנצח?',2.35,['en']),
@@ -77,14 +70,14 @@ export const BANTER_RECORDINGS=Object.freeze(Object.fromEntries([
   R('kesh_banter_ragna_02c','kesh','dry_amusement','I meant something else.','התכוונתי למשהו אחר.',1.96,['en']),
   R('ragna_banter_kesh_02d','ragna','calm_after_outburst','Of course you did.','ברור שהתכוונת.',1.57,['en']),
   // Veyra + Ragna 02: the ward is sacred; so is the ale.
-  R('veyra_banter_ragna_02a','veyra','intro_something_wrong',"You're covering the ward.",'את מכסה את סמל ההגנה.',1.96,['en']),
+  R('veyra_banter_ragna_02a','veyra','banter_correction',"You're covering the ward.",'את מכסה את סמל ההגנה.',1.96,['en']),
   R('ragna_banter_veyra_02b','ragna','default_focused','With my ale.','עם הבירה שלי.',1.80,['en']),
-  R('veyra_banter_ragna_02c','veyra','curse_offended',"It's sacred.",'הוא מקודש.',1.57,['en']),
+  R('veyra_banter_ragna_02c','veyra','banter_correction',"It's sacred.",'הוא מקודש.',1.57,['en']),
   R('ragna_banter_veyra_02d','ragna','strong_move_satisfied','So is mine.','גם היא.',1.23,['en']),
   // Veyra + Edrin 02: he moved the bones, very considerately.
-  R('veyra_banter_edrin_02a','veyra','intro_bones','Who moved the bones?','מי הזיז את העצמות?',2.12,['en']),
+  R('veyra_banter_edrin_02a','veyra','silent_doubt','Who moved the bones?','מי הזיז את העצמות?',2.12,['en']),
   R('edrin_banter_veyra_02b','edrin','drinking','I needed room for my drink.','הייתי צריך מקום לכוס שלי.',2.04,['en']),
-  R('veyra_banter_edrin_02c','veyra','draw_no_no_no','You moved the bones?','הזזת את העצמות?',2.04,['en']),
+  R('veyra_banter_edrin_02c','veyra','banter_incredulous','You moved the bones?','הזזת את העצמות?',2.04,['en']),
   R('edrin_banter_veyra_02d','edrin','casual_acceptance','Very carefully.','בזהירות רבה.',2.04,['en']),
   // Gorvan, in his own words at last: dry, unhurried, almost sincere.
   R('gorvan_banter_bramm_04a','gorvan','dry_amusement',"One curse, and you're already giving a speech.",'קללה אחת, וכבר התחלת לנאום.',3.47,['en']),
@@ -99,7 +92,7 @@ export const BANTER_RECORDINGS=Object.freeze(Object.fromEntries([
   R('edrin_banter_gorvan_03c','edrin','casual_acceptance',"Good. It's awful.",'יופי. הוא נורא.',2.19,['en']),
   R('kesh_banter_gorvan_03a','kesh','rune_was_wrong','I cannot read your future.','אני לא מצליח לקרוא את העתיד שלך.',2.59,['en']),
   R('gorvan_banter_kesh_03b','gorvan','pleasant','How refreshing.','איזו הקלה.',1.57,['en']),
-  R('veyra_banter_gorvan_04a','veyra','omen_sudden_certainty','There are seven death omens around your chair.','יש שבעה סימני מוות סביב הכיסא שלך.',3.24,['en']),
+  R('veyra_banter_gorvan_04a','veyra','banter_explaining','There are seven death omens around your chair.','יש שבעה סימני מוות סביב הכיסא שלך.',3.24,['en']),
   R('gorvan_banter_veyra_04b','gorvan','dry_amusement','That seems excessive.','קצת מוגזם, לא?',1.96,['en']),
   // ── v107: the player joins the conversation (English recordings only; Hebrew is subtitle text) ──
   // Whoever addresses the player looks out at them; the other keeps to the speaker.
@@ -111,13 +104,13 @@ export const BANTER_RECORDINGS=Object.freeze(Object.fromEntries([
   R('kesh_banter_edrin_03a','kesh','player_one_card','One card left. The balance shifts.','נשאר שם קלף אחד. האיזון משתנה.',3.63,['en']),
   R('edrin_banter_kesh_03b','edrin','player_one_card_mild_concern','Should we stop that?','כדאי לעצור את זה?',1.72,['en']),
   R('kesh_banter_edrin_03c','kesh','player_one_card_signs','It would be wise.','זה יהיה נבון.',1.65,['en']),
-  R('veyra_banter_gorvan_05a','veyra','king_suspicious',"That wasn't in the prophecy.",'זה לא הופיע בנבואה.',2.04,['en']),
+  R('veyra_banter_gorvan_05a','veyra','silent_doubt',"That wasn't in the prophecy.",'זה לא הופיע בנבואה.',2.04,['en']),
   R('gorvan_banter_veyra_05b','gorvan','certainty','Perhaps the prophecy should learn the rules.','אולי כדאי שהנבואה תלמד את החוקים.',3.08,['en']),
   // ── v109: Tavern Conversations Vol. 3 — longer exchanges, two of them three-handed (English recordings only) ──
   R('edrin_banter_gorvan_veyra_01a','edrin','intro_reluctant',"Gorvan, you're not planning on turning me into a vampire, are you?","גורבן, אתה לא מתכנן להפוך אותי לערפד, נכון?",4.60,['en']),
   R('gorvan_banter_edrin_veyra_01b','gorvan','silent_down',"No, Edrin.","לא, אדרין.",2.35,['en']),
   R('edrin_banter_gorvan_veyra_01c','edrin','casual_acceptance',"Oh, thank goodness. Thought I'd ask.","אה, תודה לאלים. חשבתי שכדאי לשאול.",3.32,['en']),
-  R('veyra_banter_edrin_gorvan_01d','veyra','omen_uneasy',"I found three little bones beneath your chair this morning. All pointing towards you.","מצאתי הבוקר שלוש עצמות קטנות מתחת לכיסא שלך. כולן הצביעו לכיוונך.",5.80,['en']),
+  R('veyra_banter_edrin_gorvan_01d','veyra','banter_explaining',"I found three little bones beneath your chair this morning. All pointing towards you.","מצאתי הבוקר שלוש עצמות קטנות מתחת לכיסא שלך. כולן הצביעו לכיוונך.",5.80,['en']),
   R('edrin_banter_gorvan_veyra_01e','edrin','oh_dear',"...I was happier worrying about the vampire.","...העדפתי לדאוג בגלל הערפד.",3.97,['en']),
   R('gorvan_banter_ragna_04a','gorvan','reminiscing',"Ah. I just remembered something I meant to tell you.","אה. בדיוק נזכרתי במשהו שרציתי לספר לכם.",3.32,['en']),
   R('ragna_banter_gorvan_04b','ragna','impatient_focus',"Then make it quick.","אז תעשה את זה קצר.",1.88,['en']),
@@ -131,12 +124,6 @@ export const BANTER_RECORDINGS=Object.freeze(Object.fromEntries([
   R('edrin_banter_bramm_ragna_01d','edrin','casual_acceptance',"You lost the match as well.","גם את המשחק הפסדת.",1.96,['en']),
   R('bramm_banter_edrin_ragna_01e','bramm','09_irritated_lucky',"Who asked you?","מי שאל אותך?",1.41,['en']),
   R('edrin_banter_bramm_ragna_01f','edrin','surprised',"You did, I think.","אתה, נדמה לי.",1.88,['en']),
-  R('veyra_banter_ragna_03a','veyra','intro_something_wrong',"Something followed me here tonight.","משהו עקב אחריי לכאן הערב.",2.69,['en']),
-  R('ragna_banter_veyra_03b','ragna','default_focused',"You said that last night.","גם אתמול אמרת את זה.",2.04,['en']),
-  R('veyra_banter_ragna_03c','veyra','omen_uneasy',"It came closer.","הוא התקרב.",1.72,['en']),
-  R('ragna_banter_veyra_03d','ragna','commanding_start',"Then tell it to take a seat. We're starting.","אז שיתיישב. אנחנו מתחילים.",3.32,['en']),
-  R('veyra_banter_ragna_03e','veyra','draw_no_no_no',"You cannot invite it in!","אסור להזמין אותו פנימה!",2.19,['en']),
-  R('ragna_banter_veyra_03f','ragna','eyes_on_table',"Then it can stand.","אז שיעמוד.",1.96,['en']),
   R('kesh_banter_gorvan_04a','kesh','close_observation',"I've heard you've been coming here longer than this tavern has stood.","שמעתי שאתה מגיע לכאן עוד מלפני שהטברנה הזאת נבנתה.",3.79,['en']),
   R('gorvan_banter_kesh_04b','gorvan','neutral',"That's true.","זה נכון.",1.23,['en']),
   R('kesh_banter_gorvan_04c','kesh','interesting_choice',"What was here before?","ומה היה כאן קודם?",1.80,['en']),
@@ -155,11 +142,11 @@ export const BANTER_RECORDINGS=Object.freeze(Object.fromEntries([
   R('kesh_banter_edrin_04d','kesh','dry_amusement',"The stone is more interesting.","האבן מעניינת יותר.",2.43,['en']),
   R('edrin_banter_kesh_04e','edrin','approving',"Fair enough.","נקודה טובה.",1.41,['en']),
   R('bramm_banter_veyra_03a','bramm','33_muttering',"This table's cursed. I can feel it.","השולחן הזה מקולל. אני מרגיש את זה.",3.24,['en']),
-  R('veyra_banter_bramm_03b','veyra','intro_interested',"At last. Someone who listens.","סוף סוף. מישהו שמקשיב.",3.08,['en']),
+  R('veyra_banter_bramm_03b','veyra','friendly_smile',"At last. Someone who listens.","סוף סוף. מישהו שמקשיב.",3.08,['en']),
   R('bramm_banter_veyra_03c','bramm','14_blame_the_deck',"Curse only seems to hit me, mind you. Bloody unfair.","רק אותי הקללה הזאת תופסת, כן? ממש לא הוגן.",4.36,['en']),
-  R('veyra_banter_bramm_03d','veyra','banter_kesh_correcting',"That's not how curses work.","לא ככה קללות עובדות.",2.19,['en']),
+  R('veyra_banter_bramm_03d','veyra','banter_correction',"That's not how curses work.","לא ככה קללות עובדות.",2.19,['en']),
   R('bramm_banter_veyra_03e','bramm','04_smug_challenge',"Then explain last night.","אז תסבירי את אתמול.",1.96,['en']),
-  R('veyra_banter_bramm_03f','veyra','omen_miss_rationalizing',"...I can't.","...אני לא יכולה.",1.88,['en']),
+  R('veyra_banter_bramm_03f','veyra','banter_dry',"...I can't.","...אני לא יכולה.",1.88,['en']),
   R('edrin_banter_gorvan_04a','edrin','intro_reluctant',"Can I ask you something?","אפשר לשאול אותך משהו?",2.51,['en']),
   R('gorvan_banter_edrin_04b','gorvan','attentive',"Of course.","כמובן.",1.07,['en']),
   R('edrin_banter_gorvan_04c','edrin','focused',"After all these years... do you remember everyone you've ever met?","אחרי כל השנים האלה... אתה זוכר את כל מי שפגשת?",5.41,['en']),
@@ -175,5 +162,6 @@ export const banterReaction=voice=>{const item=BANTER_RECORDINGS[voice];if(!item
 export const banterSpeaker=voice=>BANTER_RECORDINGS[voice]?.speaker||null;
 export function resolveBanterVoice(name,locale='en'){
   const item=BANTER_RECORDINGS[name];if(!item)return null;const ui=locale==='he'?'he':'en';if(!item.takes.includes(ui))return null;
-  return {name,locale:ui,audioLocale:ui,src:asset(item.speaker,ui==='he'?`${name}_he`:name),caption:item.captions[ui],priority:'MEDIUM'};
+  const file=ui==='he'?`${name}_he`:name;
+  return {name,locale:ui,audioLocale:ui,src:asset(item.speaker,file),caption:item.captions[ui],priority:'MEDIUM',gain:VEYRA_VOICE_TRIM[file]??1};
 }

@@ -885,11 +885,12 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
 .portrait-card .character-kesh.character-art-stage{left:-50%;top:3%;width:200%}
 .duel-seat.opponent-kesh .seat-props{display:none}
 
-/* Veyra, Gorvan (v104): square canvases like Kesh; Veyra's props sit at hand height, above the rim. */
+/* Veyra, Gorvan (v104): square canvases like Kesh. Veyra 2.0 (v111): the same 1920 px crop of her new
+   pack; no props, her hands rest at the rim and her gestures stay above it. */
 .character-veyra.character-art-stage,.character-gorvan.character-art-stage{aspect-ratio:1}
 .duel-figure .character-veyra.character-art-stage{height:calc(var(--fig-h) * 1.3);translate:0 0}
 .duel-figure .character-gorvan.character-art-stage{height:calc(var(--fig-h) * 1.22);translate:0 0}
-.portrait-card .character-veyra.character-art-stage{left:-55%;top:2%;width:210%}
+.portrait-card .character-veyra.character-art-stage{left:-66%;top:3%;width:232%}
 .portrait-card .character-gorvan.character-art-stage{left:-50%;top:3%;width:200%}
 .opponent-veyra .seat-props,.opponent-gorvan .seat-props{display:none}
 /* Heights are capped so the highest point of any pose stays inside the seat (nothing above the head is clipped):
@@ -900,7 +901,9 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
 .seat-figure.guest-ragna>img{height:calc(var(--fig-h) * 1.1);translate:0 11%;object-position:50% 89%}
 .seat-figure.guest-edrin>img{height:calc(var(--fig-h) * 1.84);translate:0 44%;object-position:50% 56%}
 .seat-figure.guest-bramm>img{height:calc(var(--fig-h) * 1.84);translate:0 44%;object-position:50% 56%}
-.guest-veyra>img,.guest-gorvan>img{height:calc(var(--fig-h) * 1.09);translate:0 9%;object-position:50% 91%}
+.guest-gorvan>img{height:calc(var(--fig-h) * 1.09);translate:0 9%;object-position:50% 91%}
+/* Veyra 2.0 is a slimmer figure on the same canvas: a little larger, so her head sits at the guests' scale. */
+.seat-figure.guest-veyra>img{height:calc(var(--fig-h) * 1.24);translate:0 13%;object-position:50% 87%}
 
 /* ── Duel table: one voiced regular at a time, sitting across from you. ── */
 .screen-duel{--rim:calc(58% + clamp(0px,(100vw - 600px) * .06,32px));--rim-curve:2%;--stage-top:calc(var(--safe-top) + clamp(96px,12vh,112px))}

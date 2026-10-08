@@ -76,7 +76,7 @@ Every Gorvan conversation was recorded in English only, his partner's line inclu
 | Edrin | "You ever relax?" → "The evening is still young." | A quiet stretch |
 | Kesh | "The night sits comfortably around you." → "Hm. I wonder." | A quiet stretch |
 | Kesh | "You are very patient." → "Take your time. I have plenty." | Someone else is taking their time |
-| Veyra | "You are making the signs difficult." → "Nevermind, nevermind..." | One of her omens has just failed (replaces her miss line) |
+| ~~Veyra~~ | ~~"You are making the signs difficult." → "Nevermind, nevermind..."~~ | Retired in v111 with Veyra's omens |
 | Veyra | "Why is the flame leaning away from you?" → "Hm. I wonder." | A quiet stretch |
 | Veyra | "You don't have a normal shadow." → "Nevermind, nevermind..." | Start of the evening, or a quiet stretch |
 

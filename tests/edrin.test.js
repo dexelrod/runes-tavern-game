@@ -174,7 +174,8 @@ test('results: one line per hand, round pools while the match continues, match p
   assert.equal(edrin.holdsExpression(),true,'the result face holds under the result slip');edrin.beginRound();assert.equal(edrin.holdsExpression(),false);
   const app=read('../dist/app.js');
   assert.match(app,/else if\(isEdrinDuel\(\)\)runCharacter\(finalDuel\?\(opponentWon\?'match_win':'match_loss'\):\(opponentWon\?'round_win':'round_loss'\),\{\},true\);/);
-  assert.equal((app.match(/runCharacter\(finalDuel\?/g)||[]).length,4,'one result dispatch each for Edrin, Ragna, Kesh, and one shared by the data-driven packs (Veyra, Gorvan)');
+  assert.equal((app.match(/runCharacter\(finalDuel\?/g)||[]).length,3,'one result dispatch each for Edrin, Ragna, Kesh');
+  assert.match(app,/else if\(isGenericDuel\(\)\)\{[\s\S]*?const trigger=finalDuel\?\(opponentWon\?'match_win':'match_loss'\):\(opponentWon\?'round_win':'round_loss'\)/,'and one shared by the data-driven packs (Veyra, Gorvan)');
 });
 
 test('first win of the match favours the delayed "Oh. I won."',()=>{

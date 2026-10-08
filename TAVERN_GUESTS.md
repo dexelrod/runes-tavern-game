@@ -43,7 +43,7 @@ Gorvan × Bramm "Don't Encourage It" (the player wins a round) is written but ha
 
 **v108: chatter between moves.** Guests now talk now and then about nothing in particular while play goes on, not only after a move or in a lull. Every 16–24 s of play (`TAVERN_CHATTER_MS` in `app.js`) the table gets an `idle` chance; a card in flight or a voice in progress postpones it by a second or two instead of throwing it away. Chatter has its own allowance in the director: two a hand (`chatterPerRound`), 8 s of quiet first (`chatterGap`), up to three per guest a match (two for Edrin and Gorvan, `TAVERN_CHATTER_CAP`), and it no longer spends the hand's two casual moments or the per-guest cap. Odds: a solo idle line .45 (was .3), an idle exchange .4 (was .28). Lines come from each guest's idle pool and the quiet-stretch exchanges. Measured: one guest about 8.8 lines a match, two about 15.6, three about 22.8.
 
-The limit is material: the free-floating pools are small (Ragna 1 line, Bramm 2, Edrin 3, Kesh 3, Veyra 4, Gorvan 5), and every line plays once a match, so chatter thins out after the first hands. More ambient lines are the way to grow it.
+The limit is material: the free-floating pools are small (Ragna 1 line, Bramm 2, Edrin 3, Kesh 3, Veyra 0 since v111, Gorvan 5), and every line plays once a match, so chatter thins out after the first hands. More ambient lines are the way to grow it.
 
 **v109: Tavern Conversations Vol. 3, quicker exchanges, quicker Edrin and Kesh.**
 
@@ -54,7 +54,7 @@ Nine owner-written conversations (53 English recordings; Hebrew as subtitle text
 | `vampire_concern` "A Reasonable Concern" | Edrin, Gorvan, Veyra | Start of the match or of a hand, all three seated (chance .3) |
 | `gorvan_ragna_bedtime` "Bedtime Stories" | Gorvan, Ragna | Start of the match / a hand, or a quiet stretch. Ragna cuts him off (60 ms) |
 | `bramm_unbeaten` "The Unbeaten" | Bramm, Ragna, Edrin | Start of the match (chance .35) |
-| `veyra_ragna_followed` "Something Followed Me" | Veyra, Ragna | Start of the match or of a hand |
+| ~~`veyra_ragna_followed` "Something Followed Me"~~ | Veyra, Ragna | Retired in v111 (ends in a shout) |
 | `gorvan_kesh_old_tavern` "The Old Tavern" | Kesh, Gorvan | Start of the match / a hand, or a quiet stretch |
 | `edrin_ragna_wager` "The Wager" | Edrin, Ragna | Start of the match |
 | `edrin_kesh_interesting_stone` "A Very Interesting Stone" | Edrin, Kesh | Quiet stretch, or right after Kesh reads his stone |
@@ -119,7 +119,7 @@ With six guests, a two-guest evening in "Sometimes" is one of: Edrin + Ragna 13%
 - **Repeats:** every recording is heard at most once a match, and identical words never come back, even from a different file.
 - **Shared moments:** two or three guests share the moments. Each roll is scaled by 0.6 for two guests and 0.45 for three, and one roll serves the whole table.
 - **Talkativeness:** Gorvan is the quietest (0.5×), then Edrin (0.6×); Bramm is a little louder (1.15×).
-- **Veyra's omens** (v104) keep their own small allowance (they don't spend her two or three ordinary lines), but still wait their turn on the single voice: a declaration is the hand's one ordinary line; a miss may come later in the same hand; a sign that lands waits for any voice in progress, then plays.
+- **Veyra** (v111): the omen system and its allowance are gone; she is a quieter guest (0.7×) with a curated allowlist and no idle lines of her own (see `VEYRA_INTEGRATION.md`).
 - **Generic regulars' text quips** never come from a guest's seat, never start while a guest is speaking, and are skipped for any update where a guest spoke.
 - **Results**
   - The winning guest may speak at round end (35%).

@@ -40,8 +40,8 @@ export const TAVERN_GUEST_ODDS=Object.freeze({sometimes:Object.freeze({one:.04,t
 // TAVERN_BANTER; a test keeps the two in step). Pairs who can trade lines are
 // strongly preferred: weight 1 + 3 × exchanges, so a pair with none is rare.
 export const TAVERN_GUEST_PAIRS=Object.freeze({'bramm+edrin':3,'bramm+kesh':2,'bramm+ragna':4,'edrin+kesh':4,'edrin+ragna':6,'kesh+ragna':2,
-  'kesh+veyra':2,'ragna+veyra':3,'edrin+veyra':2,'bramm+veyra':3,
-  'bramm+gorvan':4,'edrin+gorvan':4,'gorvan+ragna':4,'gorvan+kesh':4,'gorvan+veyra':5});
+  'kesh+veyra':1,'ragna+veyra':2,'edrin+veyra':1,'bramm+veyra':3,
+  'bramm+gorvan':4,'edrin+gorvan':4,'gorvan+ragna':4,'gorvan+kesh':4,'gorvan+veyra':4});
 // A little extra weight for established chemistry the owner especially wants heard (Veyra and Kesh).
 export const TAVERN_PAIR_CHEMISTRY=Object.freeze({'kesh+veyra':1.6});
 const pairKey=(a,b)=>[a,b].sort().join('+'),pairWeight=(a,b)=>(1+3*(TAVERN_GUEST_PAIRS[pairKey(a,b)]||0))*(TAVERN_PAIR_CHEMISTRY[pairKey(a,b)]||1);

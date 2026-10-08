@@ -1,106 +1,85 @@
-# Veyra — integration notes (v104)
+# Veyra — integration notes (v111: Veyra 2.0)
 
-Veyra, the omen-reader, is the fifth authored opponent. She is a rural witch of about forty: intelligent, obsessive, superstitious and a little unstable. She reads meaning into carved bones, a candle flame, colours, cards and coincidences, and she argues with all of them. **Kesh watches the universe; Veyra argues with it.**
+Veyra is the fifth authored opponent. **v111 reworks her**: a new character pack, a curated voice, a quieter schedule, and the omen system removed.
 
-She is a full Duel opponent and a voiced Tavern guest, on the same framework as everyone else: one reaction table on the **shared controller** (`duel/authored-controller.js`), the shared expression stage, the speech bubble, the single Web Audio voice path and the table-wide Tavern director. There is no Veyra dialogue engine.
+She is now a younger witch of about thirty — clever, self-assured, dry, a little dark, quietly competitive, now and then mischievous, and capable of genuine surprise. She knows curses professionally ("That is not a proper curse."), distrusts crowns, and still notices odd things (a vampire's shadow, a flame leaning away from him), but she no longer reads every card as a sign or argues with the bones. **Old Veyra was an obsessive omen-reader who shouted at you when she was right. New Veyra is a cool witch with a sharp tongue who mostly lets her face talk.**
+
+She is a full Duel opponent and a voiced Tavern guest on the same framework as everyone else: one reaction table on the shared controller (`duel/authored-controller.js`), the shared expression stage, the speech bubble, the single Web Audio voice path and the table-wide Tavern director. There is no Veyra-specific engine.
+
+## What changed in v111
+
+| Area | Before (v104–v110) | Now |
+|---|---|---|
+| Art | 61 poses (rural witch, bones, candle) | 26 poses from `veyra_character_pack/v2` (concept A, "curse scholar"); no props |
+| Omens | A per-match "omen book": declared signs, hit/miss detection, settle/expiry windows, a pending-hit retry timer, saved state, Tavern omen events, debug hooks | **Removed entirely** — code, state, persistence, timers, lines, faces, Tavern triggers and debug hooks. Nothing replaces it. |
+| Voice | 55 lines, 2.5 lines/min in a Duel | 24 curated lines, ~1.9–2.2 lines/min; a few hot takes trimmed in level |
+| Banter | 20 exchanges | 16 (four omen-era / shouted exchanges retired) |
 
 ## Architecture
 
 | Piece | File | Notes |
 |---|---|---|
-| Shared pack helpers (new) | `dist/duel/authored-pack.js` | <ul><li>`lineFactory` builds a reaction table from a script; `createVoiceCatalog` builds the voice library and the EN/HE resolvers from **one rule per character**: which take, if any, plays for a line in each UI language.</li><li>`duelEventFor` is the shared Duel classifier, named from the character's side (`own_*`, `player_*`, `curse_taken` / `curse_landed`, `stop_taken` / `stop_given`, `king`).</li><li>Veyra and Gorvan are built on these; the older packs are unchanged.</li></ul> |
-| Veyra pack | `dist/duel/veyra.js` | The authored EN/HE script (directions removed), the 61-pose map, reactions, silent faces, the **omen book** and `VEYRA_SPEC`. |
-| Registry | `dist/duel/characters.js` | `veyra` entry with `generic:true` and `omens:true`. `VOICED_OPPONENTS` is now six. |
-| Duel dispatch | `dist/app.js` → `genericDuelUpdate`, result dispatch `isGenericDuel()` | One generic path for data-driven packs: no per-character branch. |
-| AI | `dist/game-ai/veteran.js` → `CONTROL_PROFILE`, `TAVERN_CONTROL_PROFILE`; `bot.js` | Archetypes `witch` (Duel) and `tavern-witch` (Tavern). |
-| Opponent entry | `dist/duel/opponents.js`, `game-engine/match.js` | `veyra` / `ויירה`, female, house green, generic pools empty. |
-| Tavern | `dist/duel/tavern-director.js`, `dist/duel/banter.js` | Her allowlist, faces, omen lines, and her banter with Kesh, Ragna, Edrin (and Gorvan). |
+| Veyra pack | `dist/duel/veyra.js` | Curated EN/HE script, 26-pose map, reactions, silent faces, `VEYRA_RETIRED`, `VEYRA_VOICE_TRIM`, `VEYRA_TIMING`, `VEYRA_SPEC`. |
+| Shared pack helpers | `dist/duel/authored-pack.js` | `createVoiceCatalog` now takes an optional `gainFor(voice, take)`; the resolved voice carries `gain`. |
+| Voice path | `dist/platform/audio.js` → `playVoice` | Applies the resolved `gain` as a trim on the one Web Audio voice path (game audio: no media element, no Now Playing). Every other character resolves to gain 1. |
+| Registry | `dist/duel/characters.js` | `veyra`: default face `default`; `resultVoiceChance` / `resultFaces` (a round result may pass with only a look). `omens` flag removed. |
+| Duel dispatch | `dist/app.js` → `genericDuelUpdate`, `resultSpeaks()` | One generic path for Veyra and Gorvan; no omen branch. |
+| Tavern | `dist/duel/tavern-director.js`, `dist/duel/banter.js` | Curated allowlist, new faces, no omen triggers or omen allowance; retired exchanges removed. |
+| AI | `dist/game-ai/veteran.js` → `CONTROL_PROFILE` / `TAVERN_CONTROL_PROFILE` | Unchanged: calm, competent, fair. |
 
-## Assets
+## Art
 
-**Expressions** — `dist/assets/veyra/expressions/`, 61 WebP files at 640×640 (q86, 6.7 MB). Every pose is the same 1920 px crop of its 2048 px master (the pack's clear 64 px inset removed), uniformly scaled and bottom-centre anchored, so swaps never jump. Masters stay in `Runes Card Game/veyra_character_pack/`.
+`dist/assets/veyra/expressions/` — 26 WebP files at 640×640 (q86, ~2 MB total). Each is the same 1920 px crop (the pack's 64 px inset removed) of its 2048 px painting, scaled uniformly and bottom-centre anchored, so swaps never jump. The four banter poses the pack names after a voice stem ship as `20_banter_dry`, `21_banter_explaining`, `25_banter_correction`, `26_banter_incredulous`. The 61 old poses are gone from the game (masters stay in `Runes Card Game/veyra_character_pack/`).
 
-**Props follow the words.** The bones appear only in poses where she consults them (01 03 09 21 25 27 34 35 36 46 53 60); the candle only for flame lines (05 08 28 56 59 60). The default holds the bones, as the pack specifies. No glow, particle or animation is attached to any of them (a test guards the CSS). The loudest poses (31 "I TOLD YOU!", 32 "THERE!") are kept for omens that land.
+Expression keys: `default`, `intro_intrigued`, `observing`, `amused`, `curious`, `surprised`, `approving`, `strong_move`, `frustrated`, `draw_considering`, `curse_disapproval`, `stop_pleased`, `king_skeptical`, `player_one_card`, `veyra_one_card`, `round_win`, `round_loss`, `match_win`, `match_loss`, `banter_dry`, `banter_explaining`, `friendly_smile`, `silent_doubt`, `silent_thinking`, `banter_correction`, `banter_incredulous`.
 
-**Voice** — `dist/assets/veyra/voice/`, shipped untouched: 55 lines (108 takes), her 6 banter lines in both languages, and her 3 English-only Gorvan banter lines. Levels sit inside the range of the existing cast (her quiet lines are quiet by performance; nothing was normalised).
+Mapping was chosen by looking at the paintings, not by matching old names: her resting face is `default` (relaxed, self-assured); short hands → `observing`; your last card → `player_one_card`; her last card → `veyra_one_card`. Silent reactions lean on `amused`, `observing`, `silent_thinking`, `approving`, `silent_doubt`; the biggest faces (`surprised`, `match_win`) are kept for real surprise and the end of a match.
 
-**Deliberate exceptions**
-- `veyra_intro_02` ("Quiet. Let me see.") and `veyra_player_good_move_01` ("Oh! Clever.") exist **only in English**. In Hebrew they are simply not in the candidate pool — no English fallback, no translation (`VEYRA_ENGLISH_ONLY`; the controller, the Tavern director and the shared voice resolver all agree).
-- Deleted and never referenced: King 01, both Reverse lines, `ragna_banter_veyra_01b`, `veyra_banter_ragna_01c`. Sequence gaps were not filled.
+**CSS** (`styles.css`): Duel and select sizing unchanged (the new figure fits the old frame). At a Tavern seat she is drawn a little larger (`.seat-figure.guest-veyra>img`, 1.24 × figure height) because the new figure is slimmer on the same canvas; her head now sits at the other guests' scale. Checked at phone portrait, iPad portrait, desktop 1366 and phone landscape.
 
-**Preload** — 23 critical poses (resting face, intro, first reactions, omen poses) decode before she sits down; the rest decode straight after in the background, four at a time. Voices warm intro-first, then six at a time.
+**Preload**: 11 critical poses (resting face, intro, first reactions, last-card faces) decode before she sits down; the rest follow in the background.
 
-## Behaviour
+## Voice — what she says now
 
-**How much she talks**
-- More than Kesh, still well short of constant: ~11 s and three meaningful actions between casual lines, two ordinary lines a hand (three in a long one).
-- In real-time five-round Duels (phone, captions on): **12–16 lines a match** including the intro and one result line per hand; **55–110 face changes**; 0–1 omen declarations a hand.
-- Her face does a lot of the work: interest, suspicion, a look at the bones or the flame, a reconsidering glance — most moments get a look and no words.
+Kept (EN/HE unless noted): intro 02 (EN only) "Quiet. Let me see.", 03 "Oh. This will be interesting.", 04 "The fire doesn't like you tonight." · "Oh! Clever." (EN only) · "I did not see that." · "There." · "Exactly where it was going." · "There it is." · "More. Interesting." · "Why this one?" · "One? Already?" · "Don't move. I'm thinking." · "Last card..." · "I know how this ends." · "That is not a proper curse." · "Simple. Effective." · "No. Not yet." · "I don't trust crowns." · "Again. I need to see something." · "That wasn't right." · "Again. I missed something." · "I knew it." · "Again tomorrow. I want to compare." · "I was completely wrong."
 
-**Contextual card lines** (not a rulebook narrator; most of these moments get only a face)
+**Retired** (`VEYRA_RETIRED`, never selectable; files archived in `Runes Card Game/Veyra`, not shipped): every `omen_*`, `omen_hit_*` (incl. "I TOLD YOU!"), `omen_miss_*`; intro 01; all four idle lines ("Did you see that?", "No... that means something.", "Stop moving.", "Make up your minds."); "Yes! That's the kind of trouble I meant!"; "I knew something was coming."; "No, no, no."; "...Actually. Keep talking."; "You didn't tell me that!"; "Wait. Wait. This fits."; "Say something useful."; "Something wanted that stopped."; round win 01 and 03; "No... show me again."; match win 01; match loss 01 and 03.
 
-| Moment | Line | Chance |
-|---|---|---|
-| A Curse lands on her | "That is not a proper curse." | 30% |
-| Her Curse lands on you | "Simple. Effective." | 22% |
-| Her Shield stops you | "No. Not yet." (more likely when you are close) | 24% |
-| Your Shield stops her | "Something wanted that stopped." | 24% |
-| Your King (esp. breaking her Curse) | "I don't trust crowns." | 30% (55%) |
+How the cut was made: every take was measured (integrated loudness, momentary peak, pitch and pitch spread) against the rest of the cast, then judged with the script and the new personality. Loud / high-pitched / frantic takes went (e.g. "No, no, no." at −13 LUFS, every omen hit); lines that only make sense addressed to the bones went (several are feminine-plural in Hebrew for exactly that reason); the dry, curious, confident ones stayed. One witch's remark survives in her intro ("The fire doesn't like you tonight." — quiet, teasing).
 
-**One-card states** — when you reach one card she is suddenly alert (one strong line, 60%: alarm, the bones, "This fits.", "Don't move. I'm thinking."); her baseline becomes a fixated stare. On her own last card the pattern is resolving ("Last card...", "Say something useful.", "I know how this ends."). Never more than one line.
+**Level trims** (`VEYRA_VOICE_TRIM`): kept takes hotter than about −19.5 LUFS integrated or −15 LUFS momentary play 1–3 dB lower (e.g. "That is not a proper curse." ×0.79, "Don't move. I'm thinking." ×0.73, "You're covering the ward." ×0.68). The files are untouched.
 
-**Results** — a round line while the match continues, a match line at the end, never both. A result line now waits for a line in progress to finish instead of cutting it off (shared improvement, all characters). Win: the pattern made sense. Loss: fascinated by what she misread. **"Wait. Unless losing was the sign."** is weighted heavily after an omen failed her this match (and is common otherwise).
+**Languages**: English takes in English, Hebrew takes in Hebrew, authored Hebrew text unchanged. The two English-only lines are simply absent in Hebrew (no English fallback), in the Duel, at the Tavern and in the shared voice resolver.
 
-## The omen book
+## How often she talks
 
-Character presentation, never a rule. It reads public facts only, changes nothing in the game, and nothing in the engine or AI reads it (a test checks).
+`VEYRA_TIMING`: ~11 s and three counted actions between casual lines; two ordinary lines a hand at most; **eight ordinary remarks a match**; no remark more than twice a match and the small asides (draws, her own good moves) once. Last-card lines have their own small allowance. A round result speaks 70% (win) / 60% (loss) of the time and never repeats the same round line in a match — otherwise she just shows her result face. The match result always speaks.
 
-1. Now and then, in a quiet moment, she declares an omen. Only an omen the table actually heard is remembered.
-2. The book watches ordinary public events. The table has to move on first (3–4 actions and ~7 s) — an omen that "comes true" on the very next card feels like cheating.
-3. **Hit:** her biggest moment ("I TOLD YOU!" for the first of a match, then "Exactly! Exactly!", "The bones don't lie."). If someone is mid-line, the payoff waits for the voice to end (a few seconds at most) — it is never lost to timing.
-4. **Miss:** after the window runs out she argues with the bones ("No. You were very clear.", "Oh, shut up.", "I read it too early.", "The meaning changed."). If the hand ends first, the omen lapses silently (the result line owns that moment) and still counts as a failed sign for her final line.
+Real-time five-round Duels (phone, captions on, human-paced): **10–14 lines a match, ~1.9–2.2 a minute** (before: 16–19, ~2.5/min; Edrin 14, ~2.2/min; Bramm 21–31, 3–4/min), with 100–140 face changes. No overlapping voices.
 
-| Omen | Line | Close enough |
-|---|---|---|
-| draw | "Someone is drawing before this is over." | A Curse is taken; someone nearly out has to draw. |
-| red | "Red brings trouble tonight." | A Burgundy Curse or Shield hurts someone; someone cannot follow Burgundy. |
-| turn | "This game will turn on itself." | A Turnabout, a Curse thrown back, a King breaking a Curse, the lead changing hands. |
-| regret | "Someone is going to regret a Curse." | A Curse thrown back or broken by a King; whoever cursed this hand ends up drawing. |
+At a Tavern table she is one of the quieter guests (`TAVERN_GUEST_TALK.veyra` .7: Edrin .6, Kesh/Ragna 1, Bramm 1.15) and has no idle chatter lines of her own — between moves she talks only in banter.
 
-**Tuning** (`VEYRA_OMEN_TUNING`): one omen a hand at most, never two hands running, each omen once a match, three a match in a Duel and two at a Tavern table. Measured over simulated matches: **~2.3 omens a Duel match and ~1.9 a Tavern match; about half land** (Duel ~52%, Tavern ~55%). Real-time playtests matched: some evenings she is right, some she argues with the bones, and a few produce both.
+## Banter
 
-## AI — control, competent, fair
+Kept (faces remapped to the new conversational poses):
 
-`CONTROL_PROFILE`: the same public-information planner as Edrin, Ragna and Kesh, with a short look-ahead (fewer imagined hands than Edrin). She keeps a Shield, a Curse or a King back while the table is calm and spends them hard when someone gets close (`holdStop`, `disrupt`), and at a busy table she turns the order away from a player about to go out (`redirect`). Few slips (6%). Her madness is presentation; her card choices are calm.
+| Exchange | Notes |
+|---|---|
+| Veyra + Kesh "Look at that." / "I am." / "And you're just sitting there?!" | Rarer now (chance .2); her last line trimmed in level. |
+| Veyra + Ragna "The flame just moved." / "Focus." | Two lines, unchanged. |
+| Veyra + Ragna "You're covering the ward." … "So is mine." | English audio; Hebrew text-only. |
+| Veyra + Edrin "Who moved the bones?" … "Very carefully." | English audio; Hebrew text-only. |
+| Veyra + Bramm: the warning; destiny smells of ale; the cursed table ("That's not how curses work.") | English audio. |
+| Veyra + Gorvan: the flame leaning away; the shadow; seven death omens; the prophecy and the rules | English audio only; Hebrew is text, every line silent — never mixed. |
+| Edrin + Gorvan + Veyra "A Reasonable Concern" | Unchanged. |
 
-- Hidden-hand swap test: identical choices whatever the hidden cards are.
-- Over 400 hands each: ~52% against the mercenary and hunter bots, ~45–49% against Edrin and Ragna, ~55% against Kesh.
-- At the Tavern (`TAVERN_CONTROL_PROFILE`): the same judgement without the look-ahead and a few more slips.
-
-## Tavern Match
-
-- She joins the guest roster (`VOICED_TAVERN_GUESTS`), seated by the same odds as everyone else; her seat portrait is her live expression art.
-- Her allowlist is her whole set (the two English-only lines drop out in Hebrew by themselves). Omen lines use their own small allowance so the story can finish, but still wait their turn on the table's single voice and its pacing.
-- Generic regulars' text quips never come from her seat; with voiced guests at the table they now come half as often (16 s apart) so the table stays readable.
-
-## Banter (each exchange is one performance)
-
-| Exchange | When | Notes |
-|---|---|---|
-| Veyra "Kesh. Look at that." → Kesh "I am." → Veyra "And you're just sitting there?!" | A quiet stretch | Kesh's face goes to the fire. |
-| Kesh "A curious omen." → Veyra "Curious? It's screaming." → Kesh "You often say that." | A Turnabout, a King, or Kesh reading his stone | Kesh's reply comes after a deliberate pause. |
-| Veyra "The flame just moved." → Ragna "Focus." | A quiet or slow moment | Deliberately two lines. |
-| Veyra "Three bones crossed… and then the King appeared. Do you understand?" → Edrin "No idea, Veyra." → Veyra "Good. Neither do I." | Right after a King | Dry timing: Edrin answers after a pause. |
-
-Veyra + Kesh is weighted a little higher when guests are seated (`TAVERN_PAIR_CHEMISTRY`), so the pair everyone wants to hear sits down about one evening in ten that has company.
+Retired: Kesh "A curious omen." / "Curious? It's screaming." (shouted); Edrin's bones-and-flame lecture ("Three bones crossed…"); Gorvan "You are making the signs difficult." (fired on an omen miss); Ragna "Something followed me here tonight." (ends in a shout). Their partners' recordings for those exchanges are no longer shipped either; nothing plays half an exchange. `TAVERN_GUEST_PAIRS` follows the banter list.
 
 ## Debug (browser console)
 
-`window.VeyraDebug`: `trigger(id)`, `triggerIn(id,'he')`, `expression(key)`, `previewExpressions(ms)`, `simulate*` (one card, Curse taken / landed, Shield taken / given, King, draws, good moves, slow player, results), **`declareOmen(kind)`, `omens()`, `simulateOmenHit()`, `simulateOmenMiss()`**, `history()`, `cooldown()`, `setLanguage()`, `markVoiceMissing(voice)`, `missingAssets()` (lists every face and voice for the active language, and the lines excluded in it), `englishOnly`.
+`window.VeyraDebug`: `trigger(id)`, `triggerIn(id,'he')`, `expression(key)`, `previewExpressions(ms)`, `simulate*` (one card, Curse taken / landed, Shield taken / given, King, draws, good moves, slow player, results), `history()`, `cooldown()`, `setLanguage()`, `markVoiceMissing(voice)`, `missingAssets()`, `englishOnly`. The omen hooks are gone.
 
-## QA (v104)
+## QA (v111)
 
-- `npm test`: unit tests for the script, assets, language rules, omen book (settle, hit, miss, lapse, once each, frequency), AI fairness and strength, banter order, and restraint against Kesh and Ragna (`tests/veyra.test.js`).
-- `npm run smoke`: a Veyra Duel round in Hebrew and English (her own lines only; English-only lines never play in Hebrew), and Veyra with Gorvan at one Tavern table.
-- Real-time playtests in a browser: full five-round Duels in English and Hebrew; Tavern Matches with Kesh, Ragna, Edrin, Gorvan, and Gorvan + Bramm / Kesh; bubbles on and off; reload mid-match with an open omen (restored, no stale voice). 0 overlapping voices, 0 console errors.
-- Visual: phone portrait, iPad portrait, desktop 1366, phone landscape, the home cameo, Duel select and Tavern seats. Her props stay above the Duel rim.
+- `npm test` → `tests/veyra.test.js`: curated script and files, 26 new poses at the shared canvas, every pose reachable, no old pose name anywhere, exact bubbles, English-only rules (Duel and Tavern), **omen system gone** (exports, app state, director triggers, lines, files), retired lines never selectable in any trigger or language, anti-repetition, restraint (quieter than Ragna, ≤8 ordinary remarks a match, faces ≫ lines), one-card behaviour, results (round may be silent, match never), face mapping, banter kept/retired and played whole with the right audio policy, level trims on the one voice path, AI fairness and strength.
+- Real-time browser playtests (Playwright, human-paced): Duels in English and Hebrew at phone, iPad and desktop sizes; Tavern Matches with Veyra + Gorvan (EN, HE), + Kesh (EN, HE), + Ragna, + Edrin (HE). Checked: line counts, no omen line ever, no retired line, no overlapping voices, no console errors, English-only lines never in Hebrew, Gorvan banter silent-text in Hebrew.

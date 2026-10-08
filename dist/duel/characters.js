@@ -94,23 +94,26 @@ const kesh=Object.freeze({
 // `resultContext` feeds their round / match lines. Nothing here is per-language.
 const veyra=Object.freeze({
   id:'veyra',label:'Veyra',
-  expressions:VEYRA_EXPRESSIONS,defaultExpression:'default_observant',expressionURL:veyraExpressionURL,preload:preloadVeyraExpressions,
+  expressions:VEYRA_EXPRESSIONS,defaultExpression:'default',expressionURL:veyraExpressionURL,preload:preloadVeyraExpressions,
   reactions:VEYRA_REACTIONS,voiceLibrary:VEYRA_VOICE_LIBRARY,resolveReaction:resolveVeyraReaction,resolveVoice:resolveVeyraVoice,
   createController:({initial,settings,now})=>createVeyraController({now,initial:{...(initial||{}),recentVoices:initial?.recentVoices||settings?.characterRecentVoices?.veyra||[]}}),
   holdsExpression:controller=>!!controller?.holdsExpression?.(),
   lead(trigger){
-    // Her face jumps first; the words tumble after it.
-    if(trigger==='player_one_card')return {delay:520};
-    if(trigger==='omen_hit')return {delay:260};
-    if(trigger==='own_one_card'||trigger==='omen_miss')return {delay:440};
+    // Her face reacts first; the words, if any, a beat later.
+    if(trigger==='player_one_card')return {delay:480};
+    if(trigger==='own_one_card')return {delay:420};
     return null;
   },
   idleTriggers:()=>[['idle_quiet',{}]],
   idleFallback:(controller,context)=>controller?.observe('idle_beat',context),
-  slowPlayerAfter:12000,
+  // v111: a round result may pass with only a look (each repeat of a round line is
+  // rarer still); the match result always gets its line.
+  resultVoiceChance:trigger=>trigger==='round_win'?.7:trigger==='round_loss'?.6:1,
+  resultFaces:Object.freeze({round_win:'round_win',round_loss:'round_loss'}),
+  slowPlayerAfter:13000,
   finalResultBeat:1700,activeClock:true,
   introDelay:1300,
-  omens:true,generic:true
+  generic:true
 });
 
 const gorvan=Object.freeze({
