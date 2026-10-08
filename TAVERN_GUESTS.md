@@ -68,13 +68,15 @@ Nine owner-written conversations (53 English recordings; Hebrew as subtitle text
 
 **v110 rule: a stalling player starts a conversation.** When it is the player's turn and they have not played for 5 s (`TAVERN_STALL_MS` in `app.js`), the guests always start an exchange they have not had yet this match, if one fits: no odds, no chatter allowance, no match maximum. Only exchanges that suit any moment qualify (quiet-stretch ones, and the "slow player" ones, which come first, e.g. Ragna's "The cards won't play themselves."). Each exchange's own conditions still apply (Bramm's setbacks, round 3+ for Remembering Faces, all speakers seated), it waits for any voice in progress, and long ones still never start when someone is down to two cards. Once per player turn. The director's `stall` path (`event('stall')`).
 
+**v112 defaults:** Settings → "Voiced characters at the Tavern" defaults to **Every evening**, and **captions are on** by default (`dist/platform/storage.js`). Settings saved earlier still carried the old defaults (every key is saved together), so a one-time update moves "Sometimes" → "Every evening" and captions off → on for those saves (`settingsRevision` 110, read from the stored settings); "Off" stays off, and any choice made afterwards is kept.
+
 **v104:** Veyra and Gorvan joined the guests (see `VEYRA_INTEGRATION.md` and `GORVAN_INTEGRATION.md`). Banter is now a data-driven **sequence of any length** (`lines`), played as one performance, with dedicated banter recordings catalogued in `dist/duel/banter.js`. Exchanges recorded only in English (every Gorvan conversation) run as Hebrew text only in Hebrew. With voiced guests at the table, the ordinary regulars' text quips come half as often.
 
 ## Turning it off / reverting
 
 | Level | How | Effect |
 |---|---|---|
-| Player | Settings → Table → **Voiced characters at the Tavern: Off · Sometimes · Every evening** (`settings.tavernGuestMode`, default `sometimes`) | **Off:** new Tavern Matches seat only the nine ordinary regulars; guests already seated in a match in progress stay but fall silent (faces only). **Every evening:** every new match seats two guests, or three. An older v101–v102 "off" switch is migrated to Off. |
+| Player | Settings → Table → **Voiced characters at the Tavern: Off · Sometimes · Every evening** (`settings.tavernGuestMode`, default `often` since v112; was `sometimes`) | **Off:** new Tavern Matches seat only the nine ordinary regulars; guests already seated in a match in progress stay but fall silent (faces only). **Every evening:** every new match seats two guests, or three. An older v101–v102 "off" switch is migrated to Off. |
 | Code | `TAVERN_GUESTS_ENABLED=false` in `dist/game-engine/match.js` | No guests are seated for anyone. Saved matches that already contain guests keep them, and they still talk unless the player turns the setting off. |
 | Git | Revert the v101 commit | Back to v100, which also puts Kesh back among the ordinary regulars. |
 
