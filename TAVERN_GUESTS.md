@@ -1,4 +1,4 @@
-# Voiced guests at the Tavern — integration notes (v101, updated v103, v104, v105, v106, v107)
+# Voiced guests at the Tavern — integration notes (v101, updated v103, v104, v105, v106, v107, v108)
 
 Now and then Bramm, Edrin, Ragna, Kesh, Veyra or Gorvan happens to be playing at a Tavern Match, usually in company. They say a handful of approved lines, pull faces at what happens around them, and, rarely, two of them trade lines. The aim is "Bramm happened to be in tonight", not a character mode.
 
@@ -40,6 +40,10 @@ Gorvan × Bramm "Don't Encourage It" (the player wins a round) is written but ha
 *More talk.* `TAVERN_TIMING`: 10 s and 2 actions between casual lines (was 15 s / 3); two casual moments a hand (was one); 5 lines per guest a match, 4 in company (was 3 / 2); up to six exchanges a match, two a hand. Shared-moment scaling `TWO_GUEST_SCALE` .8, `THREE_GUEST_SCALE` .65 (was .6 / .45). Measured on the test event stream: one guest about 6.6 lines a match (was 4.6), two about 12 (was 8.7), three about 19 (was 13).
 
 *Who sits down.* `TAVERN_GUEST_ODDS`: **Sometimes** one 4%, two 8%, three 23% (still about a third of evenings, but now usually a full voiced table); **Every evening** two 15%, three 85% (was 75 / 25).
+
+**v108: chatter between moves.** Guests now talk now and then about nothing in particular while play goes on, not only after a move or in a lull. Every 16–24 s of play (`TAVERN_CHATTER_MS` in `app.js`) the table gets an `idle` chance; a card in flight or a voice in progress postpones it by a second or two instead of throwing it away. Chatter has its own allowance in the director: two a hand (`chatterPerRound`), 8 s of quiet first (`chatterGap`), up to three per guest a match (two for Edrin and Gorvan, `TAVERN_CHATTER_CAP`), and it no longer spends the hand's two casual moments or the per-guest cap. Odds: a solo idle line .45 (was .3), an idle exchange .4 (was .28). Lines come from each guest's idle pool and the quiet-stretch exchanges. Measured: one guest about 8.8 lines a match, two about 15.6, three about 22.8.
+
+The limit is material: the free-floating pools are small (Ragna 1 line, Bramm 2, Edrin 3, Kesh 3, Veyra 4, Gorvan 5), and every line plays once a match, so chatter thins out after the first hands. More ambient lines are the way to grow it.
 
 **v104:** Veyra and Gorvan joined the guests (see `VEYRA_INTEGRATION.md` and `GORVAN_INTEGRATION.md`). Banter is now a data-driven **sequence of any length** (`lines`), played as one performance, with dedicated banter recordings catalogued in `dist/duel/banter.js`. Exchanges recorded only in English (every Gorvan conversation) run as Hebrew text only in Hebrew. With voiced guests at the table, the ordinary regulars' text quips come half as often.
 

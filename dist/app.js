@@ -720,9 +720,15 @@ function performGuestLines(lines,{result=false,after=[]}={}){
   };
   step(0);
 }
-function scheduleTavernIdle(){
+// v108 chatter: every 16–24 s of play the table gets a chance to talk about nothing in particular — not only in a lull.
+// A card in flight does not cancel the chance: it waits a moment for the voice to be free, then tries.
+const TAVERN_CHATTER_MS=[16000,8000];
+function scheduleTavernIdle(delay=null){
   clearTimeout(tavernIdleTimer);if(!tavernGuests||view!=='game'||isPaused()||session?.phase!=='round')return;const epoch=sessionEpoch;
-  tavernIdleTimer=setTimeout(()=>{if(epoch!==sessionEpoch)return;if(state?.phase==='playing'&&!motionLocked&&!audioSystem.voiceSource&&!tavernGuests?.speaking&&!quip)tavernEvent('idle',{current:currentPlayer(state).id});scheduleTavernIdle();},24000+Math.random()*10000);
+  tavernIdleTimer=setTimeout(()=>{if(epoch!==sessionEpoch)return;
+    const free=state?.phase==='playing'&&!audioSystem.voiceSource&&!tavernGuests?.speaking&&!(quip&&tavernGuests.seats[quip.player]);
+    if(state?.phase==='playing'&&!free){scheduleTavernIdle(1200+Math.random()*1300);return;}
+    if(free)tavernEvent('idle',{current:currentPlayer(state).id});scheduleTavernIdle();},delay??TAVERN_CHATTER_MS[0]+Math.random()*TAVERN_CHATTER_MS[1]);
 }
 // Turn one table update into at most one table event, with who did it and to whom.
 function tavernObserve({played,playedCard,stop,stack,penalty,draw,reverse,closed,crossbowRun,previousCounts,omenOutcome=null}){

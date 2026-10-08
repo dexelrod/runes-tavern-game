@@ -80,8 +80,9 @@ test('restraint: a single guest speaks a handful of times a match; Edrin least o
   for(const guest of ['bramm','edrin','ragna','kesh','veyra','gorvan'])for(const locale of ['en','he']){
     let total=0;for(let seed=1;seed<=60;seed++)total+=playMatch({p2:guest},{seed,locale}).said.length;
     // v107: the guests talk more (a single guest about 4–8 lines a match, was 2–6).
-    const avg=total/60;assert.ok(avg>=3&&avg<=9,`${guest} ${locale}: ${avg.toFixed(2)} lines a match`);
-    if(guest==='edrin'||guest==='gorvan')assert.ok(avg<=6.5,`${guest} is among the quietest (${avg.toFixed(2)})`);
+    // v108: plus chatter between moves (a single guest about 5–11 lines a match).
+    const avg=total/60;assert.ok(avg>=3&&avg<=12,`${guest} ${locale}: ${avg.toFixed(2)} lines a match`);
+    if(guest==='edrin'||guest==='gorvan')assert.ok(avg<=8.5,`${guest} is among the quietest (${avg.toFixed(2)})`);
   }
 });
 
@@ -261,4 +262,22 @@ test('v107 the player joins the conversation: real moments only, one such exchan
   one.d.beginRound();one.tick();assert.equal(one.d.event('one_card',{actor:'p0'}).banter,'kesh_edrin_balance');
   // The app plays the glance once the exchange has finished.
   const app=read('../dist/app.js');assert.match(app,/for\(const look of after\)if\(look\.seat\)setGuestFace\(look\.seat,look\.expression,look\.duration\)/);
+});
+
+test('v108 chatter: talk between moves has its own allowance, needs only a short quiet, and never lands on a voice',()=>{
+  let clock=100000;const d=createTavernDirector({seats:{p1:'kesh',p2:'gorvan'},random:()=>0,now:()=>clock,locale:()=>'en'});
+  // Two casual moments used up this hand by reactions to the cards...
+  d.event('move',{actor:null});d.event('move',{actor:null});
+  assert.ok(d.event('good_move',{actor:'p0',victim:'p3'}).lines.length);clock+=11000;d.event('move',{actor:null});d.event('move',{actor:null});
+  assert.ok(d.event('draw',{actor:'p0'}).lines.length||true);clock+=9000;
+  // ...chatter still has its own two a hand, and needs no card events in between.
+  const first=d.event('idle',{current:'p0'});assert.ok(first.lines.length,'chatter despite the hand\'s casual moments');
+  clock+=3000;assert.equal(d.event('idle',{current:'p0'}).lines.length,0,'a short quiet first (8 s)');
+  clock+=6000;assert.ok(d.event('idle',{current:'p0'}).lines.length,'the second chatter of the hand');
+  clock+=9000;assert.equal(d.event('idle',{current:'p0'}).lines.length,0,'two a hand');
+  d.beginRound();clock+=9000;assert.ok(d.event('idle',{current:'p0'}).lines.length||true);
+  assert.equal(d.event('idle',{current:'p0',busy:true}).lines.length,0,'never over a voice');
+  assert.equal(TAVERN_TIMING.chatterPerRound,2);assert.equal(TAVERN_TIMING.chatterGap,8000);
+  const app=read('../dist/app.js');assert.match(app,/const TAVERN_CHATTER_MS=\[16000,8000\]/);
+  assert.match(app,/if\(state\?\.phase==='playing'&&!free\)\{scheduleTavernIdle\(1200\+Math\.random\(\)\*1300\);return;\}/,'a busy moment postpones the chance, it does not throw it away');
 });
