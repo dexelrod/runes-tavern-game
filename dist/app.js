@@ -693,7 +693,7 @@ function tavernEvent(type,context={}){
   if(!tavernGuests||view!=='game'||isPaused())return false;
   const plan=tavernGuests.director.event(type,{...context,busy:tavernGuests.speaking||!!audioSystem.voiceSource,muted:guestsMuted()});
   for(const face of plan.faces)if(!(tavernGuests.speaking&&tavernGuests.speakingSeat===face.seat))setGuestFace(face.seat,face.expression,face.duration);
-  if(plan.lines.length){performGuestLines(plan.lines,{result:type==='round_end'||type==='match_end'});if(plan.banter)rememberBanter(plan.banter);persist();return true;}
+  if(plan.lines.length){performGuestLines(plan.lines,{result:type==='round_end'||type==='match_end',after:plan.after||[]});if(plan.banter)rememberBanter(plan.banter);persist();return true;}
   return false;
 }
 // A dedicated banter recording, in the player's language (no take in that language: words only).
@@ -702,11 +702,12 @@ function resolveBanterLine(reaction){const locale=settings.language==='he'?'he':
 function rememberBanter(id){const heard=new Set(settings.heardBanter||[]);if(heard.has(id))return;heard.add(id);settings.heardBanter=[...heard];saveSettings(settings);}
 // Lines play one at a time; a banter holds the table's one voice until its last line ends.
 // A `silent` line (an English-only exchange in Hebrew) shows its authored words without a voice.
-function performGuestLines(lines,{result=false}={}){
+function performGuestLines(lines,{result=false,after=[]}={}){
   const guests=tavernGuests,epoch=sessionEpoch;if(!guests)return;guests.speaking=true;lastQuipAt=Date.now();
   const step=index=>{
     if(epoch!==sessionEpoch||tavernGuests!==guests)return;
-    if(index>=lines.length){guests.speaking=false;guests.speakingSeat=null;retryVeyraHit();return;}
+    // v107: once an exchange about the player ends, a listener may glance at them (silent face, then back).
+    if(index>=lines.length){guests.speaking=false;guests.speakingSeat=null;for(const look of after)if(look.seat)setGuestFace(look.seat,look.expression,look.duration);retryVeyraHit();return;}
     const line=lines[index],pack=AUTHORED_CHARACTERS[line.guest],resolved=line.reaction.category==='banter'?resolveBanterLine(line.reaction):pack.resolveReaction(line.reaction,settings.language),localized=line.silent?{...resolved,voice:null}:resolved;
     guests.speakingSeat=line.seat;setGuestFace(line.seat,localized.expression,0);
     let done=false;const finish=()=>{if(done||epoch!==sessionEpoch)return;done=true;const timer=setTimeout(()=>{if(epoch!==sessionEpoch||tavernGuests!==guests)return;if(quip?.player===line.seat){quip=null;}if(!result)setGuestFace(line.seat,null);render();const next=lines[index+1];const gap=setTimeout(()=>step(index+1),next?(settings.reducedMotion?250:next.pause||700):0);characterSequenceTimers.push(gap);},settings.reducedMotion?150:450);characterSequenceTimers.push(timer);};

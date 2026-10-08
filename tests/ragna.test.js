@@ -44,7 +44,7 @@ test('the deleted player-draw take is neither referenced nor shipped',()=>{
   const files=fs.readdirSync(new URL('../dist/assets/ragna/voice/',import.meta.url));
   assert.ok(!files.some(name=>name.startsWith('ragna_player_draw_01')));
   // 81 takes of her own, plus her side of the Veyra (2) and Gorvan (2, English only) banter, and v106's eight (English only).
-  assert.equal(files.filter(name=>!name.includes('_banter_')).length,81);assert.equal(files.length,93);assert.ok(files.every(name=>name.endsWith('.mp3')));
+  assert.equal(files.filter(name=>!name.includes('_banter_')).length,81);assert.equal(files.length,95);assert.ok(files.every(name=>name.endsWith('.mp3')));
 });
 
 test('bubbles show the exact authored transcript, acting directions removed, Hebrew untouched',()=>{

@@ -1,4 +1,4 @@
-# Voiced guests at the Tavern — integration notes (v101, updated v103, v104, v105, v106)
+# Voiced guests at the Tavern — integration notes (v101, updated v103, v104, v105, v106, v107)
 
 Now and then Bramm, Edrin, Ragna, Kesh, Veyra or Gorvan happens to be playing at a Tavern Match, usually in company. They say a handful of approved lines, pull faces at what happens around them, and, rarely, two of them trade lines. The aim is "Bramm happened to be in tonight", not a character mode.
 
@@ -23,6 +23,23 @@ Only existing recordings are used. No new dialogue or audio was created.
 | `gorvan_edrin_wine` | Edrin "Would you like some wine?" → Gorvan "No, thank you." → Edrin "Good. It's awful." | Quiet stretch |
 | `gorvan_kesh_future` | Kesh "I cannot read your future." → Gorvan "How refreshing." | Right after Kesh reads his stone, or a quiet stretch |
 | `gorvan_veyra_seven` | Veyra "There are seven death omens around your chair." → Gorvan "That seems excessive." | Gorvan's own brutal Curse |
+
+**v107: the player joins the conversation; the guests talk more; three guests is the usual company.**
+
+*Player exchanges* (English recordings only; Hebrew as subtitle text). At most **one a hand** (`playerBanterPerRound`). When an exchange ends, a listener gives the player a silent glance (`glance` on the exchange; the app shows the face once the last line ends). Whoever addresses the player uses a face that looks out at the table.
+
+| Exchange | Lines | When | Glance |
+|---|---|---|---|
+| `bramm_ragna_lucky_again` | Bramm "Lucky." → Ragna "That's the third time you've said that." → Bramm "Long streak." | The player makes a strong move, and Bramm has already called the player lucky this match (so Ragna's line is true) | Ragna, impressed |
+| `ragna_edrin_play_already` | Ragna "The cards won't play themselves." → Edrin "I've tried. They really won't." | The player is taking too long | Ragna, impatient |
+| `kesh_edrin_balance` | Kesh "One card left. The balance shifts." → Edrin "Should we stop that?" → Kesh "It would be wise." | The player reaches one card | Edrin, noticing |
+| `veyra_gorvan_prophecy` | Veyra "That wasn't in the prophecy." → Gorvan "Perhaps the prophecy should learn the rules." | The player plays a King | Veyra, reconsidering |
+
+Gorvan × Bramm "Don't Encourage It" (the player wins a round) is written but has no recordings yet, so it is not in the game.
+
+*More talk.* `TAVERN_TIMING`: 10 s and 2 actions between casual lines (was 15 s / 3); two casual moments a hand (was one); 5 lines per guest a match, 4 in company (was 3 / 2); up to six exchanges a match, two a hand. Shared-moment scaling `TWO_GUEST_SCALE` .8, `THREE_GUEST_SCALE` .65 (was .6 / .45). Measured on the test event stream: one guest about 6.6 lines a match (was 4.6), two about 12 (was 8.7), three about 19 (was 13).
+
+*Who sits down.* `TAVERN_GUEST_ODDS`: **Sometimes** one 4%, two 8%, three 23% (still about a third of evenings, but now usually a full voiced table); **Every evening** two 15%, three 85% (was 75 / 25).
 
 **v104:** Veyra and Gorvan joined the guests (see `VEYRA_INTEGRATION.md` and `GORVAN_INTEGRATION.md`). Banter is now a data-driven **sequence of any length** (`lines`), played as one performance, with dedicated banter recordings catalogued in `dist/duel/banter.js`. Exchanges recorded only in English (every Gorvan conversation) run as Hebrew text only in Hebrew. With voiced guests at the table, the ordinary regulars' text quips come half as often.
 

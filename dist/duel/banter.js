@@ -100,7 +100,19 @@ export const BANTER_RECORDINGS=Object.freeze(Object.fromEntries([
   R('kesh_banter_gorvan_03a','kesh','rune_was_wrong','I cannot read your future.','אני לא מצליח לקרוא את העתיד שלך.',2.59,['en']),
   R('gorvan_banter_kesh_03b','gorvan','pleasant','How refreshing.','איזו הקלה.',1.57,['en']),
   R('veyra_banter_gorvan_04a','veyra','omen_sudden_certainty','There are seven death omens around your chair.','יש שבעה סימני מוות סביב הכיסא שלך.',3.24,['en']),
-  R('gorvan_banter_veyra_04b','gorvan','dry_amusement','That seems excessive.','קצת מוגזם, לא?',1.96,['en'])
+  R('gorvan_banter_veyra_04b','gorvan','dry_amusement','That seems excessive.','קצת מוגזם, לא?',1.96,['en']),
+  // ── v107: the player joins the conversation (English recordings only; Hebrew is subtitle text) ──
+  // Whoever addresses the player looks out at them; the other keeps to the speaker.
+  R('bramm_banter_ragna_04a','bramm','08_dismissive_lucky','Lucky.','מזל.',1.31,['en']),
+  R('ragna_banter_bramm_04b','ragna','judging_wager',"That's the third time you've said that.",'זאת הפעם השלישית שאתה אומר את זה.',2.35,['en']),
+  R('bramm_banter_ragna_04c','bramm','15_defensive_excuse','Long streak.','רצף ארוך.',1.57,['en']),
+  R('ragna_banter_edrin_05a','ragna','impatient_focus',"The cards won't play themselves.",'הקלפים לא ישחקו מעצמם.',2.12,['en']),
+  R('edrin_banter_ragna_05b','edrin','casual_acceptance',"I've tried. They really won't.",'ניסיתי. הם באמת לא.',2.69,['en']),
+  R('kesh_banter_edrin_03a','kesh','player_one_card','One card left. The balance shifts.','נשאר שם קלף אחד. האיזון משתנה.',3.63,['en']),
+  R('edrin_banter_kesh_03b','edrin','player_one_card_mild_concern','Should we stop that?','כדאי לעצור את זה?',1.72,['en']),
+  R('kesh_banter_edrin_03c','kesh','player_one_card_signs','It would be wise.','זה יהיה נבון.',1.65,['en']),
+  R('veyra_banter_gorvan_05a','veyra','king_suspicious',"That wasn't in the prophecy.",'זה לא הופיע בנבואה.',2.04,['en']),
+  R('gorvan_banter_veyra_05b','gorvan','certainty','Perhaps the prophecy should learn the rules.','אולי כדאי שהנבואה תלמד את החוקים.',3.08,['en'])
 ].map(item=>[item.voice,item])));
 
 // A banter recording as a reaction the guest seats can perform (the same shape as

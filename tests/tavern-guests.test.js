@@ -79,8 +79,9 @@ const PAIRS=[['bramm','ragna'],['bramm','edrin'],['bramm','kesh'],['ragna','edri
 test('restraint: a single guest speaks a handful of times a match; Edrin least of all',()=>{
   for(const guest of ['bramm','edrin','ragna','kesh','veyra','gorvan'])for(const locale of ['en','he']){
     let total=0;for(let seed=1;seed<=60;seed++)total+=playMatch({p2:guest},{seed,locale}).said.length;
-    const avg=total/60;assert.ok(avg>=1.5&&avg<=6.5,`${guest} ${locale}: ${avg.toFixed(2)} lines a match`);
-    if(guest==='edrin'||guest==='gorvan')assert.ok(avg<=4.5,`${guest} is among the quietest (${avg.toFixed(2)})`);
+    // v107: the guests talk more (a single guest about 4–8 lines a match, was 2–6).
+    const avg=total/60;assert.ok(avg>=3&&avg<=9,`${guest} ${locale}: ${avg.toFixed(2)} lines a match`);
+    if(guest==='edrin'||guest==='gorvan')assert.ok(avg<=6.5,`${guest} is among the quietest (${avg.toFixed(2)})`);
   }
 });
 
@@ -106,7 +107,7 @@ test('never two lines at once, never a repeat within a match, one line per event
   assert.equal(d.event('one_card',{actor:'p0',busy:true}).lines.length,0);
 });
 
-test('banter is a regular treat: at most four a match, one a hand, each exchange once, and none when the line would be untrue',()=>{
+test('banter is a regular treat: at most six a match, two a hand, each exchange once, and none when the line would be untrue',()=>{
   let total=0,matches=0;const seen=new Set();
   for(const [a,b] of PAIRS)for(let seed=1;seed<=80;seed++){const {plans}=playMatch({p1:a,p3:b},{seed});const banters=plans.filter(p=>p.plan.banter).map(p=>p.plan.banter);matches++;total+=banters.length;assert.ok(banters.length<=TAVERN_TIMING.maxBanters);assert.equal(new Set(banters).size,banters.length);for(const id of banters)seen.add(id);}
   // v105: the guests trade lines more readily (v104 measured about 0.4 a match; now about 1–1.6).
@@ -114,7 +115,7 @@ test('banter is a regular treat: at most four a match, one a hand, each exchange
   assert.ok(seen.size>=5,`several exchanges occur in practice (${[...seen].join(', ')})`);
   // Semantic gates, checked directly with chance forced on.
   const ready=seats=>{let clock=100000;const d=createTavernDirector({seats,random:()=>0,now:()=>clock});for(let i=0;i<6;i++)d.event('move',{actor:null});return d;};
-  assert.equal(ready({p1:'ragna',p2:'edrin'}).event('slow',{current:'p0'}).banter,null,'"Eyes on the table" goes to Edrin only when it is his turn');
+  assert.notEqual(ready({p1:'ragna',p2:'edrin'}).event('slow',{current:'p0'}).banter,'pay_attention','"Eyes on the table" goes to Edrin only when it is his turn');
   assert.equal(ready({p1:'ragna',p2:'edrin'}).event('slow',{current:'p2'}).banter,'pay_attention');
   assert.equal(ready({p1:'edrin',p2:'ragna'}).event('penalty',{source:'p1',victim:'p3',amount:4}).banter,null,'Ragna only says "Damn it." when she is the one drawing');
   assert.equal(ready({p1:'edrin',p2:'ragna'}).event('penalty',{source:'p1',victim:'p2',amount:2,victimCount:7}).banter,null,'a mild +2 mid-hand is not brutal');
@@ -153,11 +154,11 @@ test('semantic safety: every line is true for the seat that says it',()=>{
   const muted=always({p2:'bramm'}).event('one_card',{actor:'p0',muted:true});assert.equal(muted.lines.length,0);assert.ok(muted.faces.length>=0);
 });
 
-test('appearance: "Sometimes" seats guests on about a third of evenings, mostly as a pair; "Every evening" always seats two or three; restored saves keep them',()=>{
-  assert.deepEqual(JSON.parse(JSON.stringify(TAVERN_GUEST_ODDS)),{sometimes:{one:.08,two:.27,three:0},often:{one:0,two:.75,three:.25}});
+test('appearance: "Sometimes" seats guests on about a third of evenings, usually three; "Every evening" always seats two or three, mostly three; restored saves keep them',()=>{
+  assert.deepEqual(JSON.parse(JSON.stringify(TAVERN_GUEST_ODDS)),{sometimes:{one:.04,two:.08,three:.23},often:{one:0,two:.15,three:.85}});
   const count=mode=>{const c=[0,0,0,0];for(let seed=0;seed<6000;seed++)c[tavernGuestsFor(seed,{mode}).filter(p=>p.voiced).length]++;return c.map(n=>n/6000);};
-  const some=count('sometimes');assert.ok(some[1]>.06&&some[1]<.1&&some[2]>.24&&some[2]<.3&&some[3]===0,some.join());
-  const often=count('often');assert.ok(often[0]===0&&often[1]===0&&often[2]>.71&&often[3]>.21,often.join());
+  const some=count('sometimes');assert.ok(some[1]>.02&&some[1]<.06&&some[2]>.06&&some[2]<.1&&some[3]>.2&&some[3]<.26,some.join());
+  const often=count('often');assert.ok(often[0]===0&&often[1]===0&&often[2]>.11&&often[2]<.19&&often[3]>.81,often.join());
   assert.ok(count('off')[0]===1);
   const m=createTavernMatch({seed:11,guests:['bramm','ragna']});const back=restoreSession(JSON.parse(JSON.stringify(serializeSession?serializeSession(m):m)));
   assert.deepEqual(back.roster.map(p=>p.nameKey),m.roster.map(p=>p.nameKey));
@@ -236,4 +237,28 @@ test('v106 exchanges: each fires in its own moment and never when its words woul
   const plan=he.event('good_move',{actor:'p2',victim:'p0'});assert.equal(plan.banter,'edrin_kesh_strategy');assert.ok(plan.lines.every(l=>l.silent));
   const quiet=createTavernDirector({seats:{p1:'edrin',p2:'kesh'},random:()=>0,now:()=>clock,locale:()=>'he',captions:()=>false});for(let i=0;i<6;i++)quiet.event('move',{actor:null});
   assert.notEqual(quiet.event('good_move',{actor:'p2',victim:'p0'}).banter,'edrin_kesh_strategy');
+});
+
+test('v107 the player joins the conversation: real moments only, one such exchange a hand, a glance afterwards',()=>{
+  const ready=seats=>{let clock=100000;const d=createTavernDirector({seats,random:()=>0,now:()=>clock,locale:()=>'en'});for(let i=0;i<6;i++)d.event('move',{actor:null});return {d,tick:()=>{clock+=60000;for(let i=0;i<4;i++)d.event('move',{actor:null});}};};
+  // Ragna + Edrin: only when the player is the one taking too long.
+  let {d}=ready({p1:'ragna',p2:'edrin'});let plan=d.event('slow',{current:'p0'});assert.equal(plan.banter,'ragna_edrin_play_already');
+  assert.deepEqual(plan.after,[{seat:'p1',expression:'impatient_focus',duration:1400}],'Ragna keeps her eyes on the player afterwards');
+  // Kesh + Edrin: the player's last card, not anyone else's.
+  assert.equal(ready({p1:'kesh',p2:'edrin'}).d.event('one_card',{actor:'p0'}).banter,'kesh_edrin_balance');
+  assert.notEqual(ready({p1:'kesh',p2:'edrin'}).d.event('one_card',{actor:'p3'}).banter,'kesh_edrin_balance');
+  // Veyra + Gorvan: the player's King.
+  assert.equal(ready({p1:'veyra',p2:'gorvan'}).d.event('king',{actor:'p0'}).banter,'veyra_gorvan_prophecy');
+  assert.notEqual(ready({p1:'veyra',p2:'gorvan'}).d.event('king',{actor:'p1'}).banter,'veyra_gorvan_prophecy');
+  // Bramm + Ragna: "That's the third time you've said that." — only once Bramm has already called the player lucky.
+  const fresh=ready({p1:'bramm',p2:'ragna'});assert.notEqual(fresh.d.event('good_move',{actor:'p0',victim:'p3'}).banter,'bramm_ragna_lucky_again');
+  let clock=100000;const lucky=createTavernDirector({seats:{p1:'bramm',p2:'ragna'},random:()=>0,now:()=>clock,locale:()=>'en',initial:{used:['bramm_player_good_move_01'],usedWords:['lucky']}});for(let i=0;i<6;i++)lucky.event('move',{actor:null});
+  plan=lucky.event('good_move',{actor:'p0',victim:'p3'});assert.equal(plan.banter,'bramm_ragna_lucky_again','his "Lucky." may repeat: that is the joke');
+  assert.equal(plan.lines[0].voice,'bramm_banter_ragna_04a');assert.equal(plan.after[0].seat,'p2');
+  // At most one exchange about the player a hand.
+  const one=ready({p1:'ragna',p2:'edrin',p3:'kesh'});assert.equal(one.d.event('slow',{current:'p0'}).banter,'ragna_edrin_play_already');one.tick();
+  assert.notEqual(one.d.event('one_card',{actor:'p0'}).banter,'kesh_edrin_balance','a second player exchange waits for the next hand');
+  one.d.beginRound();one.tick();assert.equal(one.d.event('one_card',{actor:'p0'}).banter,'kesh_edrin_balance');
+  // The app plays the glance once the exchange has finished.
+  const app=read('../dist/app.js');assert.match(app,/for\(const look of after\)if\(look\.seat\)setGuestFace\(look\.seat,look\.expression,look\.duration\)/);
 });
