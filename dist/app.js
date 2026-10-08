@@ -38,7 +38,7 @@ const isEnglish=()=>settings.language==='en';
 const direction=()=>isEnglish()?'ltr':'rtl';
 const colorNames={he:{red:'בורדו',blue:'צפחה',green:'יער',yellow:'זהב'},en:{red:'Burgundy',blue:'Slate',green:'Forest',yellow:'Gold'}};
 const archetypeNames={he:{hunter:'הציידת',bard:'הפייטן',mercenary:'שכיר החרב',wanderer:'הנודד',scholar:'המלומד',mysterious:'הסוחר',traveler:'הנוסע'},en:{hunter:'The Hunter',bard:'The Bard',mercenary:'The Mercenary',wanderer:'The Wanderer',scholar:'The Scholar',mysterious:'The Trader',traveler:'The Traveler'}};
-const playerNames={you:'You',ragna:'Ragna',edrin:'Edrin',veyra:'Veyra',gorvan:'Gorvan',ויירה:'Veyra',גורבן:'Gorvan',aila:'Aila',ron:'Ron',bran:'Bran',sela:'Sela',kesh:'Kesh',roderic:'Roderic',lio:'Lio',mograth:'Mograth',harrow:'Harrow',rusk:'Rusk',bramm:'Bramm',adren:'Adren',myra:'Myra',toren:'Toren',leva:'Leva',sig:'Sig',alva:'Alva',hal:'Hal',runa:'Runa',derik:'Derik',אתם:'You',איילה:'Aila',רון:'Ron',בראן:'Bran',אדרן:'Adren',מירא:'Myra',טורן:'Toren',ליבה:'Leva',סיג:'Sig',אלבה:'Alva',האל:'Hal',רונה:'Runa',דריק:'Derik',לוסיאן:'Lucien',איניגו:'Inigo',לידיה:'Lydia',וירן:'Viren',סורן:'Soren',ויילין:'Waylin'};
+const playerNames={you:'You',ragna:'Ragna',edrin:'Edrin',veyra:'Veyra',gorvan:'Gorvan',ויירה:'Veyra',גורבן:'Gorvan',aila:'Aila',ron:'Ron',bran:'Bran',sela:'Sela',kesh:'Kesh',roderic:'Roderic',lio:'Lio',mograth:'Mograth',harrow:'Harrow',rusk:'Rusk',bramm:'Bramm',adren:'Adren',myra:'Myra',toren:'Toren',leva:'Leva',sig:'Sig',alva:'Alva',hal:'Hal',runa:'Runa',derik:'Derik',lucien:'Lucien',inigo:'Inigo',lydia:'Lydia',viren:'Viren',soren:'Soren',waylin:'Waylin',אתם:'You',איילה:'Aila',רון:'Ron',בראן:'Bran',אדרן:'Adren',מירא:'Myra',טורן:'Toren',ליבה:'Leva',סיג:'Sig',אלבה:'Alva',האל:'Hal',רונה:'Runa',דריק:'Derik',לוסיאן:'Lucien',איניגו:'Inigo',לידיה:'Lydia',וירן:'Viren',סורן:'Soren',ויילין:'Waylin'};
 function colorName(color){return colorNames[settings.language]?.[color]||colorNames.he[color]||'';}
 function colorRuneHTML(color,className='color-rune'){return runeSVG(color,className);}
 
@@ -81,6 +81,19 @@ const isGorvanDuel=()=>authoredPack()?.id==='gorvan';
 // Voiced guests at a Tavern table (duel/tavern-director.js): their seats and faces,
 // and ONE table-wide director deciding whether anybody speaks. Null when no guest sits.
 let tavernGuests=null,tavernIdleTimer=null;
+// v105: the ordinary regulars' table chatter after a plain card (was 0.1).
+const TABLE_BANTER_CHANCE=.18;
+// v105: when a Shield skips you, a seal slams down over your hand for a moment ("Blocked").
+// Re-renders rebuild the DOM, so the animation is resumed from its start time, not restarted.
+const SHIELD_BLOCK_MS=1700;
+let shieldBlock=null,shieldBlockTimer=null;
+function startShieldBlock(by){clearTimeout(shieldBlockTimer);shieldBlock={by:by||null,at:performance.now()};const epoch=sessionEpoch;shieldBlockTimer=setTimeout(()=>{if(epoch!==sessionEpoch)return;shieldBlock=null;if(view==='game'&&!motionLocked)render();},settings.reducedMotion?1200:SHIELD_BLOCK_MS);}
+function shieldBlockHTML(){
+  if(!shieldBlock)return'';const elapsed=performance.now()-shieldBlock.at;if(elapsed>SHIELD_BLOCK_MS+50)return'';
+  const en=isEnglish(),by=state.players.find(p=>p.id===shieldBlock.by),name=by&&by.id!=='p0'?displayName(by):'';
+  const title=en?'Blocked':'נחסמתם',sub=name?(en?`${name}’s Shield`:`המגן של ${name}`):(en?'Shield':'מגן');
+  return `<div class="shield-block" aria-hidden="true"><span class="shield-block-seal"></span><span class="shield-block-label"><b>${title}</b><small>${sub}</small></span></div>`;
+}
 const isVoicedGuest=player=>!!player&&VOICED_GUEST_KEYS.includes(player.nameKey);
 const guestSeatOf=id=>tavernGuests?Object.keys(tavernGuests.seats).find(seat=>tavernGuests.seats[seat].id===id)||null:null;
 const guestsMuted=()=>settings.tavernGuestMode==='off'||!settings.dialogue;
@@ -163,7 +176,7 @@ function setSession(next){
   const pack=authoredPack();
   setupTavernGuests();setupVeyraOmens();keshPlan=null;keshTellPending=false;
   if(pack){if(!characterController||characterControllerFor!==pack.id){characterController=pack.createController({initial:next.characterPersonality||next.brammPersonality||null,settings,now:pack.activeClock?activeNow:undefined});characterControllerFor=pack.id;}characterExpression=characterController.defaultExpression();characterPreviousExpression=characterExpression;}else{characterController=null;characterControllerFor=null;characterExpression='01_default_smug';characterPreviousExpression=characterExpression;}
-  transport?.disconnect();transport=new LocalGameTransport(state);lastLogLength=state.log.length;lastCounts=Object.fromEntries(state.players.map(p=>[p.id,p.hand.length]));lastHands=Object.fromEntries(state.players.map(p=>[p.id,p.hand.map(card=>card.id)]));lastRenderedTopId=null;landingCards.clear();propRattled.clear();eventBanner=null;
+  transport?.disconnect();transport=new LocalGameTransport(state);lastLogLength=state.log.length;lastCounts=Object.fromEntries(state.players.map(p=>[p.id,p.hand.length]));lastHands=Object.fromEntries(state.players.map(p=>[p.id,p.hand.map(card=>card.id)]));lastRenderedTopId=null;landingCards.clear();propRattled.clear();eventBanner=null;shieldBlock=null;clearTimeout(shieldBlockTimer);
   transport.subscribeToState((nextState,action)=>{
     state=nextState;session.game=nextState;
     try{onState(action);}catch(error){console.error('Non-blocking game presentation error',error);screenReaderLine='';captionLine='';}
@@ -368,7 +381,7 @@ function flyToHand(deck,target,card,delay){
   proxy.style.visibility='';
   return flight.finished.catch(()=>{}).then(()=>{requestAnimationFrame(()=>proxy.remove());});
 }
-function showEvent(kind,playerId=null,amount=null,cardId=null){clearTimeout(eventTimer);eventBanner={kind,playerId,targetId:playerId,amount,cardId};const epoch=sessionEpoch;eventTimer=setTimeout(()=>{if(epoch!==sessionEpoch)return;eventBanner=null;captionLine='';if(view==='game'&&!motionLocked)render();},settings.reducedMotion?300:1100);}
+function showEvent(kind,playerId=null,amount=null,cardId=null){clearTimeout(eventTimer);eventBanner={kind,playerId,targetId:playerId,amount,cardId,at:performance.now()};const epoch=sessionEpoch;eventTimer=setTimeout(()=>{if(epoch!==sessionEpoch)return;eventBanner=null;captionLine='';if(view==='game'&&!motionLocked)render();},settings.reducedMotion?300:1100);}
 const FEMININE_HE=[['אני צריך','אני צריכה'],['אני חושב','אני חושבת'],['אני מחזיר','אני מחזירה']];
 function voicedLine(playerId,text){if(!text||isEnglish()||!isFeminine(state?.players?.find(p=>p.id===playerId)))return text;return FEMININE_HE.reduce((line,[m,f])=>line.replace(m,f),text);}
 function showQuip(player,text,force=false){text=voicedLine(player,text);if(!player||!settings.dialogue||!text||(!force&&Date.now()-lastQuipAt<(tavernGuests?16000:7800)))return;
@@ -429,6 +442,7 @@ function onState(action){
   if(reverse&&state.players.length>2)ringTurnAt=performance.now();
   screenReaderLine=announce(entries);captionLine=screenReaderLine;
   const stack=entries.find(e=>e.type==='plus2');
+  if(stop&&stop.skipped==='p0')startShieldBlock(played?.playerId);
   if(stop)showEvent('stop',stop.skipped,null,played?.cardId);else if(closed&&opened)showEvent('takiCycle',opened.playerId,null,played?.cardId);else if(closed)showEvent('takiClose',closed.playerId,null,played?.cardId);else if(opened)showEvent('takiOpen',opened.playerId,null,played?.cardId);else if(penalty)showEvent('penalty',penalty.playerId,penalty.amount);else if(draw)showEvent('draw',draw.playerId,draw.amount||1);else if(reverse)showEvent('reverse',played?.playerId,null,played?.cardId);else if(again)showEvent('plus',played?.playerId,null,played?.cardId);else if(stack)showEvent('plus2',stack.playerId,stack.amount,played?.cardId);else if(color)showEvent('color',color.playerId,null,played?.cardId);else if(playedCard?.type===TYPES.KING)showEvent('king',played.playerId,null,played.cardId);else if(played)showEvent('play',played.playerId,null,played.cardId);
   audioSystem.setSettings(settings);
   const effectDelay=played?45:0;
@@ -466,7 +480,7 @@ function onState(action){
     else if(penalty&&penalty.amount>=4)showQuip(penalty.playerId,botLine(penalty.playerId,'penalty'));
     else if(reverse){const speaker=state.players.find(p=>p.kind==='ai'&&!isVoicedGuest(p));showQuip(speaker?.id,botLine(speaker?.id,'reverse'));}
     else if(playedCard?.type===TYPES.KING){const speaker=state.players.find(p=>p.kind==='ai'&&p.id!==played.playerId&&!isVoicedGuest(p));showQuip(speaker?.id,botLine(speaker?.id,'king'));}
-    else if(played){const one=state.players.find(p=>p.hand.length===1&&p.id===played.playerId),speaker=state.players.find(p=>p.kind==='ai'&&p.id!==played.playerId&&!isVoicedGuest(p));if(one)showQuip(speaker?.id,botLine(speaker?.id,'last'),true);else if(Math.random()<.1){const banter=isEnglish()?tavernBanterEn:tavernBanterHe;showQuip(speaker?.id,banter[Math.floor(Math.random()*banter.length)]);}}
+    else if(played){const one=state.players.find(p=>p.hand.length===1&&p.id===played.playerId),speaker=state.players.find(p=>p.kind==='ai'&&p.id!==played.playerId&&!isVoicedGuest(p));if(one)showQuip(speaker?.id,botLine(speaker?.id,'last'),true);else if(Math.random()<TABLE_BANTER_CHANCE){const banter=isEnglish()?tavernBanterEn:tavernBanterHe;showQuip(speaker?.id,banter[Math.floor(Math.random()*banter.length)]);}}
   }
   if(session.mode==='duel'){
     const humanMove=played?.playerId==='p0',opponentMove=played?.playerId==='p1';
@@ -929,7 +943,7 @@ function seatHTML(player,position){
     <div class="seat-fan" data-hand-anchor aria-hidden="true">${backs}</div>
     ${revealedHandHTML(player)}
     ${propsHTML(player)}
-    ${stopped?'<span class="stop-seal" aria-hidden="true"></span>':''}${speech}
+    ${stopped?`<span class="stop-seal" style="animation-delay:${-Math.round(performance.now()-(eventBanner.at||performance.now()))}ms" aria-hidden="true"></span>`:''}${speech}
   </div>`;
 }
 function seatsHTML(players){const layout=SEAT_LAYOUTS[players.length]||SEAT_LAYOUTS[5];return players.map((player,index)=>seatHTML(player,layout[index]||'n')).join('');}
@@ -1027,8 +1041,9 @@ function gameHTML(){
       <div class="table-notes">${crossbowHTML()}${strip?`<div class="action-strip" role="status" aria-live="polite">${strip}</div>`:''}${captionHTML()}</div>
       <span class="sr-only" aria-live="polite" aria-atomic="true">${screenReaderLine}</span>
     </div>
-    <footer class="hand-area ${isHumanTurn?'your-turn':''}">
+    <footer class="hand-area ${isHumanTurn?'your-turn':''} ${shieldBlock?'shield-blocked':''}"${shieldBlock?` style="--sb-t:${-Math.round(performance.now()-shieldBlock.at)}ms"`:''}>
       ${playerPlaceHTML(human)}
+      ${shieldBlockHTML()}
       ${hint?`<div class="turn-whisper" role="status">${hint}</div>`:''}
       ${quip?.player==='p0'?`<div class="human-quip">${quip.text}</div>`:''}
       <div class="hand-frame"><span class="hand-overflow hand-overflow-start" aria-hidden="true"></span><div class="hand ${state.taki?.open?'taki-active':''} ${settings.playableHints?'hints':''}" data-hand-anchor role="group" aria-label="${en?`Your hand, ${cardCountLabel(shown.length)}`:`היד שלכם, ${cardCountLabel(shown.length)}`}">${handCards}</div><span class="hand-overflow hand-overflow-end" aria-hidden="true"></span></div>

@@ -130,7 +130,12 @@ export const TWO_GUEST_SCALE=.6,THREE_GUEST_SCALE=.45;
 // One ordinary line per hand for the whole table, one last-card line per hand, and at most three
 // non-result lines per guest per match (two when two guests share the table): a guest says
 // roughly 2–5 things over five hands, and a banter is a once-in-a-while treat.
-export const TAVERN_TIMING=Object.freeze({casualGap:15000,casualEvents:3,highGap:5000,banterGap:40000,perGuestCap:3,pairGuestCap:2,banterChance:.13,idleBanterChance:.14,maxBanters:2});
+// v105: the guests trade lines more readily. Base odds roughly doubled, authored per-exchange
+// odds scaled by `banterBoost` (capped at `banterChanceCap`), up to four exchanges a match with a
+// 25 s gap, and an exchange no longer waits on the per-guest line cap or on a casual line already
+// said this hand (it still needs the table quiet: casualGap / casualEvents, and at most two
+// table moments per hand).
+export const TAVERN_TIMING=Object.freeze({casualGap:15000,casualEvents:3,highGap:5000,banterGap:25000,perGuestCap:3,pairGuestCap:2,banterChance:.22,idleBanterChance:.28,banterBoost:1.6,banterChanceCap:.85,maxBanters:4,banterPerRound:1});
 
 // Silent faces: what each guest's face does when something happens near them.
 const FACES=Object.freeze({
@@ -217,7 +222,7 @@ export function createTavernDirector({seats={},random=Math.random,now=()=>Date.n
   const guestSeats=Object.entries(seats),bySeat=new Map(guestSeats),seatOf=Object.fromEntries(guestSeats.map(([seat,id])=>[id,seat]));
   const scale=guestSeats.length>=3?THREE_GUEST_SCALE:guestSeats.length===2?TWO_GUEST_SCALE:1,T=TAVERN_TIMING;
   const used=new Set(initial?.used||[]),usedWords=new Set(initial?.usedWords||[]),banters=new Set(initial?.banters||[]),casualBy={...(initial?.casualBy||{})},everHeard=new Set(heard);
-  let lastSpokenAt=-Infinity,lastBanterAt=-Infinity,eventsSince=99,eventsThisRound=0,casualThisRound=0,highThisRound=0,shouts=initial?.shouts||0,lastFaceAt={},log=[...(initial?.log||[])];
+  let lastSpokenAt=-Infinity,lastBanterAt=-Infinity,eventsSince=99,eventsThisRound=0,casualThisRound=0,bantersThisRound=0,highThisRound=0,shouts=initial?.shouts||0,lastFaceAt={},log=[...(initial?.log||[])];
   const words=(guest,voice)=>reactionFor(guest,voice)?.caption?.toLowerCase().replace(/[^a-z ]/g,'').trim();
   const lineTrue=(guest,voice,c={})=>{const seat=seatOf[guest],test=VOICE_WHEN[voice];return !test||test(c,seat);};
   const available=(guest,voice,{allowUsed=false,textOnly=false}={})=>{
@@ -288,13 +293,12 @@ export function createTavernDirector({seats={},random=Math.random,now=()=>Date.n
   function tryBanter(type,c){
     const chanceBase=type==='idle'||type==='slow'?T.idleBanterChance:T.banterChance,he=locale()==='he';
     if(banters.size>=T.maxBanters||now()-lastBanterAt<T.banterGap)return null;
-    if(type!=='match_end'&&(now()-lastSpokenAt<T.casualGap||eventsSince<T.casualEvents||(casualThisRound>=1&&type!=='omen_miss')))return null;
+    if(type!=='match_end'&&(now()-lastSpokenAt<T.casualGap||eventsSince<T.casualEvents||casualThisRound>=2||bantersThisRound>=T.banterPerRound))return null;
     const candidates=TAVERN_BANTER.filter(b=>{
       if(![].concat(b.on).includes(type)||banters.has(b.id))return false;
       if(b.requires&&!everHeard.has(b.requires))return false;
       const guests=[...new Set(b.lines.map(([guest])=>guest))];
       if(!guests.every(guest=>seatOf[guest]))return false;
-      if(type!=='match_end'&&!guests.every(guest=>(casualBy[guest]||0)<cap))return false;
       // Recorded in English only: voiced in English; in Hebrew, authored text alone — and only if bubbles are on.
       const textOnly=b.audio==='en'&&he;if(textOnly&&!captions())return false;
       if(b.when&&!b.when(c,seatOf,type,{spoke}))return false;
@@ -302,13 +306,13 @@ export function createTavernDirector({seats={},random=Math.random,now=()=>Date.n
     });
     if(type==='slow'||type==='idle')for(const b of [...candidates])if(b.lines.some(([,voice])=>voice==='ragna_idle_04'))if(shouts>=1)candidates.splice(candidates.indexOf(b),1);
     for(const b of candidates.toSorted(()=>random()-.5)){
-      if(random()>(b.chance??chanceBase))continue;
+      if(random()>(b.chance!=null?Math.min(T.banterChanceCap,b.chance*T.banterBoost):chanceBase))continue;
       const textOnly=b.audio==='en'&&he;
       const lines=b.lines.map(([guest,voice,pause],index)=>say(seatOf[guest],guest,voice,{...(index?{pause:pause??600+Math.floor(random()*900)}:{}),...(textOnly?{silent:true}:{})}));
       if(b.lines.some(([,voice])=>voice==='ragna_idle_04'))shouts++;
       remember(lines,{banter:b.id,trigger:type});
       for(const guest of new Set(b.lines.map(([guest])=>guest)))if(!RESULT.has(type))casualBy[guest]=(casualBy[guest]||0)+1;
-      if(type!=='match_end')casualThisRound++;
+      if(type!=='match_end'){casualThisRound++;bantersThisRound++;}
       return {banter:b.id,lines};
     }
     return null;
@@ -362,7 +366,7 @@ export function createTavernDirector({seats={},random=Math.random,now=()=>Date.n
   }
   return Object.freeze({
     event,
-    beginRound(){casualThisRound=0;highThisRound=0;eventsThisRound=0;eventsSince=99;},
+    beginRound(){casualThisRound=0;bantersThisRound=0;highThisRound=0;eventsThisRound=0;eventsSince=99;},
     seats:()=>({...seats}),seatOf:guest=>seatOf[guest]||null,
     // Debug: play a given line or banter regardless of chance (still never repeats a banter).
     force(voice){const entry=guestSeats.find(([,guest])=>reactionFor(guest,voice));if(!entry)return null;const lines=[say(entry[0],entry[1],voice)];remember(lines,{trigger:'debug'});return {lines,faces:[]};},

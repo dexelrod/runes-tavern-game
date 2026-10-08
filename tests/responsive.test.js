@@ -32,7 +32,8 @@ test('layout is driven by shared table variables, not per-screen magic offsets',
   assert.match(css,/@media \(min-width:600px\) and \(orientation:portrait\)/,'tablet portrait has its own layout');
   assert.ok((css.match(/@media/g)||[]).length<=14,'breakpoints stay few and named');
   // Six voiced characters now have a few framing rules each (v104).
-  assert.ok(css.length<92000,'stylesheet stays a single readable system');
+  // v105: + the Shield "Blocked" seal over the player's hand.
+  assert.ok(css.length<95000,'stylesheet stays a single readable system');
 });
 
 test('cards scale as one object and stay opaque when unplayable',()=>{

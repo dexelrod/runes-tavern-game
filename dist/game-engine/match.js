@@ -1,4 +1,5 @@
 import { createInitialState, restoreState, serializeState } from './engine.js';
+import { mulberry32 } from './cards.js';
 
 export const MATCH_VERSION=1;
 // The ordinary regulars who can sit at a Tavern Match (seeded, so a saved match
@@ -75,9 +76,23 @@ export function createTavernMatch({seed=Date.now(),roster=null,voicedGuests=true
   return {version:MATCH_VERSION,mode:'tavern',phase:'round',round:1,totalRounds:5,suddenDeath:false,seed,scores:scoreMap(players),roster:players,results:[],championId:null,game:createInitialState({playerCount:4,players,seed})};
 }
 
+// v105: Quick Play strangers are drawn at random from every name the tavern knows: the
+// quick-table names, the older guest names, the ordinary regulars and the voiced cast.
+// Names only — Quick Play stays unvoiced: no archetype, house, portrait or voice comes along,
+// and every voiced hook is tied to a Duel or Tavern seat, never to a name.
+const QUICK_TABLE_NAMES=[['אדרן','adren','m'],['מירא','myra','f'],['טורן','toren','m'],['ליבה','leva','f'],['סיג','sig','m'],['אלבה','alva','f'],['האל','hal','m'],['רונה','runa','f'],['דריק','derik','m'],
+  ['לוסיאן','lucien','m'],['איניגו','inigo','m'],['לידיה','lydia','f'],['וירן','viren','m'],['סורן','soren','m'],['ויילין','waylin','m']];
+const QUICK_GENDER={aila:'f',ron:'f',bran:'f',sela:'f',ragna:'f',veyra:'f'};
+export const QUICK_NAME_POOL=Object.freeze([...QUICK_TABLE_NAMES.map(([name,nameKey,gender])=>({name,nameKey,gender})),
+  ...[...TAVERN_REGULARS,...VOICED_TAVERN_GUESTS].map(({name,nameKey})=>({name,nameKey,gender:QUICK_GENDER[nameKey]||'m'}))].map(Object.freeze));
+export function quickRosterFor(seed,playerCount){
+  const random=mulberry32(((seed>>>0)^0x51ed27a3)>>>0),pool=[...QUICK_NAME_POOL];
+  for(let i=pool.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
+  return [{id:'p0',name:'אתם',nameKey:null,kind:'human'},...pool.slice(0,playerCount-1).map((item,index)=>({id:`p${index+1}`,name:item.name,nameKey:item.nameKey,gender:item.gender,kind:'ai'}))];
+}
 export function createQuickSession({playerCount=3,seed=Date.now()}={}){
   const supportedCount=Math.max(2,Math.min(6,playerCount));
-  return {version:MATCH_VERSION,mode:'quick',phase:'round',round:1,totalRounds:1,suddenDeath:false,seed,scores:{},roster:null,results:[],championId:null,game:createInitialState({playerCount:supportedCount,seed,firstPlayerIndex:Math.abs(Math.floor(seed/7))%supportedCount})};
+  return {version:MATCH_VERSION,mode:'quick',phase:'round',round:1,totalRounds:1,suddenDeath:false,seed,scores:{},roster:null,results:[],championId:null,game:createInitialState({playerCount:supportedCount,players:quickRosterFor(seed,supportedCount),seed,firstPlayerIndex:Math.abs(Math.floor(seed/7))%supportedCount})};
 }
 
 export function createDuelSession({seed=Date.now(),opponent}={}){

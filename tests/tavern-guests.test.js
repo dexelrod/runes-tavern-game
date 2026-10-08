@@ -84,9 +84,11 @@ test('restraint: a single guest speaks a handful of times a match; Edrin least o
   }
 });
 
-test('two guests share the moments: they do not double the talk',()=>{
+// v105: banter is deliberately extra conversation, so only the guests' own lines are compared here.
+const ownLines=({plans})=>plans.filter(p=>!p.plan.banter).reduce((sum,p)=>sum+p.plan.lines.length,0);
+test('two guests share the moments: they do not double the talk (banter aside)',()=>{
   for(const [a,b] of PAIRS){
-    let solo=0,pair=0;for(let seed=1;seed<=50;seed++){solo+=playMatch({p2:a},{seed}).said.length+playMatch({p2:b},{seed:seed+500}).said.length;pair+=playMatch({p1:a,p3:b},{seed:seed+900}).said.length;}
+    let solo=0,pair=0;for(let seed=1;seed<=50;seed++){solo+=playMatch({p2:a},{seed}).said.length+playMatch({p2:b},{seed:seed+500}).said.length;pair+=ownLines(playMatch({p1:a,p3:b},{seed:seed+900}));}
     assert.ok(pair<solo*.85,`${a}+${b}: ${pair} together vs ${solo} apart`);
   }
 });
@@ -104,10 +106,11 @@ test('never two lines at once, never a repeat within a match, one line per event
   assert.equal(d.event('one_card',{actor:'p0',busy:true}).lines.length,0);
 });
 
-test('banter is rare: at most two a match, each exchange once, and none when the line would be untrue',()=>{
+test('banter is a regular treat: at most four a match, one a hand, each exchange once, and none when the line would be untrue',()=>{
   let total=0,matches=0;const seen=new Set();
   for(const [a,b] of PAIRS)for(let seed=1;seed<=80;seed++){const {plans}=playMatch({p1:a,p3:b},{seed});const banters=plans.filter(p=>p.plan.banter).map(p=>p.plan.banter);matches++;total+=banters.length;assert.ok(banters.length<=TAVERN_TIMING.maxBanters);assert.equal(new Set(banters).size,banters.length);for(const id of banters)seen.add(id);}
-  assert.ok(total/matches<.8,`banter per two-guest match ${(total/matches).toFixed(2)}`);
+  // v105: the guests trade lines more readily (v104 measured about 0.4 a match; now about 1–1.6).
+  assert.ok(total/matches>=.9&&total/matches<=2.2,`banter per two-guest match ${(total/matches).toFixed(2)}`);
   assert.ok(seen.size>=5,`several exchanges occur in practice (${[...seen].join(', ')})`);
   // Semantic gates, checked directly with chance forced on.
   const ready=seats=>{let clock=100000;const d=createTavernDirector({seats,random:()=>0,now:()=>clock});for(let i=0;i<6;i++)d.event('move',{actor:null});return d;};

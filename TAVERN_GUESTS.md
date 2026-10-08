@@ -1,8 +1,10 @@
-# Voiced guests at the Tavern — integration notes (v101, updated v103, v104)
+# Voiced guests at the Tavern — integration notes (v101, updated v103, v104, v105)
 
 Now and then Bramm, Edrin, Ragna, Kesh, Veyra or Gorvan happens to be playing at a Tavern Match, usually in company. They say a handful of approved lines, pull faces at what happens around them, and, rarely, two of them trade lines. The aim is "Bramm happened to be in tonight", not a character mode.
 
 Only existing recordings are used. No new dialogue or audio was created.
+
+**v105: more banter.** The guests trade lines far more readily. Base odds are up (`banterChance` .13 → .22, `idleBanterChance` .14 → .28), each exchange's own authored odds are multiplied by `banterBoost` 1.6 (capped at .85), a match can hold up to **four** exchanges (was two) with a **25 s** gap (was 40 s), at most one a hand. An exchange no longer waits on the per-guest line cap or on a casual line already said this hand; it still needs the table quiet (`casualGap`, `casualEvents`) and every line still has to be literally true. Measured on the test event stream: about **1.5 exchanges per two-guest match** (v104: 0.4), and over 90% of two-guest matches now have at least one (v104: 40%). Most pairs now play through all the exchanges they have, so a pair's exchanges come back more often across evenings. The ordinary regulars' text chatter after a plain card is also up (`TABLE_BANTER_CHANCE` in `app.js`, .1 → .18). Who sits down is unchanged.
 
 **v104:** Veyra and Gorvan joined the guests (see `VEYRA_INTEGRATION.md` and `GORVAN_INTEGRATION.md`). Banter is now a data-driven **sequence of any length** (`lines`), played as one performance, with dedicated banter recordings catalogued in `dist/duel/banter.js`. Exchanges recorded only in English (every Gorvan conversation) run as Hebrew text only in Hebrew. With voiced guests at the table, the ordinary regulars' text quips come half as often.
 
