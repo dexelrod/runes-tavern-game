@@ -59,13 +59,35 @@ export function omenColour(state){
   return null;
 }
 
+// Threat assessment (the Bounty Hunter's THREAT_PROFILE): how dangerous each opponent is
+// right now, from public facts only — how many cards they hold and what they have visibly
+// done over the last few turns (cards shed, cards taken). Nobody's name enters into it.
+export function tableThreats(state,meId){
+  const n=state.players.length,flow={};
+  for(const entry of state.log.slice(-4*n)){
+    if(entry.type==='play')flow[entry.playerId]=(flow[entry.playerId]||0)+1;
+    else if(entry.type==='draw'||entry.type==='drawPenalty')flow[entry.playerId]=(flow[entry.playerId]||0)-(entry.amount||1);
+  }
+  return Object.fromEntries(state.players.filter(p=>p.id!==meId).map(p=>{
+    const c=p.hand.length,base=c<=1?10:c===2?6:c===3?3.2:c===4?1.6:Math.max(0,1-(c-5)*.25);
+    return [p.id,base+Math.max(0,Math.min(3,flow[p.id]||0))*.8];
+  }));
+}
+
 function tableView(state,me,P=null){
   const others=state.players.filter(p=>p.id!==me.id),opp=Math.min(...others.map(p=>p.hand.length));
-  const threat=others.find(p=>p.hand.length===opp),gaps=observedGaps(state,me.id).get(threat?.id)||new Set();
   // Who plays next, and who would play next if the order turned (public card counts only).
   const n=state.players.length,index=state.players.findIndex(p=>p.id===me.id),dir=state.direction||1;
-  const nextCount=state.players[(index+dir+n)%n]?.hand.length??opp,prevCount=state.players[(index-dir+n)%n]?.hand.length??opp;
-  return {opp,gaps,twoPlayer:n===2,danger:opp<=2,nextCount,prevCount,omen:P?.omenBias?omenColour(state):null};
+  const next=state.players[(index+dir+n)%n],prev=state.players[(index-dir+n)%n];
+  const nextCount=next?.hand.length??opp,prevCount=prev?.hand.length??opp;
+  // A targeted profile reads the table as threats: the most dangerous opponent (not merely the
+  // shortest hand) is the one to watch, and a Shield or a Curse is judged by who it would hit.
+  const threats=P?.targeted?tableThreats(state,me.id):null;
+  const target=threats?others.reduce((best,p)=>threats[p.id]>threats[best.id]+1e-9?p:best,others[0]):others.find(p=>p.hand.length===opp);
+  const gaps=observedGaps(state,me.id).get(target?.id)||new Set();
+  const view={opp,gaps,twoPlayer:n===2,danger:opp<=2,nextCount,prevCount,omen:P?.omenBias?omenColour(state):null};
+  if(threats)Object.assign(view,{targetId:target?.id||null,hitThreat:threats[next?.id]??0,prevThreat:threats[prev?.id]??0,maxThreat:Math.max(...Object.values(threats)),hitDanger:nextCount<=2});
+  return view;
 }
 
 function colourCounts(cards){const counts=Object.fromEntries(COLORS.map(c=>[c,0]));for(const card of cards)if(counts[card.color]!==undefined)counts[card.color]++;return counts;}
@@ -90,12 +112,14 @@ function scoreCard(card,state,me,view,P){
   if(setColour)score+=follow*P.followWeight+(view.gaps.has(setColour)?P.missingColour*(view.danger?2:1):0);
   // Omen profiles (Kesh) like to keep the table on the hand's omen colour.
   if(P.omenBias&&setColour&&setColour===view.omen)score+=P.omenBias;
+  // A targeted profile judges its Shield and Curse by the player they would actually hit.
+  const hit=P.targeted?{danger:view.hitDanger,opp:view.nextCount}:view;
   switch(card.type){
     case TYPES.NUMBER:score+=2;break;
     case TYPES.REVERSE:score+=view.twoPlayer?2:3;break;
-    case TYPES.STOP:score+=canFollow?(view.twoPlayer?8:6)+(view.danger?6:0):3;break;
+    case TYPES.STOP:score+=canFollow?(view.twoPlayer?8:6)+(hit.danger?6:0):3;break;
     case TYPES.PLUS:score+=canFollow?7:-15;break;
-    case TYPES.PLUS2:score+=view.danger?P.curseDanger:view.opp<=4?P.curseMidgame:n<=2?4:-P.holdCurse;break;
+    case TYPES.PLUS2:score+=hit.danger?P.curseDanger:hit.opp<=4?P.curseMidgame:n<=2?4:-P.holdCurse;break;
     case TYPES.TAKI:score+=follow*P.crossbowPerCard-(follow===0?4:0);break;
     case TYPES.SUPER_TAKI:{const run=state.activeColor?after.filter(c=>c.color===state.activeColor).length:Math.max(...Object.values(colourCounts(after)));score+=run*P.crossbowPerCard-10;break;}
     case TYPES.CHANGE_COLOR:score+=-P.holdWild+(view.danger?10:0)-(n<=2?6:0);break;
@@ -106,8 +130,18 @@ function scoreCard(card,state,me,view,P){
   if(P.pressure&&view.opp<=3&&[TYPES.STOP,TYPES.PLUS2,TYPES.TAKI,TYPES.SUPER_TAKI].includes(card.type))score+=P.pressure*(view.opp<=1?1.5:1);
   // Control profiles (Veyra, Gorvan) keep their answers — a Shield, a Curse, a King —
   // for the moment that needs one, then spend them without hesitation.
-  if(P.holdStop&&card.type===TYPES.STOP&&!view.danger&&view.opp>3)score-=P.holdStop;
-  if(P.disrupt&&view.opp<=2&&[TYPES.STOP,TYPES.PLUS2,TYPES.KING].includes(card.type))score+=P.disrupt*(view.opp<=1?1.4:1);
+  if(P.holdStop&&card.type===TYPES.STOP&&!hit.danger&&hit.opp>3)score-=P.holdStop;
+  if(P.disrupt&&hit.opp<=2&&[TYPES.STOP,TYPES.PLUS2,TYPES.KING].includes(card.type))score+=P.disrupt*(hit.opp<=1?1.4:1);
+  // Threat assessment at a busy table: spend control on the current threat, not on whoever
+  // happens to sit next; turn the order away from the threat; never waste an answer on a
+  // harmless player while someone else is about to go out.
+  if(P.targeted&&!view.twoPlayer){
+    if([TYPES.STOP,TYPES.PLUS2].includes(card.type)){
+      if(view.hitThreat>=view.maxThreat-.5&&view.hitThreat>=3)score+=P.threatAim*(view.hitThreat/10);
+      else if(view.maxThreat>=6&&view.hitThreat<3)score-=P.wasteControl;
+    }
+    if(card.type===TYPES.REVERSE)score+=Math.max(-1,Math.min(1,(view.hitThreat-view.prevThreat)/6))*P.threatRedirect;
+  }
   // At a busy table a Turnabout sends the turn away from a player about to go out.
   if(P.redirect&&card.type===TYPES.REVERSE&&!view.twoPlayer)score+=view.nextCount<=2&&view.prevCount>2?P.redirect:view.nextCount>3?-P.redirect*.3:0;
   // Plan the finish: never strand a lone Quickstep, and keep a wild as the closer.
@@ -196,7 +230,7 @@ function planTurn(state,me,P,random,note){
     return best===-Infinity?evaluateTurnEnd(s,meId,start,P):best;
   };
   const first=options(state);if(first.length<=1)return null;
-  const view=tableView(state,me);
+  const view=tableView(state,me,P.targeted?P:null);
   const scored=first.map(action=>{nodes++;let next;try{next=applyAction(state,action);}catch{return {action,score:-Infinity};}
     const card=me.hand.find(c=>c.id===action.cardId);
     return {action,score:search(next,1)+(card?scoreCard(card,state,me,view,P)*P.priorWeight:0)+random()*P.jitter};}).toSorted((a,b)=>b.score-a.score);
@@ -240,7 +274,7 @@ let chooseRolloutAction=null;
 export function setRolloutPolicy(policy){chooseRolloutAction=policy;}
 function sampledChoice(state,me,actions,random,P,note){
   if(!chooseRolloutAction||actions.length<2)return null;
-  const view=tableView(state,me),totals=actions.map(()=>0);
+  const view=tableView(state,me,P.targeted?P:null),totals=actions.map(()=>0);
   const native=globalThis.structuredClone;globalThis.structuredClone=jsonClone;
   const clock=()=>globalThis.performance?.now?.()??Date.now(),started=clock();let samples=0;
   try{
@@ -342,6 +376,23 @@ export const PATIENT_PROFILE=Object.freeze({
   holdStop:4,disrupt:8,redirect:4,
   jitter:1,mistakeRate:.05,mistakeWindow:5
 });
+// The Bounty Hunter: threat assessment. The same fair, public-information planner, tuned to
+// identify the current threat and deal with it efficiently. Practical, not flashy: it keeps
+// its answers (Shield, Curse, King, Rune) until they stop an imminent win, judges each one by
+// the player it would actually hit, sheds cards efficiently (a Crossbow that empties a colour
+// is a natural tool, valued a little above the cast — never forced), and at a busy table
+// shifts its attention as the threat moves. No hidden information, no marked targets, no
+// bounty rules: the rules do not know who he is. Steady, very few slips; a short look-ahead.
+export const THREAT_PROFILE=Object.freeze({
+  ...VETERAN_PROFILE,
+  samples:8,minSamples:4,thinkBudgetMs:30,
+  followWeight:4.5,crossbowPerCard:7,
+  holdWild:13,holdKing:12,holdCurse:8,curseMidgame:5,curseDanger:31,
+  holdStop:5,disrupt:11,redirect:5,
+  targeted:true,threatAim:9,wasteControl:7,threatRedirect:8,
+  jitter:1.2,mistakeRate:.05,mistakeWindow:5
+});
 // At a Tavern table: their judgement without the look-ahead, and a few more slips.
+export const TAVERN_THREAT_PROFILE=Object.freeze({...THREAT_PROFILE,samples:0,mistakeRate:.09});
 export const TAVERN_CONTROL_PROFILE=Object.freeze({...CONTROL_PROFILE,samples:0,mistakeRate:.1});
 export const TAVERN_PATIENT_PROFILE=Object.freeze({...PATIENT_PROFILE,samples:0,mistakeRate:.09});

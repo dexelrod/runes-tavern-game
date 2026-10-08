@@ -27,7 +27,7 @@ test('Gorvan registers all 59 authored lines, 24 poses and his English recording
   assert.equal(GORVAN_REACTIONS.length,59);assert.equal(Object.keys(GORVAN_VOICE_LIBRARY).length,59);assert.equal(GORVAN_EXPRESSIONS.length,24);
   const files=fs.readdirSync(new URL('../dist/assets/gorvan/voice/',import.meta.url));
   // 59 lines of his own + his side of the v106 banter (7 dedicated recordings, English only).
-  assert.equal(files.filter(name=>!name.includes('_banter_')).length,59);assert.equal(files.length,76);assert.ok(files.every(name=>name.endsWith('.mp3')&&!name.endsWith('_he.mp3')),'English recordings only — nothing invented');
+  assert.equal(files.filter(name=>!name.includes('_banter_')&&!name.includes('_chitchat_')).length,59);assert.equal(files.length,82);assert.ok(files.every(name=>name.endsWith('.mp3')&&!name.endsWith('_he.mp3')),'English recordings only — nothing invented');
   for(const reaction of GORVAN_REACTIONS){
     assert.ok(GORVAN_EXPRESSIONS.includes(reaction.expression),reaction.id);
     for(const locale of ['en','he']){const voice=resolveGorvanVoice(reaction.voice,locale);assert.ok(voice,`${reaction.voice} ${locale}`);assert.doesNotMatch(voice.src,/_he\.mp3$/,'Hebrew plays the English recording');assert.equal(voice.audioLocale,'en');assert.ok(fs.readFileSync(fileURLToPath(voice.src)).length>1024);}
@@ -112,7 +112,8 @@ test('his sound accents: SFX channel, his own plays only, never stacked, the pul
 });
 
 test('banter: every partner; the v104 exchanges answer in lines he already has, v106 in his own banter recordings — English audio only',()=>{
-  const gorvanBanter=TAVERN_BANTER.filter(b=>b.lines.some(([guest])=>guest==='gorvan'));
+  // v113: the Bounty Hunter's exchanges with Gorvan have their own test (tests/bounty-hunter.test.js).
+  const gorvanBanter=TAVERN_BANTER.filter(b=>b.lines.some(([guest])=>guest==='gorvan')&&!b.id.startsWith('hunter_'));
   const partners=new Set(gorvanBanter.flatMap(b=>b.lines.map(([guest])=>guest)).filter(g=>g!=='gorvan'));
   assert.deepEqual([...partners].toSorted(),['bramm','edrin','kesh','ragna','veyra']);
   assert.equal(gorvanBanter.length,21);
@@ -164,5 +165,5 @@ test('his AI is patient, fair and beatable',t=>{
   assert.ok(PATIENT_PROFILE.jitter<VETERAN_PROFILE.jitter&&PATIENT_PROFILE.mistakeRate<=.05,'steady, very few slips');
   assert.equal(TAVERN_PATIENT_PROFILE.samples,0);
   // No vampire mechanics: nothing in the rules knows who he is.
-  for(const file of ['../dist/game-engine/engine.js','../dist/game-engine/cards.js','../dist/game-engine/match.js'])assert.doesNotMatch(read(file).replace(/nameKey:'gorvan'[^}]*\}/,'').replace(/gorvan:'red'/,'').replace(/גורבן:'gorvan'/,'').replace(/'[a-z]+\+gorvan'|'gorvan\+[a-z]+'/g,''),/gorvan/i);
+  for(const file of ['../dist/game-engine/engine.js','../dist/game-engine/cards.js','../dist/game-engine/match.js'])assert.doesNotMatch(read(file).replace(/nameKey:'gorvan'[^}]*\}/,'').replace(/gorvan:'red'/,'').replace(/גורבן:'gorvan'/,'').replace(/'[a-z_]+\+gorvan'|'gorvan\+[a-z_]+'/g,''),/gorvan/i);
 });

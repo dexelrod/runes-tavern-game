@@ -2,7 +2,7 @@ import { AUTHORED_CHARACTERS } from './characters.js';
 import { BANTER_RECORDINGS, banterReaction } from './banter.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Voiced Tavern guests. Now and then Bramm, Edrin, Ragna, Kesh, Veyra or Gorvan
+// Voiced Tavern guests. Now and then Bramm, Edrin, Ragna, Kesh, Veyra, Gorvan or the Bounty Hunter
 // happens to be playing at a Tavern table. Each guest is data — the owner-approved
 // list of recordings that make sense at a four-seat table, how readily they talk,
 // and the faces they pull — and ONE table-wide director decides whether anybody
@@ -85,6 +85,22 @@ export const TAVERN_GUEST_POOLS=Object.freeze({
     other_one_card:L('gorvan','player_one_card_01','player_one_card_02','player_one_card_03','player_one_card_04'),own_one_card:L('gorvan','one_card_01','one_card_02','one_card_03'),
     round_win:L('gorvan','round_win_01','round_win_02','round_win_03'),round_loss:L('gorvan','round_loss_01','round_loss_02','round_loss_03'),
     match_win:L('gorvan','match_win_01','match_win_02','match_win_03','match_win_04'),match_loss:L('gorvan','match_loss_01','match_loss_02','match_loss_03','match_loss_04')
+  }),
+  // The Bounty Hunter (v113): the quietest guest of all. A crowded table mostly gets his
+  // helmet turning; when he does speak it is short. His Crossbow lines stay at the Duel
+  // table (a Tavern Crossbow is too busy a moment for a remark). "Your move." and the idle
+  // "Good." are Duel-only too: at a four-seat table they could address the wrong person.
+  bounty_hunter:Object.freeze({
+    intro:L('bounty_hunter','intro_01','intro_02','intro_03','intro_04','intro_05'),
+    idle:L('bounty_hunter','idle_02','idle_04','idle_07'),slow:L('bounty_hunter','idle_01','idle_03','idle_06'),
+    other_good_move:L('bounty_hunter','player_good_move_01','player_good_move_02','player_good_move_03','player_good_move_04','player_good_move_05'),
+    own_good_move:L('bounty_hunter','good_move_01','good_move_02','good_move_03','good_move_04'),
+    other_draw:L('bounty_hunter','player_draw_02','player_draw_03'),own_draw:L('bounty_hunter','draw_01','draw_02','draw_04'),
+    curse_taken:L('bounty_hunter','curse_received_01','curse_received_02'),curse_landed:L('bounty_hunter','curse_01','curse_02'),
+    stop_given:L('bounty_hunter','stop_01','stop_02'),own_king:L('bounty_hunter','king_01','king_02'),
+    other_one_card:L('bounty_hunter','player_one_card_01','player_one_card_02','player_one_card_03','player_one_card_04'),own_one_card:L('bounty_hunter','one_card_01','one_card_02'),
+    round_win:L('bounty_hunter','round_win_01','round_win_02','round_win_03','round_win_04'),round_loss:L('bounty_hunter','round_loss_01','round_loss_02','round_loss_03','round_loss_04'),
+    match_win:L('bounty_hunter','match_win_01','match_win_02','match_win_03','match_win_04'),match_loss:L('bounty_hunter','match_loss_01','match_loss_02','match_loss_03','match_loss_04')
   })
 });
 
@@ -96,7 +112,11 @@ const VOICE_WHEN=Object.freeze({
   gorvan_king_02:(c,seat)=>!!c.victim&&c.victim===seat,gorvan_king_01:(c,seat)=>c.victim!==seat,
   // "Unfortunate." / "My condolences." are for a real haul.
   gorvan_good_move_04:c=>(c.amount||0)>=4||(c.victimCount??9)<=3,gorvan_player_draw_03:c=>(c.amount||0)>=4,
-  veyra_player_draw_02:c=>(c.amount||0)>=4
+  veyra_player_draw_02:c=>(c.amount||0)>=4,
+  // "Take two." only when it is literally two; "Bad hand." / "Happens." only for a real haul.
+  bounty_hunter_curse_01:c=>(c.amount||0)===2,bounty_hunter_player_draw_02:c=>(c.amount||0)>=4,bounty_hunter_player_draw_03:c=>(c.amount||0)>=4,
+  // "Didn't expect that." is significant for him: only for a move that really hurt someone.
+  bounty_hunter_player_good_move_03:c=>(c.amount||0)>=4||(c.victimCount??9)<=2
 });
 // Two-beat performances by one guest: Ragna's "QUIET!" … "Thank you."; Gorvan's pulse
 // remark and its retraction; his old rules and "No. Before your time."
@@ -104,14 +124,20 @@ const FOLLOW_UPS=Object.freeze({ragna_idle_04:{voice:'ragna_idle_05',chance:.6,d
 
 // How readily each guest talks (Edrin especially little: he is only half watching;
 // Gorvan least of all: silence suits him; Veyra, v111, between Edrin and Bramm).
-export const TAVERN_GUEST_TALK=Object.freeze({kesh:1,edrin:.6,ragna:1,bramm:1.15,veyra:.7,gorvan:.5});
+// The Bounty Hunter (v113) least of everyone: most moments at a table do not require a reaction.
+export const TAVERN_GUEST_TALK=Object.freeze({kesh:1,edrin:.6,ragna:1,bramm:1.15,veyra:.7,gorvan:.5,bounty_hunter:.32});
+// A guest whose results are worth more than his chatter: the Hunter says almost nothing all
+// evening, but he does close a match (professional closure) more often than not.
+export const TAVERN_RESULT_TALK=Object.freeze({bounty_hunter:.8});
+// Ordinary (casual and last-card) lines a match for the quietest guests: [alone, with company].
+export const TAVERN_LINE_CAP=Object.freeze({bounty_hunter:Object.freeze([3,2])});
 // Chance that an eligible moment produces a line, for one guest at the table, before
 // cooldowns and budgets. Most moments stay silent.
 export const TAVERN_TRIGGER_CHANCE=Object.freeze({
   intro:.55,idle:.45,slow:.35,taunt:.18,mock:.1,shout:.22,
   other_good_move:.2,own_good_move:.14,setback:.3,surprised:.5,other_draw:.22,own_draw:.12,self_mistake:.65,
   skip:.25,curse:.2,reverse:.14,king:.24,brutal:.45,omen:.55,
-  curse_taken:.3,curse_landed:.2,stop_given:.22,stop_taken:.22,
+  curse_taken:.3,curse_landed:.2,stop_given:.22,stop_taken:.22,own_king:.24,
   other_one_card:.3,own_one_card:.3,
   round_win:.35,round_loss:.12,match_win:.85,match_loss:.5
 });
@@ -141,7 +167,7 @@ export const TAVERN_TIMING=Object.freeze({casualGap:10000,casualEvents:2,highGap
 // Moments that are not about a card: a quiet stretch, or the start of a hand. Their talk keeps its own allowance.
 const CHATTER=new Set(['idle','round_start']);
 // Chatter lines per guest per match (the quiet ones say less).
-export const TAVERN_CHATTER_CAP=Object.freeze({edrin:2,gorvan:2});
+export const TAVERN_CHATTER_CAP=Object.freeze({edrin:2,gorvan:2,bounty_hunter:1});
 
 // Silent faces: what each guest's face does when something happens near them.
 const FACES=Object.freeze({
@@ -153,18 +179,34 @@ const FACES=Object.freeze({
   // raised brow, real surprise. Nothing frantic.
   veyra:{own_draw:['draw_considering','frustrated'],curse_taken:['curse_disapproval'],curse_landed:['amused','approving'],stop_taken:['silent_doubt','frustrated'],stop_given:['stop_pleased'],king:['king_skeptical'],reverse_seen:['observing','curious'],other_one_card:['player_one_card','silent_thinking'],own_one_card:['veyra_one_card','amused'],other_good_move:['approving','surprised','observing'],own_good_move:['strong_move','amused'],idle:['observing','amused','silent_thinking','friendly_smile','curious'],other_draw:['amused','curious'],slow_seen:['amused','silent_doubt']},
   // Gorvan: small glances, a narrower look; never a big face.
-  gorvan:{own_draw:['not_ideal','silent_down'],curse_taken:['rude','dry_amusement'],curse_landed:['silent_narrow'],stop_taken:['silent_opponent'],stop_given:['firm_stop'],king:['dry_amusement'],other_one_card:['attentive'],own_one_card:['certainty'],other_good_move:['approval','silent_opponent'],own_good_move:['silent_narrow','certainty'],idle:['silent_down','silent_opponent','curious','reminiscing'],other_draw:['sympathetic'],slow:['silent_opponent']}
+  gorvan:{own_draw:['not_ideal','silent_down'],curse_taken:['rude','dry_amusement'],curse_landed:['silent_narrow'],stop_taken:['silent_opponent'],stop_given:['firm_stop'],king:['dry_amusement'],other_one_card:['attentive'],own_one_card:['certainty'],other_good_move:['approval','silent_opponent'],own_good_move:['silent_narrow','certainty'],idle:['silent_down','silent_opponent','curious','reminiscing'],other_draw:['sympathetic'],slow:['silent_opponent']},
+  // The Bounty Hunter: body language only, and small. `@actor` turns his helmet toward
+  // whoever did it (left, right, or out at the player) — app.js resolves it from the real
+  // seating. A last card anywhere is a new problem: professional focus. Never the rare look.
+  bounty_hunter:{own_draw:['hand_glance','card_inspect','resigned'],curse_taken:['resigned','fixed_stare'],curse_landed:['hand_glance'],stop_taken:['fixed_stare','doubtful'],stop_given:['firm_stop'],king:['@actor','doubtful'],own_king:['card_inspect'],
+    other_one_card:['focus','@actor'],own_one_card:['hand_glance','neutral'],other_good_move:['@actor','approval','@actor'],own_good_move:['card_place','hand_glance'],
+    idle:['hand_glance','adjustment','@current','neutral'],other_draw:['@actor'],slow:['@current','fixed_stare'],reverse_seen:['@actor']}
 });
 // How readily a guest's face reacts at all (1 = as everyone).
-const FACE_RATE=Object.freeze({veyra:1.1,gorvan:.75});
+const FACE_RATE=Object.freeze({veyra:1.1,gorvan:.75,bounty_hunter:.95});
 const RESULT_FACES=Object.freeze({
   kesh:{round_win:'round_win',round_loss:'round_loss',match_win:'match_win',match_loss:'match_loss'},
   edrin:{round_win:'round_win_casual',round_loss:'round_loss',match_win:'match_win_content',match_loss:'match_loss_content'},
   ragna:{round_win:'round_win',round_loss:'round_loss_frustrated',match_win:'match_win_good_fight',match_loss:'match_loss_respect'},
   bramm:{round_win:'27_smug_unbeaten',round_loss:'31_again',match_win:'24_big_victory',match_loss:'30_defeated_sulk'},
   veyra:{round_win:'round_win',round_loss:'round_loss',match_win:'match_win',match_loss:'match_loss'},
-  gorvan:{round_win:'certainty',round_loss:'sincere_nod',match_win:'pleasant',match_loss:'sincere_nod'}
+  gorvan:{round_win:'certainty',round_loss:'sincere_nod',match_win:'pleasant',match_loss:'sincere_nod'},
+  // Near-neutral, by design: no celebration, immediate acceptance.
+  bounty_hunter:{round_win:'neutral',round_loss:'neutral',match_win:'neutral',match_loss:'approval'}
 });
+
+// v113: on how many evenings a banter subject is open at all (rolled once per match, kept on
+// restore). The Bounty Hunter's Gorvan thread should be discovered gradually, not every match.
+export const TAVERN_TOPIC_ODDS=Object.freeze({gorvan:.45,later:.2,trio:.35});
+// Once "Maybe later." has been heard on some evening, its subject opens even more rarely.
+export const TAVERN_TOPIC_HEARD_SCALE=Object.freeze({later:.35});
+// Exchanges a guest takes part in, a match (the Hunter: one meaningful exchange now and then).
+export const TAVERN_BANTER_GUEST_CAP=Object.freeze({bounty_hunter:2});
 
 // ── Banter: authored exchanges, each ONE performance ─────────────────────────
 // `lines` are [guest, voice] (or [guest, voice, pause ms]) in authored order. Each
@@ -173,6 +215,7 @@ const RESULT_FACES=Object.freeze({
 // exchange recorded only in English (banter.js): in Hebrew it is text only.
 // `requires` names an exchange that must have been heard before (on any evening).
 const brutal=c=>(c.amount||0)>=4||(c.victimCount??9)<=3;
+const H='bounty_hunter',HUNTER=Object.freeze({audio:'en',echo:true,chance:.2,pauseScale:.85}),HUNTER_TRIO=Object.freeze({...HUNTER,chance:.12});
 const B=(id,on,lines,extra={})=>Object.freeze({id,on,lines:Object.freeze(lines.map(item=>Object.freeze(item))),audio:'all',...extra});
 export const TAVERN_BANTER=Object.freeze([
   B('silence_apparently','idle',[['ragna','ragna_idle_04'],['edrin','edrin_idle_01']]),
@@ -242,7 +285,7 @@ export const TAVERN_BANTER=Object.freeze([
   // ── v109: Tavern Conversations Vol. 3 ──
   // Openings: the start of the match (intro) or of a hand (round_start). Three-handed ones are kept rare (chance).
   B('vampire_concern',['intro','round_start'],[['edrin','edrin_banter_gorvan_veyra_01a'],['gorvan','gorvan_banter_edrin_veyra_01b',500],['edrin','edrin_banter_gorvan_veyra_01c',450],['veyra','veyra_banter_edrin_gorvan_01d',700],['edrin','edrin_banter_gorvan_veyra_01e',1400]],{audio:'en',chance:.3}),
-  B('bramm_unbeaten',['intro'],[['bramm','bramm_banter_edrin_ragna_01a'],['ragna','ragna_banter_bramm_edrin_01b',500],['bramm','bramm_banter_edrin_ragna_01c',400],['edrin','edrin_banter_bramm_ragna_01d',700],['bramm','bramm_banter_edrin_ragna_01e',350],['edrin','edrin_banter_bramm_ragna_01f',700]],{audio:'en',chance:.35}),
+  B('bramm_unbeaten',['intro'],[['bramm','bramm_banter_edrin_ragna_01a'],['ragna','ragna_banter_bramm_edrin_01b',500],['bramm','bramm_banter_edrin_ragna_01c',400],['edrin','edrin_banter_bramm_ragna_01d',700],['bramm','bramm_banter_edrin_ragna_01e',350],['edrin','edrin_banter_bramm_ragna_01f',700]],{audio:'en',chance:.35,topic:'unbeaten'}),
   B('gorvan_ragna_bedtime',['intro','round_start','idle'],[['gorvan','gorvan_banter_ragna_04a'],['ragna','ragna_banter_gorvan_04b',450],['gorvan','gorvan_banter_ragna_04c',500],['ragna','ragna_banter_gorvan_04d',60],['gorvan','gorvan_banter_ragna_04e',900],['ragna','ragna_banter_gorvan_04f',400]],{audio:'en'}),
   B('gorvan_kesh_old_tavern',['intro','round_start','idle'],[['kesh','kesh_banter_gorvan_04a'],['gorvan','gorvan_banter_kesh_04b',600],['kesh','kesh_banter_gorvan_04c',500],['gorvan','gorvan_banter_kesh_04d',700],['kesh','kesh_banter_gorvan_04e',1200]],{audio:'en'}),
   B('edrin_ragna_wager',['intro'],[['edrin','edrin_banter_ragna_06a'],['ragna','ragna_banter_edrin_06b',500],['edrin','edrin_banter_ragna_06c',500],['ragna','ragna_banter_edrin_06d',400],['edrin','edrin_banter_ragna_06e',700],['ragna','ragna_banter_edrin_06f',350],['edrin','edrin_banter_ragna_06g',500]],{audio:'en'}),
@@ -251,7 +294,36 @@ export const TAVERN_BANTER=Object.freeze([
   // Bramm feels cursed only once the table has really been hard on him (two setbacks or more this match).
   B('bramm_veyra_cursed_table','idle',[['bramm','bramm_banter_veyra_03a'],['veyra','veyra_banter_bramm_03b',500],['bramm','bramm_banter_veyra_03c',450],['veyra','veyra_banter_bramm_03d',500],['bramm','bramm_banter_veyra_03e',450],['veyra','veyra_banter_bramm_03f',1200]],{audio:'en',when:(c,s,type,d)=>d.setbacks(s.bramm)>=2}),
   // Later in the evening (round 3 or after), when there has been time to get to know each other.
-  B('gorvan_edrin_remembering','idle',[['edrin','edrin_banter_gorvan_04a'],['gorvan','gorvan_banter_edrin_04b',500],['edrin','edrin_banter_gorvan_04c',500],['gorvan','gorvan_banter_edrin_04d',700],['edrin','edrin_banter_gorvan_04e',700],['gorvan','gorvan_banter_edrin_04f',1300],['edrin','edrin_banter_gorvan_04g',700]],{audio:'en',when:c=>(c.round||0)>=3})
+  B('gorvan_edrin_remembering','idle',[['edrin','edrin_banter_gorvan_04a'],['gorvan','gorvan_banter_edrin_04b',500],['edrin','edrin_banter_gorvan_04c',500],['gorvan','gorvan_banter_edrin_04d',700],['edrin','edrin_banter_gorvan_04e',700],['gorvan','gorvan_banter_edrin_04f',1300],['edrin','edrin_banter_gorvan_04g',700]],{audio:'en',when:c=>(c.round||0)>=3}),
+
+  // ── v113: the Bounty Hunter (English recordings only — text only in Hebrew) ──
+  // Every one is rare (`chance`), quiet and spacious (`pauseScale` keeps the authored pauses
+  // nearly whole), and he takes part in at most two a match (TAVERN_BANTER_GUEST_CAP).
+  // `topic`: exchanges on one subject share an evening — at most one a match, and the
+  // subject is only "open" on some evenings at all (TAVERN_TOPIC_ODDS). `needs`: someone who
+  // must be at the table though they do not speak. The Gorvan thread is professional risk
+  // assessment, never fear, and only ever with Gorvan actually present.
+  B('hunter_gorvan_wanted',['intro','idle'],[[H,'bounty_hunter_banter_gorvan_01a'],['gorvan','gorvan_banter_bounty_hunter_01b',800],[H,'bounty_hunter_banter_gorvan_01c',1500]],{...HUNTER,topic:'gorvan'}),
+  B('hunter_gorvan_let_in','idle',[[H,'bounty_hunter_banter_gorvan_02a'],['gorvan','gorvan_banter_bounty_hunter_02b',900],[H,'bounty_hunter_banter_gorvan_02c',800]],{...HUNTER,topic:'gorvan'}),
+  B('hunter_gorvan_uncomfortable','idle',[['gorvan','gorvan_banter_bounty_hunter_03a'],[H,'bounty_hunter_banter_gorvan_03b',600],['gorvan','gorvan_banter_bounty_hunter_03c',1200],[H,'bounty_hunter_banter_gorvan_03d',600]],{...HUNTER,topic:'gorvan'}),
+  B('hunter_edrin_helmet',['idle','round_start'],[['edrin','edrin_banter_bounty_hunter_01a'],[H,'bounty_hunter_banter_edrin_01b',600],['edrin','edrin_banter_bounty_hunter_01c',700],[H,'bounty_hunter_banter_edrin_01d',600]],{...HUNTER}),
+  B('hunter_edrin_vampire','idle',[[H,'bounty_hunter_banter_edrin_02a'],['edrin','edrin_banter_bounty_hunter_02b',900],[H,'bounty_hunter_banter_edrin_02c',600],['edrin','edrin_banter_bounty_hunter_02d',1000],[H,'bounty_hunter_banter_edrin_02e',1400]],{...HUNTER,topic:'gorvan',needs:['gorvan']}),
+  B('hunter_ragna_coin',['intro','idle','round_start'],[['ragna','ragna_banter_bounty_hunter_01a'],[H,'bounty_hunter_banter_ragna_01b',700],['ragna','ragna_banter_bounty_hunter_01c',600]],{...HUNTER}),
+  B('hunter_ragna_standard','idle',[[H,'bounty_hunter_banter_ragna_02a'],['ragna','ragna_banter_bounty_hunter_02b',600],[H,'bounty_hunter_banter_ragna_02c',1000],['ragna','ragna_banter_bounty_hunter_02d',500]],{...HUNTER,topic:'gorvan',needs:['gorvan']}),
+  B('hunter_kesh_road','idle',[['kesh','kesh_banter_bounty_hunter_01a'],[H,'bounty_hunter_banter_kesh_01b',900],['kesh','kesh_banter_bounty_hunter_01c',900],[H,'bounty_hunter_banter_kesh_01d',900]],{...HUNTER}),
+  B('hunter_kesh_face',['intro','idle'],[['kesh','kesh_banter_bounty_hunter_02a'],[H,'bounty_hunter_banter_kesh_02b',900],['kesh','kesh_banter_bounty_hunter_02c',1000]],{...HUNTER}),
+  B('hunter_veyra_blocking','idle',[['veyra','veyra_banter_bounty_hunter_01a'],[H,'bounty_hunter_banter_veyra_01b',500],['veyra','veyra_banter_bounty_hunter_01c',450],[H,'bounty_hunter_banter_veyra_01d',600]],{...HUNTER}),
+  // "Maybe later." — one tiny crack in the monotone. Its own topic, open on few evenings and
+  // rarer still once heard. No follow-up, no romance state: nothing remembers it but `heard`.
+  B('hunter_veyra_later','idle',[['veyra','veyra_banter_bounty_hunter_02a'],[H,'bounty_hunter_banter_veyra_02b',500],['veyra','veyra_banter_bounty_hunter_02c',700],[H,'bounty_hunter_banter_veyra_02d',1000]],{...HUNTER,topic:'later'}),
+  B('hunter_bramm_worth',['idle','good_move'],[['bramm','bramm_banter_bounty_hunter_01a'],[H,'bounty_hunter_banter_bramm_01b',700],['bramm','bramm_banter_bounty_hunter_01c',500],[H,'bounty_hunter_banter_bramm_01d',700]],{...HUNTER,when:(c,s,type)=>type!=='good_move'||c.actor===s.bramm}),
+  B('hunter_bramm_unbeaten',['intro','idle'],[['bramm','bramm_banter_bounty_hunter_02a'],[H,'bounty_hunter_banter_bramm_02b',500],['bramm','bramm_banter_bounty_hunter_02c',700],[H,'bounty_hunter_banter_bramm_02d',800]],{...HUNTER,topic:'unbeaten'}),
+  // Three-person sequences: much rarer than two (their own topic: at most one a match, on
+  // some evenings only), atomic, and with room between the lines.
+  B('hunter_vampire_trio',['idle','round_start'],[[H,'bounty_hunter_chitchat_gorvan_edrin_01a'],['edrin','edrin_chitchat_bounty_hunter_gorvan_01b',700],[H,'bounty_hunter_chitchat_gorvan_edrin_01c',600],['gorvan','gorvan_chitchat_bounty_hunter_edrin_01d',900],[H,'bounty_hunter_chitchat_gorvan_edrin_01e',700]],{...HUNTER_TRIO,topic:['gorvan','trio']}),
+  B('hunter_shadow_trio','idle',[['veyra','veyra_chitchat_bounty_hunter_gorvan_01a'],[H,'bounty_hunter_chitchat_veyra_gorvan_01b',600],['gorvan','gorvan_chitchat_bounty_hunter_veyra_01c',900],[H,'bounty_hunter_chitchat_veyra_gorvan_01d',600]],{...HUNTER_TRIO,topic:['gorvan','trio']}),
+  B('hunter_orc_trio',['idle','round_start'],[['bramm','bramm_chitchat_bounty_hunter_ragna_01a'],[H,'bounty_hunter_chitchat_bramm_ragna_01b',500],['bramm','bramm_chitchat_bounty_hunter_ragna_01c',500],[H,'bounty_hunter_chitchat_bramm_ragna_01d',600],['ragna','ragna_chitchat_bounty_hunter_bramm_01e',600]],{...HUNTER_TRIO,topic:'trio'}),
+  B('hunter_nothing_trio',['intro','idle'],[['veyra','veyra_chitchat_bounty_hunter_kesh_01a'],['kesh','kesh_chitchat_bounty_hunter_veyra_01b',1000],[H,'bounty_hunter_chitchat_veyra_kesh_01c',1100]],{...HUNTER_TRIO,topic:'trio'})
 ]);
 
 export const reactionFor=(guest,voice)=>AUTHORED_CHARACTERS[guest]?.reactions.find(item=>item.voice===voice)||(BANTER_RECORDINGS[voice]?.speaker===guest?banterReaction(voice):null);
@@ -267,6 +339,11 @@ export function createTavernDirector({seats={},random=Math.random,now=()=>Date.n
   const guestSeats=Object.entries(seats),bySeat=new Map(guestSeats),seatOf=Object.fromEntries(guestSeats.map(([seat,id])=>[id,seat]));
   const scale=guestSeats.length>=3?THREE_GUEST_SCALE:guestSeats.length===2?TWO_GUEST_SCALE:1,T=TAVERN_TIMING;
   const setbacks={...(initial?.setbacks||{})},chatterBy={...(initial?.chatterBy||{})},used=new Set(initial?.used||[]),usedWords=new Set(initial?.usedWords||[]),banters=new Set(initial?.banters||[]),casualBy={...(initial?.casualBy||{})},everHeard=new Set(heard);
+  // Banter subjects open tonight: rolled once per match (restored with the match, never re-rolled).
+  // Only subjects this table could actually have are rolled (a table without them draws nothing).
+  const seatedAll=b=>[...b.lines.map(([guest])=>guest),...(b.needs||[])].every(guest=>seatOf[guest]);
+  const topicsOpen=initial?.topicsOpen?{...initial.topicsOpen}:Object.fromEntries(Object.entries(TAVERN_TOPIC_ODDS).filter(([topic])=>TAVERN_BANTER.some(b=>[].concat(b.topic||[]).includes(topic)&&seatedAll(b))).map(([topic,odds])=>{const heardBefore=TAVERN_BANTER.some(b=>[].concat(b.topic||[]).includes(topic)&&heard.includes(b.id));return [topic,random()<odds*(heardBefore?(TAVERN_TOPIC_HEARD_SCALE[topic]??1):1)];}));
+  const topicsUsed=new Set(initial?.topicsUsed||[]),banterBy={...(initial?.banterBy||{})};
   let lastSpokenAt=-Infinity,lastBanterAt=-Infinity,eventsSince=99,eventsThisRound=0,casualThisRound=0,chatterThisRound=0,bantersThisRound=0,playerBantersThisRound=0,highThisRound=0,shouts=initial?.shouts||0,lastFaceAt={},log=[...(initial?.log||[])];
   const words=(guest,voice)=>reactionFor(guest,voice)?.caption?.toLowerCase().replace(/[^a-z ]/g,'').trim();
   const lineTrue=(guest,voice,c={})=>{const seat=seatOf[guest],test=VOICE_WHEN[voice];return !test||test(c,seat);};
@@ -293,14 +370,24 @@ export function createTavernDirector({seats={},random=Math.random,now=()=>Date.n
     if(banter){banters.add(banter);everHeard.add(banter);lastBanterAt=now();}
   };
   const cap=guestSeats.length>=2?T.pairGuestCap:T.perGuestCap;
+  const capFor=guest=>{const own=TAVERN_LINE_CAP[guest];return own?Math.min(cap,own[guestSeats.length>=2?1:0]):cap;};
+  // Whether an exchange may run at all tonight: its subject is open and unused, the people it
+  // needs are seated, and no participant has had their share of exchanges this match.
+  const banterAllowed=b=>{
+    const topics=[].concat(b.topic||[]);if(topics.some(topic=>topicsOpen[topic]===false||topicsUsed.has(topic)))return false;
+    if((b.needs||[]).some(guest=>!seatOf[guest]))return false;
+    return [...new Set(b.lines.map(([guest])=>guest))].every(guest=>(banterBy[guest]||0)<(TAVERN_BANTER_GUEST_CAP[guest]??Infinity));
+  };
+  const linesOf=(b,textOnly)=>b.lines.map(([guest,voice,pause],index)=>say(seatOf[guest],guest,voice,{...(index?{pause:Math.round((pause??600+Math.floor(random()*900))*(b.pauseScale??T.banterPauseScale))}:{}),...(textOnly?{silent:true}:{})}));
+  const noteBanter=b=>{for(const topic of [].concat(b.topic||[]))topicsUsed.add(topic);for(const guest of new Set(b.lines.map(([guest])=>guest)))banterBy[guest]=(banterBy[guest]||0)+1;};
   const gateChatter=(...guests)=>now()-lastSpokenAt>=T.chatterGap&&chatterThisRound<T.chatterPerRound&&guests.every(g=>(chatterBy[g]||0)<(TAVERN_CHATTER_CAP[g]??T.chatterPerGuest));
-  const gateCasual=guest=>eventsSince>=T.casualEvents&&now()-lastSpokenAt>=T.casualGap&&casualThisRound<T.casualPerRound&&(casualBy[guest]||0)<cap;
-  const gateHigh=guest=>now()-lastSpokenAt>=T.highGap&&highThisRound<1&&(casualBy[guest]||0)<cap;
+  const gateCasual=guest=>eventsSince>=T.casualEvents&&now()-lastSpokenAt>=T.casualGap&&casualThisRound<T.casualPerRound&&(casualBy[guest]||0)<capFor(guest);
+  const gateHigh=guest=>now()-lastSpokenAt>=T.highGap&&highThisRound<1&&(casualBy[guest]||0)<capFor(guest);
   const spoke=guest=>log.some(item=>item.guest===guest&&item.trigger!=='debug');
 
   // Which trigger an event means for a given guest seat (null: nothing for them).
   function triggerFor(type,seat,guest,c){
-    const own=c.actor===seat,modern=guest==='veyra'||guest==='gorvan';
+    const own=c.actor===seat,modern=guest==='veyra'||guest==='gorvan'||guest==='bounty_hunter';
     switch(type){
       case 'intro':return 'intro';
       case 'round_start':return null;
@@ -319,9 +406,9 @@ export function createTavernDirector({seats={},random=Math.random,now=()=>Date.n
         if(modern){if(c.victim===seat)return 'stop_taken';if(c.actor===seat)return 'stop_given';return null;}
         return c.victim===seat?(guest==='kesh'?'skip':guest==='bramm'?'setback':null):null;
       case 'king':
-        if(modern)return own?null:'king';
+        if(modern)return own?(guest==='bounty_hunter'?'own_king':null):'king';
         if(guest==='kesh')return 'king';return guest==='bramm'&&c.victim===seat?'setback':null;
-      case 'reverse':return guest==='kesh'?'reverse':guest==='veyra'?'reverse_seen':null;
+      case 'reverse':return guest==='kesh'?'reverse':guest==='veyra'||guest==='bounty_hunter'?'reverse_seen':null;
       case 'one_card':return own?'own_one_card':'other_one_card';
       case 'omen':return guest==='kesh'&&c.actor===seat?'omen':null;
       case 'omen_failed':return guest==='kesh'&&c.actor===seat?'surprised':null;
@@ -339,7 +426,7 @@ export function createTavernDirector({seats={},random=Math.random,now=()=>Date.n
     if(CHATTER.has(type)){if(!gateChatter())return null;}
     else if(type!=='match_end'&&(now()-lastSpokenAt<T.casualGap||eventsSince<T.casualEvents||casualThisRound>T.casualPerRound||bantersThisRound>=T.banterPerRound))return null;
     const candidates=TAVERN_BANTER.filter(b=>{
-      if(![].concat(b.on).includes(type)||banters.has(b.id))return false;
+      if(![].concat(b.on).includes(type)||banters.has(b.id)||!banterAllowed(b))return false;
       if(b.player&&playerBantersThisRound>=T.playerBanterPerRound)return false;
       if(CHATTER.has(type)&&!gateChatter(...new Set(b.lines.map(([g])=>g))))return false;
       if(b.lines.length>=T.longBanterLines&&type!=='match_end'&&(c.minCards??9)<T.longBanterMinCards)return false;
@@ -355,9 +442,9 @@ export function createTavernDirector({seats={},random=Math.random,now=()=>Date.n
     for(const b of candidates.toSorted(()=>random()-.5)){
       if(random()>(b.chance!=null?Math.min(T.banterChanceCap,b.chance*T.banterBoost):chanceBase))continue;
       const textOnly=b.audio==='en'&&he;
-      const lines=b.lines.map(([guest,voice,pause],index)=>say(seatOf[guest],guest,voice,{...(index?{pause:Math.round((pause??600+Math.floor(random()*900))*T.banterPauseScale)}:{}),...(textOnly?{silent:true}:{})}));
+      const lines=linesOf(b,textOnly);
       if(b.lines.some(([,voice])=>voice==='ragna_idle_04'))shouts++;
-      remember(lines,{banter:b.id,trigger:type});
+      remember(lines,{banter:b.id,trigger:type});noteBanter(b);
       for(const guest of new Set(b.lines.map(([guest])=>guest)))if(!RESULT.has(type)&&!CHATTER.has(type))casualBy[guest]=(casualBy[guest]||0)+1;
       if(CHATTER.has(type)){chatterThisRound++;for(const g of new Set(b.lines.map(([g])=>g)))chatterBy[g]=(chatterBy[g]||0)+1;}else if(type!=='match_end'){casualThisRound++;bantersThisRound++;}
       if(b.player)playerBantersThisRound++;
@@ -374,7 +461,7 @@ export function createTavernDirector({seats={},random=Math.random,now=()=>Date.n
     const he=locale()==='he',ctx={...c,current:c.current||'p0'};
     const fits=[];
     for(const b of TAVERN_BANTER){
-      if(banters.has(b.id))continue;
+      if(banters.has(b.id)||!banterAllowed(b))continue;
       const on=[].concat(b.on),type=on.includes('slow')?'slow':on.includes('idle')?'idle':null;if(!type)continue;
       const guests=[...new Set(b.lines.map(([guest])=>guest))];if(!guests.every(guest=>seatOf[guest]))continue;
       if(b.player&&playerBantersThisRound>=T.playerBanterPerRound)continue;
@@ -388,9 +475,9 @@ export function createTavernDirector({seats={},random=Math.random,now=()=>Date.n
     }
     if(!fits.length)return null;
     const aboutPlayer=fits.filter(f=>f.type==='slow'),pool=aboutPlayer.length?aboutPlayer:fits,{b,textOnly}=pool[Math.floor(random()*pool.length)];
-    const lines=b.lines.map(([guest,voice,pause],index)=>say(seatOf[guest],guest,voice,{...(index?{pause:Math.round((pause??600+Math.floor(random()*900))*T.banterPauseScale)}:{}),...(textOnly?{silent:true}:{})}));
+    const lines=linesOf(b,textOnly);
     if(b.lines.some(([,voice])=>voice==='ragna_idle_04'))shouts++;
-    remember(lines,{banter:b.id,trigger:'stall'});
+    remember(lines,{banter:b.id,trigger:'stall'});noteBanter(b);
     if(b.player)playerBantersThisRound++;
     return {banter:b.id,lines,after:(b.glance||[]).map(([guest,expression,duration])=>({seat:seatOf[guest],expression,duration}))};
   }
@@ -419,7 +506,7 @@ export function createTavernDirector({seats={},random=Math.random,now=()=>Date.n
           if(!isResult&&trigger!==INTRO&&!(chatter?gateChatter(guest):high?gateHigh(guest):gateCasual(guest)))continue;
           const voice=pick(guest,trigger,{...c,self:seat});if(!voice)continue;
           // One roll per moment for the whole table: the first guest who could speak gets the chance, nobody else.
-          const chance=(TAVERN_TRIGGER_CHANCE[trigger]??0)*TAVERN_GUEST_TALK[guest]*(isResult||trigger===INTRO?1:scale);
+          const chance=(TAVERN_TRIGGER_CHANCE[trigger]??0)*(isResult?TAVERN_RESULT_TALK[guest]??TAVERN_GUEST_TALK[guest]:TAVERN_GUEST_TALK[guest])*(isResult||trigger===INTRO?1:scale);
           if(random()>chance)break;
           const lines=[say(seat,guest,voice)];
           const follow=FOLLOW_UPS[voice];if(follow&&random()<follow.chance&&available(guest,follow.voice,{allowUsed:!!follow.repeatable}))lines.push(say(seat,guest,follow.voice,{pause:follow.delay}));
@@ -440,7 +527,10 @@ export function createTavernDirector({seats={},random=Math.random,now=()=>Date.n
       const always=HIGH.has(trigger);
       if(now()-(lastFaceAt[seat]||-Infinity)<2500&&!always)continue;
       if(!always&&random()>(trigger==='idle'?.6:.55)*(FACE_RATE[guest]??1))continue;
-      lastFaceAt[seat]=now();faces.push({seat,expression:face,duration:always?2100:1700});
+      // `@actor` / `@current`: a look toward that seat (app.js resolves the direction from the seating).
+      const toward=face==='@actor'?c.actor:face==='@current'?c.current:null;
+      if(face.startsWith('@')&&(!toward||toward===seat))continue;
+      lastFaceAt[seat]=now();faces.push({seat,expression:toward?'@look':face,...(toward?{toward}:{}),duration:always?2100:1700});
     }
     return {faces,lines:plan?.lines||[],banter:plan?.banter||null,after:plan?.after||[]};
   }
@@ -450,9 +540,10 @@ export function createTavernDirector({seats={},random=Math.random,now=()=>Date.n
     seats:()=>({...seats}),seatOf:guest=>seatOf[guest]||null,
     // Debug: play a given line or banter regardless of chance (still never repeats a banter).
     force(voice){const entry=guestSeats.find(([,guest])=>reactionFor(guest,voice));if(!entry)return null;const lines=[say(entry[0],entry[1],voice)];remember(lines,{trigger:'debug'});return {lines,faces:[]};},
-    forceBanter(id){const b=TAVERN_BANTER.find(item=>item.id===id);if(!b||!b.lines.every(([guest])=>seatOf[guest]))return null;const textOnly=b.audio==='en'&&locale()==='he';const lines=b.lines.map(([guest,voice,pause],index)=>say(seatOf[guest],guest,voice,{...(index?{pause:Math.round((pause??900)*T.banterPauseScale)}:{}),...(textOnly?{silent:true}:{})}));remember(lines,{banter:b.id,trigger:'debug'});return {lines,faces:[],banter:b.id};},
+    forceBanter(id){const b=TAVERN_BANTER.find(item=>item.id===id);if(!b||!b.lines.every(([guest])=>seatOf[guest]))return null;const textOnly=b.audio==='en'&&locale()==='he';const lines=linesOf(b,textOnly);remember(lines,{banter:b.id,trigger:'debug'});noteBanter(b);return {lines,faces:[],banter:b.id};},
     heard:()=>[...everHeard],
-    snapshot:()=>({seats:{...seats},setbacks:{...setbacks},chatterBy:{...chatterBy},used:[...used],usedWords:[...usedWords],banters:[...banters],casualBy:{...casualBy},shouts,log:log.map(item=>({...item}))}),
+    topics:()=>({open:{...topicsOpen},used:[...topicsUsed]}),
+    snapshot:()=>({seats:{...seats},setbacks:{...setbacks},chatterBy:{...chatterBy},used:[...used],usedWords:[...usedWords],banters:[...banters],casualBy:{...casualBy},shouts,log:log.map(item=>({...item})),topicsOpen:{...topicsOpen},topicsUsed:[...topicsUsed],banterBy:{...banterBy}}),
     cooldown:()=>({quietMs:Number.isFinite(lastSpokenAt)?Math.round(now()-lastSpokenAt):null,casualReadyInMs:Math.max(0,Math.round(T.casualGap-(now()-lastSpokenAt)))||0,eventsSince,casualThisRound,highThisRound,banterReadyInMs:Math.max(0,Math.round(T.banterGap-(now()-lastBanterAt)))||0,bantersThisMatch:banters.size})
   });
 }

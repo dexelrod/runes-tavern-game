@@ -8,6 +8,7 @@ import { KESH_EXPRESSIONS, KESH_REACTIONS, KESH_VOICE_LIBRARY, createKeshControl
 import { EDRIN_EXPRESSIONS, EDRIN_REACTIONS, EDRIN_VOICE_LIBRARY, createEdrinController, edrinExpressionURL, preloadEdrinExpressions, resolveEdrinReaction, resolveEdrinVoice } from './edrin.js';
 import { VEYRA_EXPRESSIONS, VEYRA_REACTIONS, VEYRA_VOICE_LIBRARY, createVeyraController, preloadVeyraExpressions, resolveVeyraReaction, resolveVeyraVoice, veyraExpressionURL } from './veyra.js';
 import { GORVAN_EXPRESSIONS, GORVAN_REACTIONS, GORVAN_VOICE_LIBRARY, createGorvanController, gorvanExpressionURL, preloadGorvanExpressions, resolveGorvanReaction, resolveGorvanVoice } from './gorvan.js';
+import { BOUNTY_HUNTER_EXPRESSIONS, BOUNTY_HUNTER_LOOKS, BOUNTY_HUNTER_REACTIONS, BOUNTY_HUNTER_VOICE_LIBRARY, bountyHunterEventFor, bountyHunterExpressionURL, createBountyHunterController, preloadBountyHunterExpressions, resolveBountyHunterReaction, resolveBountyHunterVoice } from './bounty-hunter.js';
 import { banterSpeaker, resolveBanterVoice } from './banter.js';
 
 const bramm=Object.freeze({
@@ -136,9 +137,37 @@ const gorvan=Object.freeze({
   generic:true
 });
 
-export const AUTHORED_CHARACTERS=Object.freeze({bramm,edrin,ragna,kesh,veyra,gorvan});
+// The Bounty Hunter (v113): the third data-driven pack. `refineEvent` names the few cards he
+// has lines for (his own Curse, Crossbow, Runed Crossbow, King) on top of the shared
+// classifier; `looks` turns his helmet toward whoever is actually speaking at a Tavern table.
+const bounty_hunter=Object.freeze({
+  id:'bounty_hunter',label:'The Bounty Hunter',
+  expressions:BOUNTY_HUNTER_EXPRESSIONS,defaultExpression:'neutral',expressionURL:bountyHunterExpressionURL,preload:preloadBountyHunterExpressions,
+  reactions:BOUNTY_HUNTER_REACTIONS,voiceLibrary:BOUNTY_HUNTER_VOICE_LIBRARY,resolveReaction:resolveBountyHunterReaction,resolveVoice:resolveBountyHunterVoice,
+  createController:({initial,settings,now})=>createBountyHunterController({now,initial:{...(initial||{}),recentVoices:initial?.recentVoices||settings?.characterRecentVoices?.bounty_hunter||[]}}),
+  holdsExpression:controller=>!!controller?.holdsExpression?.(),
+  lead(trigger){
+    // The helmet turns first; the words, if any, come after a pause. Stillness is the performance.
+    if(trigger==='player_one_card')return {delay:820};
+    if(trigger==='own_one_card'||trigger==='curse_taken')return {delay:640};
+    return null;
+  },
+  refineEvent:bountyHunterEventFor,
+  looks:BOUNTY_HUNTER_LOOKS,
+  idleTriggers:()=>[['idle_quiet',{}]],
+  idleFallback:(controller,context)=>controller?.observe('idle_beat',context),
+  // Round results: almost no celebration, immediate acceptance — often just the look.
+  resultVoiceChance:trigger=>trigger==='round_win'?.5:trigger==='round_loss'?.5:1,
+  resultFaces:Object.freeze({round_win:'neutral',round_loss:'neutral'}),
+  slowPlayerAfter:15000,
+  finalResultBeat:1600,activeClock:true,
+  introDelay:1400,
+  generic:true
+});
+
+export const AUTHORED_CHARACTERS=Object.freeze({bramm,edrin,ragna,kesh,veyra,gorvan,bounty_hunter});
 // The voiced opponents offered at the duel table, in their canonical order.
-export const VOICED_OPPONENTS=Object.freeze(['bramm','edrin','ragna','kesh','veyra','gorvan']);
+export const VOICED_OPPONENTS=Object.freeze(['bramm','edrin','ragna','kesh','veyra','gorvan','bounty_hunter']);
 export const authoredCharacter=id=>AUTHORED_CHARACTERS[id]||null;
 export function characterForVoice(name=''){return Object.values(AUTHORED_CHARACTERS).find(pack=>pack.voiceLibrary[name])||AUTHORED_CHARACTERS[banterSpeaker(name)]||null;}
 // Ordinary lines resolve through their character; dedicated banter recordings through the banter catalog.

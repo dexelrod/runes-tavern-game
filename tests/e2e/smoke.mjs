@@ -91,7 +91,7 @@ console.log('Duel select: six voiced regulars, swipe, random regular');
 {const {page,context,errors}=await open({width:390,height:844},{language:'en'},true);
   check(await page.evaluate(()=>[...document.querySelectorAll('.home-choice')].map(n=>n.classList[1]).join())==='duel-choice,tavern-choice,quick-choice','home order: Duel, Tavern Match, Quick Play');
   await page.click('[data-duel]');await page.waitForTimeout(300);
-  check(await page.locator('.duel-slide').count()===6,'exactly six voiced regulars at the duel table');
+  check(await page.locator('.duel-slide').count()===7,'exactly seven voiced regulars at the duel table');
   const first=await page.getAttribute('.duel-sit','data-opponent');
   const box=await page.locator('.duel-carousel').boundingBox();
   await page.mouse.move(box.x+box.width*.8,box.y+box.height*.3);await page.mouse.down();await page.mouse.move(box.x+box.width*.2,box.y+box.height*.3,{steps:8});await page.mouse.up();await page.waitForTimeout(300);
@@ -125,13 +125,14 @@ for(const language of ['he','en']){const {page,context,errors}=await open({width
   check(errors.length===0,`no console errors (${errors.join(' | ')})`);await context.close();}
 
 // v104: Veyra (Hebrew takes, two lines English-only) and Gorvan (English voice, Hebrew bubbles).
-for(const [who,index] of [['veyra',4],['gorvan',5]]){
+// v113: the Bounty Hunter (English voice, Hebrew bubbles; a first meeting is always "Hello.").
+for(const [who,index] of [['veyra',4],['gorvan',5],['bounty_hunter',6]]){
   console.log(`Duel vs ${who}: one round, Hebrew and English`);
   for(const language of ['he','en']){const {page,context,errors}=await open({width:390,height:844},{language,captions:true},true);
     await page.click('[data-duel]');await page.click(`[data-duel-go="${index}"]`);await page.click(`.duel-sit[data-opponent="${who}"]`);await page.waitForSelector(`.duel-seat.opponent-${who} .character-art`,{timeout:10000}).catch(()=>{});
     check(await page.locator(`.duel-seat.opponent-${who} .character-art`).isVisible(),`${who} sits at the table`);
     check(new RegExp(`/assets/${who}/expressions/${who}_\\d\\d_`).test(await page.getAttribute(`.duel-seat.opponent-${who} .character-art`,'src')),'expression art from the character pack');
-    await page.waitForTimeout(who==='gorvan'?2600:1200);const bubble=page.locator('.character-speech').first();
+    await page.waitForTimeout(who==='gorvan'?2600:who==='bounty_hunter'?800:1200);const bubble=page.locator('.character-speech').first();
     check(await bubble.count()===1&&(await bubble.getAttribute('dir'))===(language==='he'?'rtl':'ltr'),'the first-meeting intro bubble shows in the active language');
     const text=await bubble.textContent().catch(()=>'');check(!/\[|\]/.test(text),'no acting directions in the bubble');
     if(language==='he')check(!/[A-Za-z]/.test(text),`a Hebrew bubble (${text})`);
@@ -149,6 +150,19 @@ console.log('Tavern Match: Veyra and Gorvan at one table');
   const lines=await page.evaluate(()=>window.TavernDebug.banter('gorvan_veyra_flame'));check(JSON.stringify(lines)==='["veyra_banter_gorvan_02a","gorvan_idle_03"]','their exchange plays as one authored sequence');
   await page.waitForTimeout(800);check(await page.locator('.guest-speech').count()===1,'one bubble at a time');
   check(await playRound(page),'a round with them reaches the result slip');
+  check((await snapshot(page)).voiceInterruptions===0,'no voice ever cut across another');
+  check(errors.length===0,`no console errors (${errors.join(' | ')})`);await context.close();}
+
+console.log('Tavern Match: the Bounty Hunter with Gorvan and Edrin (English, then Hebrew text-only)');
+for(const language of ['en','he']){const {page,context,errors}=await open({width:390,height:844},{language,captions:true},true);
+  await page.evaluate(()=>window.TavernDebug.startWith(['bounty_hunter','gorvan','edrin']));await page.waitForTimeout(1500);
+  // A forced exchange skips the table's scheduling, so wait for any opening line to finish first.
+  for(let i=0;i<40&&((await snapshot(page)).voice||(await snapshot(page)).guestSpeaking);i++)await page.waitForTimeout(200);
+  check(await page.locator('.seat-figure.guest-bounty_hunter img').isVisible(),'the Hunter sits with his live body language');
+  const lines=await page.evaluate(()=>window.TavernDebug.banter('hunter_vampire_trio'));check(lines?.length===5,'the three-person sequence plays whole');
+  const voices=new Set();let bubbles=0;for(let i=0;i<70;i++){const s=await snapshot(page);if(s.voice)voices.add(s.voice);if(s.quip?.guest)bubbles++;await page.waitForTimeout(200);}
+  if(language==='he')check(voices.size===0&&bubbles>0,'Hebrew: the English-only exchange runs as text, never one voiced half');else check(voices.size>=4,`English: voiced (${voices.size} takes heard)`);
+  check(await playRound(page),'a round with him reaches the result slip');
   check((await snapshot(page)).voiceInterruptions===0,'no voice ever cut across another');
   check(errors.length===0,`no console errors (${errors.join(' | ')})`);await context.close();}
 

@@ -199,6 +199,8 @@ html[lang=he] :is(.sheet-lede,.setting-label,.rule-card p,.rule-scoring p,.stand
 .seat-name{display:grid;min-width:0;text-align:center}
 .seat-name b{overflow:hidden;font:700 13px/1.15 var(--display);white-space:nowrap;text-overflow:ellipsis}
 .seat-name small{overflow:hidden;color:var(--ink-soft);font:italic 500 10.5px/1.1 var(--display);white-space:nowrap;text-overflow:ellipsis}
+/* v113: a long name ("The Bounty Hunter") wraps onto two tight lines at a narrow seat instead of being cut off. */
+.seat:not(.duel-seat) .seat-name.long-name b{white-space:normal;text-overflow:clip;line-height:1;letter-spacing:-.02em;font-size:.8em}
 .seat-count{display:flex;align-items:center;gap:4px;padding-inline-start:4px;font:700 14px/1 var(--display);font-variant-numeric:lining-nums tabular-nums;color:var(--ink)}
 .mini-back{width:7px;height:10px;border-radius:1px;background:linear-gradient(#7a2940,#531827);box-shadow:inset 0 0 0 1px #c2914a99}
 .house-pin{display:grid;place-items:center;width:16px;height:16px;flex:0 0 auto}
@@ -893,6 +895,13 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
 .portrait-card .character-veyra.character-art-stage{left:-66%;top:3%;width:232%}
 .portrait-card .character-gorvan.character-art-stage{left:-50%;top:3%;width:200%}
 .opponent-veyra .seat-props,.opponent-gorvan .seat-props{display:none}
+/* The Bounty Hunter (v113): one 1760 px crop of his shared 2048 px canvas. His armoured silhouette is
+   broad, so he is drawn a touch smaller than Gorvan — the helmet sits at the cast's head scale and he
+   never reads as the biggest figure at the table. No props; never mirrored; no animation of his own. */
+.character-bounty_hunter.character-art-stage{aspect-ratio:1}
+.duel-figure .character-bounty_hunter.character-art-stage{height:calc(var(--fig-h) * 1.16);translate:0 0}
+.portrait-card .character-bounty_hunter.character-art-stage{left:-46%;top:4%;width:192%}
+.opponent-bounty_hunter .seat-props{display:none}
 /* Heights are capped so the highest point of any pose stays inside the seat (nothing above the head is clipped):
    height ≤ 1 / (rim line − top of the art), both as fractions of the canvas. */
 /* ── Voiced guests at a Tavern table: each seat portrait is the character's live
@@ -902,6 +911,8 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
 .seat-figure.guest-edrin>img{height:calc(var(--fig-h) * 1.84);translate:0 44%;object-position:50% 56%}
 .seat-figure.guest-bramm>img{height:calc(var(--fig-h) * 1.84);translate:0 44%;object-position:50% 56%}
 .guest-gorvan>img{height:calc(var(--fig-h) * 1.09);translate:0 9%;object-position:50% 91%}
+/* The Bounty Hunter: shoulders as broad as the seat; a little under Gorvan's scale so he does not loom. */
+.seat-figure.guest-bounty_hunter>img{height:calc(var(--fig-h) * 1.04);translate:0 8%;object-position:50% 92%}
 /* Veyra 2.0 is a slimmer figure on the same canvas: a little larger, so her head sits at the guests' scale. */
 .seat-figure.guest-veyra>img{height:calc(var(--fig-h) * 1.24);translate:0 13%;object-position:50% 87%}
 
@@ -920,6 +931,7 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
 .duel-slide-art .character-kesh.character-art-stage{height:114cqh}
 .duel-slide-art .character-veyra.character-art-stage{height:120cqh}
 .duel-slide-art .character-gorvan.character-art-stage{height:114cqh}
+.duel-slide-art .character-bounty_hunter.character-art-stage{height:110cqh}
 .duel-slide-art .character-art{animation:none}
 .duel-plate{position:absolute;left:50%;top:calc(var(--rim) + 24px);translate:-50% 0;display:grid;justify-items:center;gap:2px;width:min(calc(100% - 40px),520px);color:var(--cream);text-align:center;text-shadow:0 1px 2px #000,0 0 10px #000c}
 .duel-plate .champion-kicker{color:#cbb48a;font:italic 500 14px/1.2 var(--display)}
@@ -959,6 +971,7 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
   .duel-seat .seat-figure .character-kesh.character-art-stage{height:auto;width:205%;translate:0 -3%}
   .duel-seat .seat-figure .character-veyra.character-art-stage{height:auto;width:210%;translate:0 -3%}
   .duel-seat .seat-figure .character-gorvan.character-art-stage{height:auto;width:205%;translate:0 -3%}
+  .duel-seat .seat-figure .character-bounty_hunter.character-art-stage{height:auto;width:196%;translate:0 -3%}
   .duel-plate .chalk-record{justify-self:start}
   .duel-plate-attitude{display:none}
 }

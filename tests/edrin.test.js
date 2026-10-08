@@ -54,7 +54,7 @@ test('bubbles use the authored transcript with acting directions removed, Hebrew
 });
 
 test('one framework: Edrin plugs into the shared registry and the single Web Audio voice path',()=>{
-  assert.deepEqual(Object.keys(AUTHORED_CHARACTERS).toSorted(),['bramm','edrin','gorvan','kesh','ragna','veyra']);
+  assert.deepEqual(Object.keys(AUTHORED_CHARACTERS).toSorted(),['bounty_hunter','bramm','edrin','gorvan','kesh','ragna','veyra']);
   assert.match(resolveCharacterVoice('edrin_round_win_01','he').src,/edrin_round_win_01_he\.mp3$/);
   assert.match(resolveCharacterVoice('bramm_loss_01','en').src,/bramm_loss_01\.mp3$/);
   const app=read('../dist/app.js');

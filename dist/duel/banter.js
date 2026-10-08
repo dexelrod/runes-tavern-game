@@ -26,7 +26,10 @@ const asset=(speaker,name)=>new URL(`../assets/${speaker}/voice/${name}.mp3`,imp
 // Dedicated banter recordings: who says them, the exact authored text (directions
 // removed; Hebrew reproduced exactly), the speaker's face for the line, which takes
 // exist, and the longer take in seconds.
-const R=(voice,speaker,expression,en,he,seconds,takes=['en','he'])=>Object.freeze({voice,speaker,expression,captions:Object.freeze({en,he}),takes:Object.freeze(takes),seconds});
+// `look` (optional): whom the speaker addresses — a guest id, or 'player'. A character with
+// `looks` in its pack (the Bounty Hunter) turns toward that guest's real seat for the line
+// instead of using the pack's staging default.
+const R=(voice,speaker,expression,en,he,seconds,takes=['en','he'],look=null)=>Object.freeze({voice,speaker,expression,captions:Object.freeze({en,he}),takes:Object.freeze(takes),seconds,look});
 export const BANTER_RECORDINGS=Object.freeze(Object.fromEntries([
   // Veyra + Kesh 01 — she shows him the flame; he is already looking.
   R('veyra_banter_kesh_01a','veyra','banter_explaining','Kesh. Look at that.','קאש. תסתכל על זה.',2.35),
@@ -153,12 +156,81 @@ export const BANTER_RECORDINGS=Object.freeze(Object.fromEntries([
   R('gorvan_banter_edrin_04d','gorvan','reminiscing',"No. Only the interesting ones.","לא. רק את המעניינים.",2.93,['en']),
   R('edrin_banter_gorvan_04e','edrin','player_one_card_mild_concern',"Ah. Do you think you'll remember me?","אה. אתה חושב שתזכור אותי?",3.00,['en']),
   R('gorvan_banter_edrin_04f','gorvan','pleasant',"I think I shall.","אני מאמין שכן.",2.12,['en']),
-  R('edrin_banter_gorvan_04g','edrin','match_win_content',"Oh. Well, that's rather nice.","אה. טוב, זה דווקא נחמד.",2.85,['en'])
+  R('edrin_banter_gorvan_04g','edrin','match_win_content',"Oh. Well, that's rather nice.","אה. טוב, זה דווקא נחמד.",2.85,['en']),
+  // ── v113: the Bounty Hunter — two-person exchanges with each of the cast and four rare
+  // three-person sequences. English recordings only (Hebrew is subtitle text). Script
+  // text verbatim; performance tags are direction, never text. ──
+  R('bounty_hunter_banter_gorvan_01a','bounty_hunter','partner_left',"Are you wanted anywhere?","מחפשים אותך איפשהו?",1.88,['en'],'gorvan'),
+  R('gorvan_banter_bounty_hunter_01b','gorvan','dry_amusement',"Currently?","כרגע?",1.07,['en']),
+  R('bounty_hunter_banter_gorvan_01c','bounty_hunter','doubtful',"That's not reassuring.","זה לא מרגיע.",2.93,['en']),
+  R('bounty_hunter_banter_gorvan_02a','bounty_hunter','partner_left',"Still don't understand why they let you in.","עדיין לא מבין למה נותנים לך להיכנס.",2.85,['en'],'gorvan'),
+  R('gorvan_banter_bounty_hunter_02b','gorvan','formal',"I pay.","אני משלם.",1.49,['en']),
+  R('bounty_hunter_banter_gorvan_02c','bounty_hunter','doubtful',"That's everyone's answer.","זאת התשובה של כולם.",2.04,['en']),
+  R('gorvan_banter_bounty_hunter_03a','gorvan','curious',"Do I make you uncomfortable?","אני גורם לך להרגיש לא בנוח?",2.19,['en']),
+  R('bounty_hunter_banter_gorvan_03b','bounty_hunter','neutral',"No.","לא.",1.15,['en']),
+  R('gorvan_banter_bounty_hunter_03c','gorvan','dry_amusement',"Disappointed.","מאכזב.",1.80,['en']),
+  R('bounty_hunter_banter_gorvan_03d','bounty_hunter','neutral',"You'll manage.","אתה תסתדר.",1.49,['en']),
+  R('edrin_banter_bounty_hunter_01a','edrin','focused',"You ever take that thing off?","אתה מתישהו מוריד את הדבר הזה?",2.27,['en']),
+  R('bounty_hunter_banter_edrin_01b','bounty_hunter','partner_right',"Yes.","כן.",1.15,['en'],'edrin'),
+  R('edrin_banter_bounty_hunter_01c','edrin','focused',"Where?","איפה?",1.65,['en']),
+  R('bounty_hunter_banter_edrin_01d','bounty_hunter','neutral',"Not here.","לא פה.",1.31,['en']),
+  R('bounty_hunter_banter_edrin_02a','bounty_hunter','partner_left',"Does no one find that concerning?","אף אחד פה לא חושב שזה מדאיג?",2.69,['en'],'gorvan'),
+  R('edrin_banter_bounty_hunter_02b','edrin','idle_distracted',"What?","מה?",1.07,['en']),
+  R('bounty_hunter_banter_edrin_02c','bounty_hunter','partner_left',"The vampire.","הערפד.",1.41,['en'],'gorvan'),
+  R('edrin_banter_bounty_hunter_02d','edrin','casual_acceptance',"Oh. Gorvan's alright.","אה. גורבן בסדר.",2.59,['en']),
+  R('bounty_hunter_banter_edrin_02e','bounty_hunter','fixed_stare',"...Right.","...כן.",1.57,['en'],'edrin'),
+  R('ragna_banter_bounty_hunter_01a','ragna','judging_wager',"You fight for coin?","אתה נלחם בשביל כסף?",2.04,['en']),
+  R('bounty_hunter_banter_ragna_01b','bounty_hunter','partner_right',"I collect people for coin.","אני אוסף אנשים בשביל כסף.",2.27,['en'],'ragna'),
+  R('ragna_banter_bounty_hunter_01c','ragna','more_like_it',"Better.","יותר טוב.",1.23,['en']),
+  R('bounty_hunter_banter_ragna_02a','bounty_hunter','partner_left',"You trust the vampire?","את סומכת על הערפד?",1.96,['en'],'ragna'),
+  R('ragna_banter_bounty_hunter_02b','ragna','default_focused',"He pays his bets.","הוא משלם כשהוא מפסיד.",1.88,['en']),
+  R('bounty_hunter_banter_ragna_02c','bounty_hunter','doubtful',"That's your standard?","זה הסטנדרט שלך?",1.72,['en']),
+  R('ragna_banter_bounty_hunter_02d','ragna','judging_wager',"It's a good standard.","זה סטנדרט טוב.",2.04,['en']),
+  R('kesh_banter_bounty_hunter_01a','kesh','close_observation',"The road behind you feels crowded.","הדרך מאחוריך מרגישה עמוסה.",2.69,['en']),
+  R('bounty_hunter_banter_kesh_01b','bounty_hunter','partner_right',"Usually is.","בדרך כלל כן.",1.57,['en'],'kesh'),
+  R('kesh_banter_bounty_hunter_01c','kesh','interesting_choice',"And ahead?","ומה לפניך?",1.15,['en']),
+  R('bounty_hunter_banter_kesh_01d','bounty_hunter','neutral',"Working on it.","עובד על זה.",1.49,['en']),
+  R('kesh_banter_bounty_hunter_02a','kesh','close_observation',"Hard to read a man with no face.","קשה לקרוא אדם בלי פנים.",3.00,['en']),
+  R('bounty_hunter_banter_kesh_02b','bounty_hunter','neutral',"That's useful.","זה שימושי.",1.49,['en']),
+  R('kesh_banter_bounty_hunter_02c','kesh','dry_amusement',"I imagine so.","אני מתאר לעצמי.",1.72,['en']),
+  R('veyra_banter_bounty_hunter_01a','veyra','frustrated',"Your helmet is blocking everything.","הקסדה שלך חוסמת לי הכל.",2.59,['en']),
+  R('bounty_hunter_banter_veyra_01b','bounty_hunter','neutral',"Good.","טוב.",1.07,['en']),
+  R('veyra_banter_bounty_hunter_01c','veyra','banter_correction',"That was not a compliment.","זאת לא הייתה מחמאה.",2.12,['en']),
+  R('bounty_hunter_banter_veyra_01d','bounty_hunter','neutral',"I know.","אני יודע.",1.15,['en']),
+  R('veyra_banter_bounty_hunter_02a','veyra','observing',"I can't read your face.","אני לא מצליחה לקרוא את הפנים שלך.",2.19,['en']),
+  R('bounty_hunter_banter_veyra_02b','bounty_hunter','neutral',"That's the point.","זאת המטרה.",1.57,['en']),
+  R('veyra_banter_bounty_hunter_02c','veyra','amused',"I can read the rest of you.","את השאר אני יכולה לקרוא.",2.35,['en']),
+  R('bounty_hunter_banter_veyra_02d','bounty_hunter','rare_amusement',"Maybe later.","אולי אחר כך.",1.57,['en']),
+  R('bramm_banter_bounty_hunter_01a','bramm','04_smug_challenge',"Alright, helmet. How much am I worth?","טוב, קסדה. כמה אני שווה?",4.36,['en']),
+  R('bounty_hunter_banter_bramm_01b','bounty_hunter','partner_right',"Currently?","כרגע?",1.07,['en'],'bramm'),
+  R('bramm_banter_bounty_hunter_01c','bramm','06_mocking_disbelief',"...Currently?","...כרגע?",1.23,['en']),
+  R('bounty_hunter_banter_bramm_01d','bounty_hunter','neutral',"Not much.","לא הרבה.",1.49,['en']),
+  R('bramm_banter_bounty_hunter_02a','bramm','02_intro_boast',"You know, they call me Bramm the Unbeaten.","אתה יודע, קוראים לי בראם הבלתי מנוצח.",3.71,['en']),
+  R('bounty_hunter_banter_bramm_02b','bounty_hunter','doubtful',"Who does?","מי קורא לך ככה?",1.31,['en']),
+  R('bramm_banter_bounty_hunter_02c','bramm','27_smug_unbeaten',"Me.","אני.",1.07,['en']),
+  R('bounty_hunter_banter_bramm_02d','bounty_hunter','neutral',"Right.","כן.",1.15,['en']),
+  R('bounty_hunter_chitchat_gorvan_edrin_01a','bounty_hunter','partner_left',"He's a vampire.","הוא ערפד.",1.96,['en'],'gorvan'),
+  R('edrin_chitchat_bounty_hunter_gorvan_01b','edrin','casual_acceptance',"We know.","אנחנו יודעים.",1.15,['en']),
+  R('bounty_hunter_chitchat_gorvan_edrin_01c','bounty_hunter','partner_right',"And no one sees a problem.","ואף אחד לא רואה פה בעיה.",2.04,['en'],'edrin'),
+  R('gorvan_chitchat_bounty_hunter_edrin_01d','gorvan','silent_down',"I can hear you.","אני שומע אותך.",1.57,['en']),
+  R('bounty_hunter_chitchat_gorvan_edrin_01e','bounty_hunter','partner_left',"I know.","אני יודע.",1.15,['en'],'gorvan'),
+  R('veyra_chitchat_bounty_hunter_gorvan_01a','veyra','silent_doubt',"His shadow is wrong.","הצל שלו לא בסדר.",2.19,['en']),
+  R('bounty_hunter_chitchat_veyra_gorvan_01b','bounty_hunter','approval',"Finally.","סוף סוף.",1.31,['en']),
+  R('gorvan_chitchat_bounty_hunter_veyra_01c','gorvan','title_tired',"This again.","שוב זה.",1.49,['en']),
+  R('bounty_hunter_chitchat_veyra_gorvan_01d','bounty_hunter','attention',"You see?","אתם רואים?",1.15,['en'],'player'),
+  R('bramm_chitchat_bounty_hunter_ragna_01a','bramm','11_showing_off',"Ever taken down an orc?","פעם תפסת אורק?",2.04,['en']),
+  R('bounty_hunter_chitchat_bramm_ragna_01b','bounty_hunter','neutral',"Yes.","כן.",1.15,['en']),
+  R('bramm_chitchat_bounty_hunter_ragna_01c','bramm','33_muttering',"Big one?","גדול?",1.65,['en']),
+  R('bounty_hunter_chitchat_bramm_ragna_01d','bounty_hunter','neutral',"Yes.","כן.",1.23,['en']),
+  R('ragna_chitchat_bounty_hunter_bramm_01e','ragna','enjoying_challenge',"Stop asking questions, Bramm.","תפסיק לשאול שאלות, בראם.",3.40,['en']),
+  R('veyra_chitchat_bounty_hunter_kesh_01a','veyra','frustrated',"Nothing. I get absolutely nothing from him.","כלום. אני לא מקבלת ממנו שום דבר.",3.87,['en']),
+  R('kesh_chitchat_bounty_hunter_veyra_01b','kesh','dry_amusement',"Perhaps that is the sign.","אולי זה הסימן.",2.35,['en']),
+  R('bounty_hunter_chitchat_veyra_kesh_01c','bounty_hunter','neutral',"Perhaps not.","אולי לא.",1.31,['en'])
 ].map(item=>[item.voice,item])));
 
 // A banter recording as a reaction the guest seats can perform (the same shape as
 // every authored line: id, voice, captions, expression, priority, duration).
-export const banterReaction=voice=>{const item=BANTER_RECORDINGS[voice];if(!item)return null;return Object.freeze({id:voice,trigger:'banter',voice,caption:item.captions.en,captions:item.captions,expression:item.expression,priority:'MEDIUM',category:'banter',duration:Math.round(item.seconds*1000)+650});};
+export const banterReaction=voice=>{const item=BANTER_RECORDINGS[voice];if(!item)return null;return Object.freeze({id:voice,trigger:'banter',voice,caption:item.captions.en,captions:item.captions,expression:item.expression,look:item.look||null,priority:'MEDIUM',category:'banter',duration:Math.round(item.seconds*1000)+650});};
 export const banterSpeaker=voice=>BANTER_RECORDINGS[voice]?.speaker||null;
 export function resolveBanterVoice(name,locale='en'){
   const item=BANTER_RECORDINGS[name];if(!item)return null;const ui=locale==='he'?'he':'en';if(!item.takes.includes(ui))return null;

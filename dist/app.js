@@ -17,6 +17,7 @@ import { allTavernVoices, createTavernDirector } from './duel/tavern-director.js
 import { duelEventFor } from './duel/authored-pack.js';
 import { debugMarkVeyraVoiceMissing, veyraDebugMissingVoices, VEYRA_ENGLISH_ONLY } from './duel/veyra.js';
 import { debugMarkGorvanVoiceMissing } from './duel/gorvan.js';
+import { debugMarkBountyHunterVoiceMissing } from './duel/bounty-hunter.js';
 
 const root=document.querySelector('#app');
 // iOS home-screen web apps can leave the document scrolled (after rotation, the
@@ -38,7 +39,7 @@ const isEnglish=()=>settings.language==='en';
 const direction=()=>isEnglish()?'ltr':'rtl';
 const colorNames={he:{red:'בורדו',blue:'צפחה',green:'יער',yellow:'זהב'},en:{red:'Burgundy',blue:'Slate',green:'Forest',yellow:'Gold'}};
 const archetypeNames={he:{hunter:'הציידת',bard:'הפייטן',mercenary:'שכיר החרב',wanderer:'הנודד',scholar:'המלומד',mysterious:'הסוחר',traveler:'הנוסע'},en:{hunter:'The Hunter',bard:'The Bard',mercenary:'The Mercenary',wanderer:'The Wanderer',scholar:'The Scholar',mysterious:'The Trader',traveler:'The Traveler'}};
-const playerNames={you:'You',ragna:'Ragna',edrin:'Edrin',veyra:'Veyra',gorvan:'Gorvan',ויירה:'Veyra',גורבן:'Gorvan',aila:'Aila',ron:'Ron',bran:'Bran',sela:'Sela',kesh:'Kesh',roderic:'Roderic',lio:'Lio',mograth:'Mograth',harrow:'Harrow',rusk:'Rusk',bramm:'Bramm',adren:'Adren',myra:'Myra',toren:'Toren',leva:'Leva',sig:'Sig',alva:'Alva',hal:'Hal',runa:'Runa',derik:'Derik',lucien:'Lucien',inigo:'Inigo',lydia:'Lydia',viren:'Viren',soren:'Soren',waylin:'Waylin',אתם:'You',איילה:'Aila',רון:'Ron',בראן:'Bran',אדרן:'Adren',מירא:'Myra',טורן:'Toren',ליבה:'Leva',סיג:'Sig',אלבה:'Alva',האל:'Hal',רונה:'Runa',דריק:'Derik',לוסיאן:'Lucien',איניגו:'Inigo',לידיה:'Lydia',וירן:'Viren',סורן:'Soren',ויילין:'Waylin'};
+const playerNames={you:'You',ragna:'Ragna',edrin:'Edrin',veyra:'Veyra',gorvan:'Gorvan',bounty_hunter:'The\u00a0Bounty Hunter',ויירה:'Veyra',גורבן:'Gorvan','צייד הראשים':'The\u00a0Bounty Hunter',aila:'Aila',ron:'Ron',bran:'Bran',sela:'Sela',kesh:'Kesh',roderic:'Roderic',lio:'Lio',mograth:'Mograth',harrow:'Harrow',rusk:'Rusk',bramm:'Bramm',adren:'Adren',myra:'Myra',toren:'Toren',leva:'Leva',sig:'Sig',alva:'Alva',hal:'Hal',runa:'Runa',derik:'Derik',lucien:'Lucien',inigo:'Inigo',lydia:'Lydia',viren:'Viren',soren:'Soren',waylin:'Waylin',אתם:'You',איילה:'Aila',רון:'Ron',בראן:'Bran',אדרן:'Adren',מירא:'Myra',טורן:'Toren',ליבה:'Leva',סיג:'Sig',אלבה:'Alva',האל:'Hal',רונה:'Runa',דריק:'Derik',לוסיאן:'Lucien',איניגו:'Inigo',לידיה:'Lydia',וירן:'Viren',סורן:'Soren',ויילין:'Waylin'};
 function colorName(color){return colorNames[settings.language]?.[color]||colorNames.he[color]||'';}
 function colorRuneHTML(color,className='color-rune'){return runeSVG(color,className);}
 
@@ -426,7 +427,7 @@ function announce(entries){
   if(play){const card=state.discardPile.find(c=>c.id===play.cardId),label=card?(card.type===TYPES.NUMBER?`${card.value} ${colorName(card.color)}`:cardLabel(card,'he')):'קלף';return play.playerId==='p0'?`שיחקתם ${label}`:`${names[play.playerId]} ${verb(play.playerId,'שיחק','שיחקה')} ${label}`;}
   return'';
 }
-const CHARACTER_GENDER={ragna:'f',edrin:'m',veyra:'f',gorvan:'m',aila:'f',sela:'f',ron:'f',bran:'f',kesh:'m',roderic:'m',lio:'m',mograth:'m',harrow:'m',rusk:'m',bramm:'m'};
+const CHARACTER_GENDER={ragna:'f',edrin:'m',veyra:'f',gorvan:'m',bounty_hunter:'m',aila:'f',sela:'f',ron:'f',bran:'f',kesh:'m',roderic:'m',lio:'m',mograth:'m',harrow:'m',rusk:'m',bramm:'m'};
 function isFeminine(player){if(!player)return false;const known=player.gender||CHARACTER_GENDER[player.nameKey||player.duelOpponentId];if(known)return known==='f';return(['hunter','scholar'].includes(player.archetype)||['איילה','לידיה','סֶלָה','מירא','ליבה','אלבה','רונה'].includes(player.name));}
 function winnerLine(player,unit='round'){if(!player)return'';const hand=unit==='hand';if(isEnglish())return player.id==='p0'?(hand?'You won the hand':'You won the round'):`${displayName(player)} won the ${hand?'hand':'round'}`;if(player.id==='p0')return hand?'ניצחתם ביד':'ניצחתם בסיבוב';return`${player.name} ${isFeminine(player)?'ניצחה':'ניצח'} ${hand?'ביד':'בסיבוב'}`;}
 function onState(action){
@@ -523,7 +524,7 @@ function onState(action){
       if(after==='attentive'&&before==='default'&&characterExpression===shown&&!characterSpeaking)runCharacter('close_game');
       if(after!==before&&characterExpression===shown&&!characterSpeaking)setCharacterExpression(restingExpression());
     }else if(isGenericDuel()&&state.phase!=='finished'){
-      genericDuelUpdate({played,playedCard,stop,stack,penalty,draw,closed,reverse,crossbowRun,previousCounts});
+      genericDuelUpdate({played,playedCard,stop,stack,penalty,draw,closed,opened,reverse,again,crossbowRun,previousCounts});
     }else if(isAuthoredDuel());
     else if((penalty?.playerId==='p1'&&penalty.amount>=4)||stop?.skipped==='p1')setDuelReaction('annoyed',duelLine('annoyed'));
     else if(humanMove&&(reverse||opened||playedCard?.type===TYPES.KING||state.players[0].hand.length===1))setDuelReaction('surprised',duelLine('surprised'));
@@ -614,11 +615,13 @@ function keshOmenLine(phase){if(isKeshDuel())runCharacter('omen',{phase});else i
 // ── Veyra and Gorvan at the Duel table: the generic authored dispatch ──────────
 // One trigger per table update from the shared classifier (duel/authored-pack.js),
 // read from the character's side.
-function genericDuelUpdate({played,playedCard,stop,stack,penalty,draw,closed,reverse,crossbowRun,previousCounts}){
+function genericDuelUpdate({played,playedCard,stop,stack,penalty,draw,closed,opened=null,reverse,again=null,crossbowRun,previousCounts}){
   const humanCount=state.players[0].hand.length,ownCount=state.players[1].hand.length,oldHuman=previousCounts.p0??humanCount,oldOwn=previousCounts.p1??ownCount;
   if(oldHuman===1&&humanCount>1){const settle=characterController.oneCardRecovered();if(settle&&!characterSpeaking)setCharacterExpression(settle.expression,settle.duration);}
   const shown=characterExpression,before=characterController.snapshot().state;characterController.observeTable({humanCount,ownCount});const after=characterController.snapshot().state;
-  const event=duelEventFor({played,playedCard,stop,stack,penalty,draw,closed,reverse,crossbowRun,humanCount,ownCount,oldHuman,oldOwn,cursedBefore:penaltyOnHumanBefore});
+  const shared=duelEventFor({played,playedCard,stop,stack,penalty,draw,closed,reverse,crossbowRun,humanCount,ownCount,oldHuman,oldOwn,cursedBefore:penaltyOnHumanBefore});
+  // A pack may name a few moments more precisely (the Bounty Hunter: his own Curse, Crossbow, King).
+  const pack=authoredPack(),event=pack?.refineEvent?pack.refineEvent(shared,{played,playedCard,stack,opened,closed,crossbowRun,again,humanCount,cursedBefore:tablePenaltyBefore}):shared;
   const context={playerOnOneCard:humanCount===1,ownTurn:currentPlayer(state).id==='p1',playerStillToPlay:currentPlayer(state).id==='p0'};
   if(event)runCharacter(event[0],{...event[1],...context});
   if(after==='attentive'&&before==='default'&&characterExpression===shown&&!characterSpeaking)runCharacter('close_game');
@@ -659,8 +662,20 @@ function setupTavernGuests(){
   const seats=Object.fromEntries(guests.map(p=>[p.id,p.nameKey]));
   tavernGuests={key,director:createTavernDirector({seats,now:activeNow,locale:()=>settings.language,captions:()=>!!settings.captions,heard:settings.heardBanter||[],initial:session.tavernDirector||null}),seats:Object.fromEntries(guests.map(p=>[p.id,{id:p.nameKey,face:AUTHORED_CHARACTERS[p.nameKey].defaultExpression,timer:null}])),speaking:false,slip:{},curseBy:null,penaltyBefore:false,dawdled:null};
 }
-function setGuestFace(seatId,expression,duration=1700){
+// v113: where a guest with authored looks (the Bounty Hunter) sits relative to someone else:
+// the opponents sit left to right in SEAT_LAYOUTS order; the player is straight ahead.
+function seatColumn(seatId){const opponents=state?.players.slice(1,6)||[],layout=SEAT_LAYOUTS[opponents.length]||SEAT_LAYOUTS[5],index=opponents.findIndex(p=>p.id===seatId);return index<0?null:({w:0,nw:1,n:2,ne:3,e:4})[layout[index]]??2;}
+// The face for "look at <target>" (a seat id, a guest id, or 'player'), from the real seating — never mirrored art.
+function lookFace(seatId,target){
+  const pack=AUTHORED_CHARACTERS[tavernGuests?.seats[seatId]?.id];if(!pack?.looks)return null;
+  const toward=target&&target!=='player'&&!/^p\d$/.test(target)?guestSeatOf(target):target;
+  if(!toward||toward==='player'||toward==='p0')return pack.looks.ahead;
+  const from=seatColumn(seatId),to=seatColumn(toward);if(from===null||to===null||to===from)return pack.looks.ahead;
+  return to<from?pack.looks.left:pack.looks.right;
+}
+function setGuestFace(seatId,expression,duration=1700,toward=null){
   const seat=tavernGuests?.seats[seatId];if(!seat)return;const pack=AUTHORED_CHARACTERS[seat.id],rest=pack.defaultExpression;
+  if(expression==='@look')expression=lookFace(seatId,toward);
   clearTimeout(seat.timer);seat.face=expression&&pack.expressions.includes(expression)?expression:rest;render();
   // duration 0 holds the face (a result) until the next hand.
   if(expression&&duration>0){const epoch=sessionEpoch;seat.timer=setTimeout(()=>{if(epoch!==sessionEpoch||tavernGuests?.seats[seatId]!==seat)return;seat.face=rest;render();},settings.reducedMotion?Math.min(duration,900):duration);}
@@ -668,7 +683,7 @@ function setGuestFace(seatId,expression,duration=1700){
 function tavernEvent(type,context={}){
   if(!tavernGuests||view!=='game'||isPaused())return false;
   const plan=tavernGuests.director.event(type,{round:session?.round||1,minCards:state?Math.min(...state.players.map(p=>p.hand.length)):9,...context,busy:tavernGuests.speaking||!!audioSystem.voiceSource,muted:guestsMuted()});
-  for(const face of plan.faces)if(!(tavernGuests.speaking&&tavernGuests.speakingSeat===face.seat))setGuestFace(face.seat,face.expression,face.duration);
+  for(const face of plan.faces)if(!(tavernGuests.speaking&&tavernGuests.speakingSeat===face.seat))setGuestFace(face.seat,face.expression,face.duration,face.toward);
   if(plan.lines.length){performGuestLines(plan.lines,{result:type==='round_end'||type==='match_end',after:plan.after||[]});if(plan.banter)rememberBanter(plan.banter);persist();return true;}
   return false;
 }
@@ -683,9 +698,12 @@ function performGuestLines(lines,{result=false,after=[]}={}){
   const step=index=>{
     if(epoch!==sessionEpoch||tavernGuests!==guests)return;
     // v107: once an exchange about the player ends, a listener may glance at them (silent face, then back).
-    if(index>=lines.length){guests.speaking=false;guests.speakingSeat=null;for(const look of after)if(look.seat)setGuestFace(look.seat,look.expression,look.duration);return;}
+    if(index>=lines.length){guests.speaking=false;guests.speakingSeat=null;if(!result)for(const seat of new Set(lines.map(item=>item.seat)))if(AUTHORED_CHARACTERS[guests.seats[seat]?.id]?.looks)setGuestFace(seat,null);for(const look of after)if(look.seat)setGuestFace(look.seat,look.expression,look.duration);return;}
     const line=lines[index],pack=AUTHORED_CHARACTERS[line.guest],resolved=line.reaction.category==='banter'?resolveBanterLine(line.reaction):pack.resolveReaction(line.reaction,settings.language),localized=line.silent?{...resolved,voice:null}:resolved;
-    guests.speakingSeat=line.seat;setGuestFace(line.seat,localized.expression,0);
+    // v113: a speaker with authored looks turns toward whoever the line is addressed to, from the
+    // real seating; a listener with looks (in this exchange) turns toward the speaker.
+    guests.speakingSeat=line.seat;setGuestFace(line.seat,(pack.looks&&localized.look&&lookFace(line.seat,localized.look))||localized.expression,0);
+    if(lines.length>1)for(const other of new Set(lines.map(item=>item.seat)))if(other!==line.seat&&AUTHORED_CHARACTERS[tavernGuests.seats[other]?.id]?.looks)setGuestFace(other,'@look',0,line.seat);
     // v109: inside an exchange the next speaker comes in quickly (120 ms after a line, was 450).
     let done=false;const finish=()=>{if(done||epoch!==sessionEpoch)return;done=true;const beat=lines[index+1]?120:450;const timer=setTimeout(()=>{if(epoch!==sessionEpoch||tavernGuests!==guests)return;if(quip?.player===line.seat){quip=null;}if(!result)setGuestFace(line.seat,null);render();const next=lines[index+1];const gap=setTimeout(()=>step(index+1),next?(settings.reducedMotion?200:next.pause??350):0);characterSequenceTimers.push(gap);},settings.reducedMotion?120:beat);characterSequenceTimers.push(timer);};
     const bubble=()=>{if(epoch!==sessionEpoch||tavernGuests!==guests)return;clearTimeout(quipTimer);quip={player:line.seat,text:localized.caption,lang:localized.locale,guest:true};lastQuipAt=Date.now();render();};
@@ -719,7 +737,7 @@ function tavernObserve({played,playedCard,stop,stack,penalty,draw,reverse,closed
   const reached=Object.keys(counts).find(id=>counts[id]===1&&(previousCounts[id]??counts[id])>1);
   if(reached)say('one_card',{actor:reached});
   else if(penalty){say('penalty',{victim:penalty.playerId,amount:penalty.amount||2,source:guests.curseBy,victimCount:counts[penalty.playerId]});delete guests.slip[penalty.playerId];guests.curseBy=null;}
-  else if(stop){const victim=stop.skipped,shielder=guests.seats[played?.playerId]?.id;if(guests.seats[victim]||shielder==='veyra'||shielder==='gorvan')say('skip',{actor:played?.playerId,victim});else say((counts[victim]??9)<=2?'good_move':'move',{actor:played?.playerId,victim});}
+  else if(stop){const victim=stop.skipped,shielder=guests.seats[played?.playerId]?.id;if(guests.seats[victim]||shielder==='veyra'||shielder==='gorvan'||shielder==='bounty_hunter')say('skip',{actor:played?.playerId,victim});else say((counts[victim]??9)<=2?'good_move':'move',{actor:played?.playerId,victim});}
   else if(playedCard?.type===TYPES.KING){const broke=guests.penaltyBefore;say('king',{actor:played.playerId,victim:broke?guests.curseBy:null});if(broke)guests.curseBy=null;}
   else if(reverse)say('reverse',{actor:played?.playerId});
   else if(draw){say('draw',{actor:draw.playerId,slip:!!guests.slip[draw.playerId]});delete guests.slip[draw.playerId];}
@@ -767,12 +785,12 @@ function homeHTML(){
 // you. Swipe (or use the arrows/keys) to see the others; which one is waiting
 // first changes every visit. The other nine regulars are a random draw.
 const DUEL_KICKERS=Object.freeze({
-  en:{bramm:'The house champion',edrin:'Thirty years at this table',ragna:'Wants more gold on the table',kesh:'Reads the table by its signs',veyra:'Knows a proper curse when she sees one',gorvan:'The house insists on “Lord”'},
-  he:{bramm:'אלוף הבית',edrin:'שלושים שנה ליד השולחן הזה',ragna:'רוצה יותר זהב על השולחן',kesh:'קורא את השולחן לפי הסימנים',veyra:'מזהה קללה אמיתית כשהיא רואה אחת',gorvan:'הבית מתעקש על ״לורד״'}
+  en:{bramm:'The house champion',edrin:'Thirty years at this table',ragna:'Wants more gold on the table',kesh:'Reads the table by its signs',veyra:'Knows a proper curse when she sees one',gorvan:'The house insists on “Lord”',bounty_hunter:'Has time to kill'},
+  he:{bramm:'אלוף הבית',edrin:'שלושים שנה ליד השולחן הזה',ragna:'רוצה יותר זהב על השולחן',kesh:'קורא את השולחן לפי הסימנים',veyra:'מזהה קללה אמיתית כשהיא רואה אחת',gorvan:'הבית מתעקש על ״לורד״',bounty_hunter:'יש לו זמן להרוג'}
 });
 const DUEL_HOME_LINES=Object.freeze({
-  en:{bramm:'Bramm waits. “Still unbeaten.”',edrin:'Edrin has saved you a seat.',ragna:'Ragna waits. “Sit straight.”',kesh:'Kesh waits. “The signs are quiet tonight.”',veyra:'Veyra waits. “Oh. This will be interesting.”',gorvan:'Gorvan waits. “Shall we?”'},
-  he:{bramm:'בראם מחכה. ״עדיין בלתי־מנוצח.״',edrin:'אדרין שמר לכם מקום.',ragna:'ראגנה מחכה. ״לשבת ישר.״',kesh:'קֶשׁ מחכה. ״הסימנים שקטים הלילה.״',veyra:'ויירה מחכה. ״או. זה הולך להיות מעניין.״',gorvan:'גורבן מחכה. ״שנתחיל?״'}
+  en:{bramm:'Bramm waits. “Still unbeaten.”',edrin:'Edrin has saved you a seat.',ragna:'Ragna waits. “Sit straight.”',kesh:'Kesh waits. “The signs are quiet tonight.”',veyra:'Veyra waits. “Oh. This will be interesting.”',gorvan:'Gorvan waits. “Shall we?”',bounty_hunter:'The Bounty Hunter waits. “Hello.”'},
+  he:{bramm:'בראם מחכה. ״עדיין בלתי־מנוצח.״',edrin:'אדרין שמר לכם מקום.',ragna:'ראגנה מחכה. ״לשבת ישר.״',kesh:'קֶשׁ מחכה. ״הסימנים שקטים הלילה.״',veyra:'ויירה מחכה. ״או. זה הולך להיות מעניין.״',gorvan:'גורבן מחכה. ״שנתחיל?״',bounty_hunter:'צייד הראשים מחכה. ״שלום.״'}
 });
 let duelIndex=Math.floor(Math.random()*VOICED_OPPONENTS.length);
 const featuredDuelOpponent=()=>VOICED_OPPONENTS[duelIndex]||VOICED_OPPONENTS[0];
@@ -873,7 +891,7 @@ const propAssets=Object.freeze({
 // Kesh keeps only his clay cup on the table: his rune stone stays in his hand. Edrin has no drink (he keeps looking for it).
 // Veyra keeps a dark bottle by her; Gorvan has "the usual".
 const SEAT_SIGNATURES=Object.freeze({
-  aila:['woodenTankard','arrowhead'],ron:['ceramicCup','flute'],bran:['pewterTankard','whetstone'],sela:['pewterGoblet','inkpot'],kesh:['ceramicCup'],bramm:['bread'],ragna:['pewterTankard'],edrin:[],veyra:['darkBottle'],gorvan:['pewterGoblet'],
+  aila:['woodenTankard','arrowhead'],ron:['ceramicCup','flute'],bran:['pewterTankard','whetstone'],sela:['pewterGoblet','inkpot'],kesh:['ceramicCup'],bramm:['bread'],ragna:['pewterTankard'],edrin:[],veyra:['darkBottle'],gorvan:['pewterGoblet'],bounty_hunter:[],
   roderic:['pewterTankard','dice'],lio:['ceramicCup','purse'],mograth:['horn','bread'],harrow:['woodenTankard','pipe'],rusk:['medievalFlask','map']
 });
 // Two objects per seat at most: one drink (the signature) and one personal item.
@@ -920,7 +938,7 @@ function seatHTML(player,position){
   const label=active?(en?`${name}'s turn, ${cardCountLabel(count)}`:`התור של ${name}, ${cardCountLabel(count)}`):`${name}, ${cardCountLabel(count)}`;
   return `<div class="seat seat-${position} ${seatFigureHTML(player)?'has-figure':''} ${duelOpponent?`duel-seat opponent-${duelOpponent.id}`:''} ${active?'active':''} ${count===1&&state.phase==='playing'?'last-card':''} ${stopped?'sealed':''} ${propRattled.has(player.id)?'rattled':''} ${winning?'winner-seat':''}" data-player-id="${player.id}" data-seat="${position}" role="group" aria-label="${label}">
     ${seatFigureHTML(player)}
-    <div class="seat-plate">${house}<span class="seat-name"><b>${name}</b>${epithet?`<small>${epithet}</small>`:''}</span><span class="seat-count" title="${cardCountLabel(count)}"><i class="mini-back" aria-hidden="true"></i><bdi>${count}</bdi></span></div>
+    <div class="seat-plate">${house}<span class="seat-name ${name.length>12?'long-name':''}"><b>${name}</b>${epithet?`<small>${epithet}</small>`:''}</span><span class="seat-count" title="${cardCountLabel(count)}"><i class="mini-back" aria-hidden="true"></i><bdi>${count}</bdi></span></div>
     ${seatScoreHTML(player)}
     <div class="seat-fan" data-hand-anchor aria-hidden="true">${backs}</div>
     ${revealedHandHTML(player)}
@@ -1384,6 +1402,17 @@ window.GorvanDebug=characterDebug('gorvan',{
   titleStep:()=>settings.gorvanTitleStep||0,
   sfx:name=>{const key={entrance:'gorvanEntrance',pulse:'gorvanPulse',accent:'gorvanAccent',curse:'gorvanCurse'}[name];if(!key)return null;audioSystem.setSettings(settings);return audioSystem.play(key);},
   sfxMemory:()=>({...gorvanSfx,pulsed:[...gorvanSfx.pulsed]})
+});
+// The Bounty Hunter: every line (English voice; Hebrew bubbles), every body-language state,
+// the cards he has lines for, and the seat-aware look toward a speaker at a Tavern table.
+window.BountyHunterDebug=characterDebug('bounty_hunter',{
+  ...packDebug('bounty_hunter',debugMarkBountyHunterVoiceMissing),
+  simulateOwnCurse:(amount=2)=>authoredPack()?.id==='bounty_hunter'?runCharacter('own_curse',{amount,urgent:true},true):null,
+  simulateCrossbow:()=>authoredPack()?.id==='bounty_hunter'?runCharacter('own_crossbow',{},true):null,
+  simulateRunedCrossbow:()=>authoredPack()?.id==='bounty_hunter'?runCharacter('own_runed_crossbow',{run:3},true):null,
+  simulateOwnKing:(broke=false)=>authoredPack()?.id==='bounty_hunter'?runCharacter('own_king',{broke},true):null,
+  look:target=>{const seat=guestSeatOf('bounty_hunter');if(!seat)return null;setGuestFace(seat,'@look',2400,target);return tavernGuests.seats[seat].face;},
+  topics:()=>tavernGuests?.director.topics()||null
 });
 // Voiced Tavern guests (console). startWith(['bramm','ragna']) seats chosen guests at a fresh
 // Tavern Match; say/banter/face force a line, an exchange or a face; event(type,context)

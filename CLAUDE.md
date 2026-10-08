@@ -23,8 +23,8 @@ If the tests fail, fix them before pushing. Never push a red build to `main`.
 ## Layout
 - `dist/` — the playable static site (all paths relative; works under `/runes-tavern-game/`)
 - `tests/` — `npm test`; `tests/e2e/smoke.mjs` for a browser smoke test
-- `*_PASS.md`, `EDRIN_INTEGRATION.md`, `RAGNA_INTEGRATION.md`, `KESH_INTEGRATION.md`, `VEYRA_INTEGRATION.md`, `GORVAN_INTEGRATION.md`, `TAVERN_GUESTS.md` — design/implementation history notes
-- New authored characters: build them on `dist/duel/authored-pack.js` (see Veyra and Gorvan) — script + expression map + one language rule; the Duel dispatch and Tavern seat are generic.
+- `*_PASS.md`, `EDRIN_INTEGRATION.md`, `RAGNA_INTEGRATION.md`, `KESH_INTEGRATION.md`, `VEYRA_INTEGRATION.md`, `GORVAN_INTEGRATION.md`, `BOUNTY_HUNTER_INTEGRATION.md`, `TAVERN_GUESTS.md` — design/implementation history notes
+- New authored characters: build them on `dist/duel/authored-pack.js` (see Veyra, Gorvan and the Bounty Hunter) — script + expression map + one language rule; the Duel dispatch and Tavern seat are generic. Optional pack hooks: `refineEvent` (name extra moments), `looks` (seat-aware glances); banter options `topic`, `needs`, `pauseScale`.
 
 ## Owner's local copy
 The owner's Mac has a copy at `~/Downloads/Runes Card Game/site-source` with `origin` pointing at

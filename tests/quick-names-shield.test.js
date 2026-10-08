@@ -8,7 +8,7 @@ const read=path=>fs.readFileSync(new URL(path,import.meta.url),'utf8');
 test('v105 Quick Play: strangers come from the whole name pool, voiced cast included, at random',()=>{
   const keys=QUICK_NAME_POOL.map(p=>p.nameKey);
   assert.equal(new Set(keys).size,keys.length,'no name twice in the pool');
-  for(const p of [...TAVERN_REGULARS,...VOICED_TAVERN_GUESTS])assert.ok(keys.includes(p.nameKey),`${p.nameKey} is in the pool`);
+  for(const p of [...TAVERN_REGULARS,...VOICED_TAVERN_GUESTS])assert.equal(keys.includes(p.nameKey),p.nameKey!=='bounty_hunter',`${p.nameKey} is in the pool (the Bounty Hunter never sits at Quick Play: no name to lend, no generic lines)`);
   for(const k of ['adren','myra','toren','leva','sig','alva','hal','runa','derik','lucien','inigo','lydia','viren','soren','waylin'])assert.ok(keys.includes(k),k);
   const seen=new Set(),firstSeats=new Set();
   for(let seed=1;seed<=400;seed++){

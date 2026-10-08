@@ -44,7 +44,7 @@ test('the deleted player-draw take is neither referenced nor shipped',()=>{
   const files=fs.readdirSync(new URL('../dist/assets/ragna/voice/',import.meta.url));
   assert.ok(!files.some(name=>name.startsWith('ragna_player_draw_01')));
   // 81 takes of her own, plus her side of the Veyra (2) and Gorvan (2, English only) banter, and v106's eight (English only).
-  assert.equal(files.filter(name=>!name.includes('_banter_')).length,81);assert.equal(files.length,102);assert.ok(files.every(name=>name.endsWith('.mp3')));
+  assert.equal(files.filter(name=>!name.includes('_banter_')&&!name.includes('_chitchat_')).length,81);assert.equal(files.length,107);assert.ok(files.every(name=>name.endsWith('.mp3')));
 });
 
 test('bubbles show the exact authored transcript, acting directions removed, Hebrew untouched',()=>{
@@ -55,7 +55,7 @@ test('bubbles show the exact authored transcript, acting directions removed, Heb
 });
 
 test('one framework: Ragna plugs into the shared registry, the shared controller and the single voice path',()=>{
-  assert.deepEqual(VOICED_OPPONENTS,['bramm','edrin','ragna','kesh','veyra','gorvan']);
+  assert.deepEqual(VOICED_OPPONENTS,['bramm','edrin','ragna','kesh','veyra','gorvan','bounty_hunter']);
   assert.match(resolveCharacterVoice('ragna_round_win_04','he').src,/ragna_round_win_04_he\.mp3$/);
   assert.match(read('../dist/duel/ragna.js'),/createAuthoredController\(RAGNA_SPEC/);
   assert.match(read('../dist/duel/edrin.js'),/createAuthoredController\(EDRIN_SPEC/);
