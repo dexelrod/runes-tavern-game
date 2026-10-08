@@ -38,7 +38,7 @@ test('Veyra registers every authored line, all 61 poses, and every delivered voi
   assert.deepEqual([...VEYRA_ENGLISH_ONLY].toSorted(),['veyra_intro_02','veyra_player_good_move_01']);
   const files=fs.readdirSync(new URL('../dist/assets/veyra/voice/',import.meta.url));
   // 55 lines (two in English only) + her six banter lines in both languages + three English-only Gorvan banter lines + v106's seven (English only).
-  assert.equal(files.length,55*2-2+12+3+7+1);assert.ok(files.every(name=>name.endsWith('.mp3')));
+  assert.equal(files.length,55*2-2+12+3+7+1+7);assert.ok(files.every(name=>name.endsWith('.mp3')));
   for(const deleted of ['veyra_intro_02_he','veyra_player_good_move_01_he','veyra_reverse_01','veyra_reverse_01_he','veyra_reverse_02','veyra_reverse_02_he','veyra_king_01','veyra_king_01_he']){
     assert.ok(!files.includes(`${deleted}.mp3`),`${deleted} stays deleted`);
     assert.ok(!read('../dist/duel/veyra.js').includes(`'${deleted.replace('veyra_','')}'`),`${deleted} is not referenced`);
@@ -238,7 +238,7 @@ test('banter with Kesh, Ragna and Edrin: authored sequences, each one performanc
   // The whole exchange plays as one plan, and nothing else speaks while it runs.
   let clock=1e6;const d=createTavernDirector({seats:{p1:'veyra',p2:'kesh'},random:()=>0,now:()=>clock});for(let i=0;i<5;i++)d.event('move',{actor:'p0'});
   const plan=d.event('idle',{current:'p0'});assert.equal(plan.banter,'veyra_kesh_flame');assert.equal(plan.lines.length,3);assert.deepEqual(plan.lines.map(l=>l.seat),['p1','p2','p1']);
-  assert.ok(plan.lines.slice(1).every(l=>l.pause>=300&&l.pause<=1600),'small natural pauses');
+  assert.ok(plan.lines.slice(1).every(l=>l.pause>=150&&l.pause<=900),'small natural pauses (v109: about half the authored gap)');
   assert.equal(d.event('one_card',{actor:'p0',busy:true}).lines.length,0);
   // "...and then the King appeared." follows a King.
   clock+=1e5;const e=createTavernDirector({seats:{p1:'veyra',p2:'edrin'},random:()=>0,now:()=>clock});for(let i=0;i<5;i++)e.event('move',{actor:'p0'});assert.equal(e.event('king',{actor:'p0'}).banter,'veyra_edrin_signs');

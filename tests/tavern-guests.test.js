@@ -101,7 +101,7 @@ test('never two lines at once, never a repeat within a match, one line per event
     const voices=said.map(line=>line.voice).filter(v=>v!=='ragna_idle_05');
     assert.equal(new Set(voices).size,voices.length,`${a}+${b} seed ${seed}: a line repeated`);
     // Several lines only as one banter, or a guest's own two-beat performance (Ragna's "Thank you.", Gorvan's retractions).
-    for(const {plan} of plans){if(plan.lines.length>=2)assert.ok(plan.banter||['ragna_idle_05','gorvan_idle_05','gorvan_flavor_03'].includes(plan.lines[1].voice),'several lines only as a banter or a two-beat performance');assert.ok(plan.lines.length<=4,'v106: an exchange runs up to four lines');if(!plan.banter)assert.ok(plan.lines.length<=2);}
+    for(const {plan} of plans){if(plan.lines.length>=2)assert.ok(plan.banter||['ragna_idle_05','gorvan_idle_05','gorvan_flavor_03'].includes(plan.lines[1].voice),'several lines only as a banter or a two-beat performance');assert.ok(plan.lines.length<=7,'v109: an exchange runs up to seven lines');if(!plan.banter)assert.ok(plan.lines.length<=2);}
   }
   // While anything is playing, nothing else starts.
   const d=createTavernDirector({seats:{p1:'bramm'},random:()=>0,now:()=>99999});
@@ -214,7 +214,7 @@ test('v106 exchanges: each fires in its own moment and never when its words woul
   assert.equal(ready({p1:'veyra',p2:'bramm'}).event('one_card',{actor:'p2'}).banter,'veyra_bramm_destiny');
   assert.equal(ready({p1:'veyra',p2:'bramm'}).event('one_card',{actor:'p1'}).banter,null,'destiny is Bramm\'s last card');
   // Edrin + Kesh
-  assert.equal(ready({p1:'edrin',p2:'kesh'}).event('idle',{current:'p0'}).banter,'edrin_kesh_stone');
+  assert.ok(['edrin_kesh_stone','edrin_kesh_interesting_stone'].includes(ready({p1:'edrin',p2:'kesh'}).event('idle',{current:'p0'}).banter));
   assert.equal(ready({p1:'edrin',p2:'kesh'}).event('good_move',{actor:'p2',victim:'p0'}).banter,'edrin_kesh_strategy');
   assert.equal(ready({p1:'edrin',p2:'kesh'}).event('good_move',{actor:'p1',victim:'p0'}).banter,null);
   // Ragna + Kesh
@@ -280,4 +280,30 @@ test('v108 chatter: talk between moves has its own allowance, needs only a short
   assert.equal(TAVERN_TIMING.chatterPerRound,2);assert.equal(TAVERN_TIMING.chatterGap,8000);
   const app=read('../dist/app.js');assert.match(app,/const TAVERN_CHATTER_MS=\[16000,8000\]/);
   assert.match(app,/if\(state\?\.phase==='playing'&&!free\)\{scheduleTavernIdle\(1200\+Math\.random\(\)\*1300\);return;\}/,'a busy moment postpones the chance, it does not throw it away');
+});
+
+test('v109 Vol. 3: openings at the start of a hand, long talk never when someone is about to win, setbacks and late-evening gates, quick beats',()=>{
+  const ready=(seats,extra={})=>{let clock=100000;const d=createTavernDirector({seats,random:()=>0,now:()=>clock,locale:()=>'en',...extra});for(let i=0;i<6;i++)d.event('move',{actor:null});return d;};
+  // Openings: a new hand is a moment of its own.
+  assert.equal(ready({p1:'veyra',p2:'ragna'}).event('round_start',{minCards:8}).banter,'veyra_ragna_followed');
+  assert.ok(['bramm_unbeaten','vampire_concern','edrin_ragna_wager'].includes(ready({p1:'bramm',p2:'ragna',p3:'edrin'}).event('intro',{minCards:8}).banter));
+  assert.equal(ready({p1:'edrin',p2:'gorvan',p3:'veyra'}).event('round_start',{minCards:8}).banter,'vampire_concern','three-handed, all three present');
+  assert.equal(TAVERN_BANTER.find(b=>b.id==='vampire_concern').lines.length,5);
+  // A long conversation never starts when someone is down to their last two cards.
+  assert.equal(ready({p1:'veyra',p2:'ragna'}).event('round_start',{minCards:2}).banter,null);
+  assert.notEqual(ready({p1:'gorvan',p2:'kesh'}).event('idle',{minCards:2}).banter,'gorvan_kesh_old_tavern');
+  // Bramm's cursed table needs two real setbacks first.
+  const cursed=ready({p1:'bramm',p2:'veyra'});assert.notEqual(cursed.event('idle',{minCards:8}).banter,'bramm_veyra_cursed_table');
+  const hit=ready({p1:'bramm',p2:'veyra'});hit.event('penalty',{source:'p0',victim:'p1',amount:2,victimCount:9,busy:true});hit.event('skip',{actor:'p0',victim:'p1',busy:true});
+  assert.equal(hit.event('idle',{minCards:8}).banter,'bramm_veyra_cursed_table','a Curse and a Shield on Bramm: now he feels it');
+  assert.equal(createTavernDirector({seats:{p1:'bramm',p2:'veyra'},initial:{setbacks:{p1:2}},random:()=>0,now:()=>1e6,locale:()=>'en'}).event('idle',{minCards:8}).banter,'bramm_veyra_cursed_table');
+  // Edrin and Gorvan's quiet moment belongs later in the evening.
+  assert.notEqual(ready({p1:'edrin',p2:'gorvan'}).event('idle',{minCards:8,round:1}).banter,'gorvan_edrin_remembering');
+  const late=createTavernDirector({seats:{p1:'edrin',p2:'gorvan'},initial:{used:[],banters:['gorvan_edrin_wine','gorvan_edrin_relax','gorvan_edrin_voice']},random:()=>0,now:()=>1e6,locale:()=>'en'});
+  assert.equal(late.event('idle',{minCards:8,round:3}).banter,'gorvan_edrin_remembering');
+  // Quick beats: Ragna cuts Gorvan off; every gap is short.
+  const bed=ready({p1:'gorvan',p2:'ragna'}).event('round_start',{minCards:8});assert.equal(bed.banter,'gorvan_ragna_bedtime');assert.ok(bed.lines[3].pause<=60,'she interrupts');
+  for(const b of [bed])assert.ok(b.lines.slice(1).every(l=>l.pause<=750));
+  const app=read('../dist/app.js');assert.match(app,/tavernEvent\('round_start',\{\}\)/);assert.match(app,/const beat=lines\[index\+1\]\?120:450/);
+  assert.match(app,/const dawdle=\{edrin:\.035,gorvan:\.03,kesh:\.025\}/,'Edrin and Kesh no longer linger');
 });

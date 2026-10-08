@@ -1,4 +1,4 @@
-# Voiced guests at the Tavern — integration notes (v101, updated v103, v104, v105, v106, v107, v108)
+# Voiced guests at the Tavern — integration notes (v101, updated v103, v104, v105, v106, v107, v108, v109)
 
 Now and then Bramm, Edrin, Ragna, Kesh, Veyra or Gorvan happens to be playing at a Tavern Match, usually in company. They say a handful of approved lines, pull faces at what happens around them, and, rarely, two of them trade lines. The aim is "Bramm happened to be in tonight", not a character mode.
 
@@ -44,6 +44,27 @@ Gorvan × Bramm "Don't Encourage It" (the player wins a round) is written but ha
 **v108: chatter between moves.** Guests now talk now and then about nothing in particular while play goes on, not only after a move or in a lull. Every 16–24 s of play (`TAVERN_CHATTER_MS` in `app.js`) the table gets an `idle` chance; a card in flight or a voice in progress postpones it by a second or two instead of throwing it away. Chatter has its own allowance in the director: two a hand (`chatterPerRound`), 8 s of quiet first (`chatterGap`), up to three per guest a match (two for Edrin and Gorvan, `TAVERN_CHATTER_CAP`), and it no longer spends the hand's two casual moments or the per-guest cap. Odds: a solo idle line .45 (was .3), an idle exchange .4 (was .28). Lines come from each guest's idle pool and the quiet-stretch exchanges. Measured: one guest about 8.8 lines a match, two about 15.6, three about 22.8.
 
 The limit is material: the free-floating pools are small (Ragna 1 line, Bramm 2, Edrin 3, Kesh 3, Veyra 4, Gorvan 5), and every line plays once a match, so chatter thins out after the first hands. More ambient lines are the way to grow it.
+
+**v109: Tavern Conversations Vol. 3, quicker exchanges, quicker Edrin and Kesh.**
+
+Nine owner-written conversations (53 English recordings; Hebrew as subtitle text), two of them three-handed:
+
+| Exchange | Who | When |
+|---|---|---|
+| `vampire_concern` "A Reasonable Concern" | Edrin, Gorvan, Veyra | Start of the match or of a hand, all three seated (chance .3) |
+| `gorvan_ragna_bedtime` "Bedtime Stories" | Gorvan, Ragna | Start of the match / a hand, or a quiet stretch. Ragna cuts him off (60 ms) |
+| `bramm_unbeaten` "The Unbeaten" | Bramm, Ragna, Edrin | Start of the match (chance .35) |
+| `veyra_ragna_followed` "Something Followed Me" | Veyra, Ragna | Start of the match or of a hand |
+| `gorvan_kesh_old_tavern` "The Old Tavern" | Kesh, Gorvan | Start of the match / a hand, or a quiet stretch |
+| `edrin_ragna_wager` "The Wager" | Edrin, Ragna | Start of the match |
+| `edrin_kesh_interesting_stone` "A Very Interesting Stone" | Edrin, Kesh | Quiet stretch, or right after Kesh reads his stone |
+| `bramm_veyra_cursed_table` "A Cursed Table" | Bramm, Veyra | Quiet stretch, once Bramm has taken two setbacks (a Curse, Shield or King on him) this match |
+| `gorvan_edrin_remembering` "Remembering Faces" | Edrin, Gorvan | Quiet stretch, round 3 or later |
+
+- **Start of a hand** is a new table moment (`round_start`, 1.5 s after the deal), with the chatter allowance.
+- **Long conversations** (4+ lines) never start when anyone is down to two cards or fewer (`longBanterMinCards`).
+- **Shorter gaps inside exchanges**: authored pauses × .5 (`banterPauseScale`), and the next speaker comes in 120 ms after a line ends (was 450 ms).
+- **Edrin and Kesh play faster**: their deliberate dawdles are rarer and shorter (Edrin .035, Gorvan .03, Kesh .025; +1.3 s, was +2.8 s), and Kesh's thinking pause is shorter (weighty card 0.8–1.3 s, capped 1.5 s; was 1.25–2.15 s, capped 2.4 s). Measured in a browser: Edrin 1.6 s and Kesh 1.8 s a turn, the same as Ragna.
 
 **v104:** Veyra and Gorvan joined the guests (see `VEYRA_INTEGRATION.md` and `GORVAN_INTEGRATION.md`). Banter is now a data-driven **sequence of any length** (`lines`), played as one performance, with dedicated banter recordings catalogued in `dist/duel/banter.js`. Exchanges recorded only in English (every Gorvan conversation) run as Hebrew text only in Hebrew. With voiced guests at the table, the ordinary regulars' text quips come half as often.
 

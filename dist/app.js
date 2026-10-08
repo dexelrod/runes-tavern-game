@@ -221,7 +221,9 @@ let coinsAnimatedFor=-1;
 function revealRoundResult(){roundResultVisible=true;recordDuelResult();feedback('round',settings);persist();render();}
 function startNextHand(){
   feedback('shuffle',settings);deckSettling=true;if(isAuthoredDuel())characterController?.beginRound();resetKeshTellMemory(true);veyraOmens?.beginRound();veyraPendingHit=null;veyraCursers.clear();gorvanSfx.pulsed.clear();
-  setSession(startNextRound(session));blockAiUntil=Date.now()+1300;if(tavernGuests){tavernGuests.director.beginRound();for(const seat of Object.keys(tavernGuests.seats))setGuestFace(seat,null);}
+  setSession(startNextRound(session));blockAiUntil=Date.now()+1300;if(tavernGuests){tavernGuests.director.beginRound();for(const seat of Object.keys(tavernGuests.seats))setGuestFace(seat,null);
+    // v109: a new hand is a natural moment for a word or a longer conversation (the game does not wait for it).
+    const epoch=sessionEpoch,timer=setTimeout(()=>{if(epoch===sessionEpoch&&!isPaused())tavernEvent('round_start',{});},settings.reducedMotion?400:1500);characterSequenceTimers.push(timer);}
   if(session.mode==='duel')setDuelReaction('drink',duelLine('drink'),true);
   if(settings.music)audioSystem.startMusic({newRound:true});
   render();beginDeckArrival();scheduleGame();
@@ -565,8 +567,9 @@ function scheduleGame(){
   // Now and then Edrin, at a Tavern table, is simply not paying attention: a long turn the table may remark on.
   // Gorvan, too, is in no hurry: now and then he takes his time over a card (no faster, no slower to decide).
   // Kesh (v106) now and then sits over his stone a while (Ragna: "Is the stone playing for you?").
-  const dawdle={edrin:.07,gorvan:.06,kesh:.05}[tavernGuests?.seats[playerId]?.id]||0;
-  if(dawdle&&tavernGuests.dawdled!==scheduledTurn&&Math.random()<dawdle){tavernGuests.dawdled=scheduledTurn;wait+=2800;const timer=setTimeout(()=>{if(epoch===sessionEpoch&&state?.turn===scheduledTurn&&!isPaused())tavernEvent('slow',{current:playerId});},1800);characterSequenceTimers.push(timer);}
+  // v109: rarer and shorter (owner: Edrin and Kesh felt far too slow) — was .07/.06/.05 and +2.8 s.
+  const dawdle={edrin:.035,gorvan:.03,kesh:.025}[tavernGuests?.seats[playerId]?.id]||0;
+  if(dawdle&&tavernGuests.dawdled!==scheduledTurn&&Math.random()<dawdle){tavernGuests.dawdled=scheduledTurn;wait+=1300;const timer=setTimeout(()=>{if(epoch===sessionEpoch&&state?.turn===scheduledTurn&&!isPaused())tavernEvent('slow',{current:playerId});},900);characterSequenceTimers.push(timer);}
   botTimer=setTimeout(()=>runBotTurn(playerId,epoch,scheduledTurn),wait);
 }
 
@@ -584,10 +587,11 @@ function planKeshTurn(playerId,turn){
   keshTellMemory.turnsSince++;if(tell){keshTellMemory.turnsSince=0;keshTellMemory.thisRound++;keshTellMemory.toldThisRound=true;}
   const r=Math.random(),quick=action.type!==ACTIONS.PLAY||legal.length<=1||!!state.taki?.open||!!state.awaitingColor;
   // Ordinary and forced turns keep the table's usual pace; only weighty decisions get his longer look.
-  let wait=quick?480+r*220:major?1250+r*900:620+r*330;
+  // v109: Kesh still pauses over a weighty card, but no longer for long (was 1.25–2.15 s, capped 2.4 s).
+  let wait=quick?440+r*200:major?820+r*480:560+r*260;
   if(settings.difficulty==='quick')wait*=.75;
   if(tell)wait=Math.max(wait,tell.lead+420);
-  keshPlan={playerId,turn,state,action,tell,major,wait:Math.min(2400,wait),shown:false,told:false,consumed:false};
+  keshPlan={playerId,turn,state,action,tell,major,wait:Math.min(1500,wait),shown:false,told:false,consumed:false};
   return keshPlan;
 }
 function stageKeshTell(plan,epoch,wait){
@@ -691,7 +695,7 @@ function setGuestFace(seatId,expression,duration=1700){
 }
 function tavernEvent(type,context={}){
   if(!tavernGuests||view!=='game'||isPaused())return false;
-  const plan=tavernGuests.director.event(type,{...context,busy:tavernGuests.speaking||!!audioSystem.voiceSource,muted:guestsMuted()});
+  const plan=tavernGuests.director.event(type,{round:session?.round||1,minCards:state?Math.min(...state.players.map(p=>p.hand.length)):9,...context,busy:tavernGuests.speaking||!!audioSystem.voiceSource,muted:guestsMuted()});
   for(const face of plan.faces)if(!(tavernGuests.speaking&&tavernGuests.speakingSeat===face.seat))setGuestFace(face.seat,face.expression,face.duration);
   if(plan.lines.length){performGuestLines(plan.lines,{result:type==='round_end'||type==='match_end',after:plan.after||[]});if(plan.banter)rememberBanter(plan.banter);persist();return true;}
   return false;
@@ -710,7 +714,8 @@ function performGuestLines(lines,{result=false,after=[]}={}){
     if(index>=lines.length){guests.speaking=false;guests.speakingSeat=null;for(const look of after)if(look.seat)setGuestFace(look.seat,look.expression,look.duration);retryVeyraHit();return;}
     const line=lines[index],pack=AUTHORED_CHARACTERS[line.guest],resolved=line.reaction.category==='banter'?resolveBanterLine(line.reaction):pack.resolveReaction(line.reaction,settings.language),localized=line.silent?{...resolved,voice:null}:resolved;
     guests.speakingSeat=line.seat;setGuestFace(line.seat,localized.expression,0);
-    let done=false;const finish=()=>{if(done||epoch!==sessionEpoch)return;done=true;const timer=setTimeout(()=>{if(epoch!==sessionEpoch||tavernGuests!==guests)return;if(quip?.player===line.seat){quip=null;}if(!result)setGuestFace(line.seat,null);render();const next=lines[index+1];const gap=setTimeout(()=>step(index+1),next?(settings.reducedMotion?250:next.pause||700):0);characterSequenceTimers.push(gap);},settings.reducedMotion?150:450);characterSequenceTimers.push(timer);};
+    // v109: inside an exchange the next speaker comes in quickly (120 ms after a line, was 450).
+    let done=false;const finish=()=>{if(done||epoch!==sessionEpoch)return;done=true;const beat=lines[index+1]?120:450;const timer=setTimeout(()=>{if(epoch!==sessionEpoch||tavernGuests!==guests)return;if(quip?.player===line.seat){quip=null;}if(!result)setGuestFace(line.seat,null);render();const next=lines[index+1];const gap=setTimeout(()=>step(index+1),next?(settings.reducedMotion?200:next.pause??350):0);characterSequenceTimers.push(gap);},settings.reducedMotion?120:beat);characterSequenceTimers.push(timer);};
     const bubble=()=>{if(epoch!==sessionEpoch||tavernGuests!==guests)return;clearTimeout(quipTimer);quip={player:line.seat,text:localized.caption,lang:localized.locale,guest:true};lastQuipAt=Date.now();render();};
     // Captions on: the bubble shows the exact line. Captions off: voice only — unless the voice cannot play, then the words still reach the table.
     if(localized.voice)void speakCharacterVoice(localized,{locked:result,onEnded:finish}).then(node=>{if(!node){if(!settings.captions)bubble();const timer=setTimeout(finish,localized.duration||2400);characterSequenceTimers.push(timer);}});

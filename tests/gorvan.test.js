@@ -27,7 +27,7 @@ test('Gorvan registers all 59 authored lines, 24 poses and his English recording
   assert.equal(GORVAN_REACTIONS.length,59);assert.equal(Object.keys(GORVAN_VOICE_LIBRARY).length,59);assert.equal(GORVAN_EXPRESSIONS.length,24);
   const files=fs.readdirSync(new URL('../dist/assets/gorvan/voice/',import.meta.url));
   // 59 lines of his own + his side of the v106 banter (7 dedicated recordings, English only).
-  assert.equal(files.filter(name=>!name.includes('_banter_')).length,59);assert.equal(files.length,67);assert.ok(files.every(name=>name.endsWith('.mp3')&&!name.endsWith('_he.mp3')),'English recordings only — nothing invented');
+  assert.equal(files.filter(name=>!name.includes('_banter_')).length,59);assert.equal(files.length,76);assert.ok(files.every(name=>name.endsWith('.mp3')&&!name.endsWith('_he.mp3')),'English recordings only — nothing invented');
   for(const reaction of GORVAN_REACTIONS){
     assert.ok(GORVAN_EXPRESSIONS.includes(reaction.expression),reaction.id);
     for(const locale of ['en','he']){const voice=resolveGorvanVoice(reaction.voice,locale);assert.ok(voice,`${reaction.voice} ${locale}`);assert.doesNotMatch(voice.src,/_he\.mp3$/,'Hebrew plays the English recording');assert.equal(voice.audioLocale,'en');assert.ok(fs.readFileSync(fileURLToPath(voice.src)).length>1024);}
@@ -115,10 +115,10 @@ test('banter: every partner; the v104 exchanges answer in lines he already has, 
   const gorvanBanter=TAVERN_BANTER.filter(b=>b.lines.some(([guest])=>guest==='gorvan'));
   const partners=new Set(gorvanBanter.flatMap(b=>b.lines.map(([guest])=>guest)).filter(g=>g!=='gorvan'));
   assert.deepEqual([...partners].toSorted(),['bramm','edrin','kesh','ragna','veyra']);
-  assert.equal(gorvanBanter.length,18);
+  assert.equal(gorvanBanter.length,22);
   const replies={gorvan_bramm_lord:'gorvan_title_01',gorvan_bramm_noble:'gorvan_curse_received_01',gorvan_bramm_again:'gorvan_title_04',gorvan_edrin_voice:'gorvan_idle_03',gorvan_edrin_relax:'gorvan_idle_02',gorvan_ragna_lord:'gorvan_title_03',gorvan_ragna_sunrise:'gorvan_idle_01',gorvan_kesh_night:'gorvan_idle_03',gorvan_kesh_patient:'gorvan_idle_01',gorvan_veyra_signs:'gorvan_idle_05',gorvan_veyra_flame:'gorvan_idle_03',gorvan_veyra_shadow:'gorvan_idle_05'};
   // v106: Gorvan's own banter recordings — multi-line, English only, Hebrew as subtitle text.
-  const v106=['gorvan_bramm_speech','gorvan_ragna_hurry','gorvan_edrin_wine','gorvan_kesh_future','gorvan_veyra_seven','veyra_gorvan_prophecy'];
+  const v106=['gorvan_bramm_speech','gorvan_ragna_hurry','gorvan_edrin_wine','gorvan_kesh_future','gorvan_veyra_seven','veyra_gorvan_prophecy','vampire_concern','gorvan_ragna_bedtime','gorvan_kesh_old_tavern','gorvan_edrin_remembering'];
   for(const b of gorvanBanter.filter(item=>v106.includes(item.id))){
     assert.equal(b.audio,'en');
     for(const [guest,voice] of b.lines){const r=BANTER_RECORDINGS[voice];assert.equal(r?.speaker,guest,voice);assert.deepEqual([...r.takes],['en']);assert.ok(r.captions.he);assert.equal(resolveCharacterVoice(voice,'he'),null);assert.ok(fs.statSync(new URL(`../dist/assets/${guest}/voice/${voice}.mp3`,import.meta.url)).size>1024);}
