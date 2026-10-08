@@ -166,7 +166,7 @@ test('appearance: "Sometimes" seats guests on about a third of evenings, usually
   assert.deepEqual(m.roster.filter(p=>p.voiced).map(p=>p.nameKey).toSorted(),['bramm','ragna']);
   const trio=createTavernMatch({seed:12,guests:['bramm','ragna','kesh']});assert.equal(trio.roster.filter(p=>p.voiced).length,3);
   const app=read('../dist/app.js');assert.match(app,/createTavernMatch\(\{seed:Date\.now\(\),guestMode:settings\.tavernGuestMode,guests\}\)/);
-  assert.match(app,/data-guest-mode="\$\{mode\}"/);assert.match(read('../dist/platform/storage.js'),/tavernGuestMode:'sometimes'/);
+  assert.match(app,/data-guest-mode="\$\{mode\}"/);assert.match(read('../dist/platform/storage.js'),/tavernGuestMode:'often',captions:true/,'v111: Every evening and captions on by default');
   assert.match(app,/session\.tavernDirector=tavernGuests\.director\.snapshot\(\)/,'the director\'s memory (lines used, banters) is saved with the match');
 });
 
@@ -177,13 +177,13 @@ test('pairs who can banter are strongly preferred, and the pair table matches th
   assert.ok(banterPairs/pairs>.9,`${(100*banterPairs/pairs).toFixed(1)}% of pairs can trade lines`);
 });
 
-test('settings: an older "off" switch stays off; anything unknown becomes "Sometimes"',()=>{
+test('settings: an older "off" switch stays off; anything unknown becomes the default (v111: "Every evening")',()=>{
   const store={};globalThis.localStorage={getItem:k=>store[k]??null,setItem:(k,v)=>{store[k]=String(v);}};
   return import('../dist/platform/storage.js').then(({loadSettings})=>{
     store['taki-pocket-settings']=JSON.stringify({tavernGuests:false});assert.equal(loadSettings().tavernGuestMode,'off');
-    store['taki-pocket-settings']=JSON.stringify({tavernGuests:true});assert.equal(loadSettings().tavernGuestMode,'sometimes');
+    store['taki-pocket-settings']=JSON.stringify({tavernGuests:true});assert.equal(loadSettings().tavernGuestMode,'often');
     store['taki-pocket-settings']=JSON.stringify({tavernGuestMode:'often'});assert.equal(loadSettings().tavernGuestMode,'often');
-    store['taki-pocket-settings']=JSON.stringify({tavernGuestMode:'loud'});assert.equal(loadSettings().tavernGuestMode,'sometimes');
+    store['taki-pocket-settings']=JSON.stringify({tavernGuestMode:'loud'});assert.equal(loadSettings().tavernGuestMode,'often');
     assert.equal('tavernGuests' in loadSettings(),false);
   });
 });
@@ -325,4 +325,15 @@ test('v110 rule: a stalling player always gets an exchange the table has not had
   assert.equal(fresh().event('stall',{current:'p0',minCards:7,busy:true}).lines.length,0);
   assert.notEqual(createTavernDirector({seats:{p1:'gorvan',p2:'kesh'},random:()=>0,now:()=>1e6,locale:()=>'en'}).event('stall',{current:'p0',minCards:2}).banter,'gorvan_kesh_old_tavern','no long talk when someone is about to win');
   const app=read('../dist/app.js');assert.match(app,/const TAVERN_STALL_MS=5000/);assert.match(app,/tavernEvent\('stall',\{current:'p0'\}\)/);
+});
+
+test('v111 defaults: Every evening and captions on — and older saved settings move over once',async()=>{
+  const store={};globalThis.localStorage={getItem:k=>store[k]??null,setItem:(k,v)=>{store[k]=String(v);},removeItem:k=>{delete store[k];}};
+  const {loadSettings,saveSettings}=await import('../dist/platform/storage.js?v111');
+  let s=loadSettings();assert.equal(s.tavernGuestMode,'often');assert.equal(s.captions,true);
+  store['taki-pocket-settings']=JSON.stringify({tavernGuestMode:'sometimes',captions:false,language:'he'});
+  s=loadSettings();assert.equal(s.tavernGuestMode,'often');assert.equal(s.captions,true);assert.equal(s.language,'he','other choices untouched');
+  store['taki-pocket-settings']=JSON.stringify({tavernGuestMode:'off',captions:false});assert.equal(loadSettings().tavernGuestMode,'off','Off stays off');
+  s.tavernGuestMode='sometimes';s.captions=false;saveSettings(s);s=loadSettings();assert.equal(s.tavernGuestMode,'sometimes','a choice made after the change is kept');assert.equal(s.captions,false);
+  delete globalThis.localStorage;
 });

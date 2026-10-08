@@ -1,8 +1,13 @@
 const SETTINGS='taki-pocket-settings'; const MATCH='taki-pocket-match';
-export const defaults={language:'en',playerCount:3,difficulty:'normal',sound:true,ambience:true,music:true,sfxVolume:.9,ambienceVolume:.18,musicVolume:.14,dialogue:true,tavernGuestMode:'sometimes',captions:false,haptics:true,reducedMotion:false,highContrastCards:false,playableHints:true,hideTableMessages:true,tutorial:true,duelOpponent:'ron',duelRecords:{}};
+export const defaults={language:'en',playerCount:3,difficulty:'normal',sound:true,ambience:true,music:true,sfxVolume:.9,ambienceVolume:.18,musicVolume:.14,dialogue:true,tavernGuestMode:'often',captions:true,haptics:true,reducedMotion:false,highContrastCards:false,playableHints:true,hideTableMessages:true,tutorial:true,duelOpponent:'ron',duelRecords:{},settingsRevision:110};
 export function loadSettings(){try{const loaded={...defaults,...JSON.parse(localStorage.getItem(SETTINGS)||'{}')};if(![2,3,4,6].includes(loaded.playerCount))loaded.playerCount=defaults.playerCount;if(!['he','en'].includes(loaded.language))loaded.language=defaults.language;
   // v103: the on/off switch became off · sometimes · often. An older "off" stays off.
-  if(!['off','sometimes','often'].includes(loaded.tavernGuestMode))loaded.tavernGuestMode=defaults.tavernGuestMode;if(loaded.tavernGuests===false&&!JSON.parse(localStorage.getItem(SETTINGS)||'{}').tavernGuestMode)loaded.tavernGuestMode='off';delete loaded.tavernGuests;return loaded;}catch{return {...defaults};}}
+  if(!['off','sometimes','often'].includes(loaded.tavernGuestMode))loaded.tavernGuestMode=defaults.tavernGuestMode;if(loaded.tavernGuests===false&&!JSON.parse(localStorage.getItem(SETTINGS)||'{}').tavernGuestMode)loaded.tavernGuestMode='off';delete loaded.tavernGuests;
+  // v111: "Every evening" and captions on are the new defaults. Settings saved before then still carry the old
+  // defaults (every key is saved at once), so move those over once; a choice made after this is kept.
+  const stored=JSON.parse(localStorage.getItem(SETTINGS)||'{}');
+  if(Object.keys(stored).length&&!(stored.settingsRevision>=110)){if(loaded.tavernGuestMode==='sometimes')loaded.tavernGuestMode='often';if(loaded.captions===false)loaded.captions=true;loaded.settingsRevision=110;}
+  return loaded;}catch{return {...defaults};}}
 export function saveSettings(value){localStorage.setItem(SETTINGS,JSON.stringify(value));}
 export function saveMatch(state){localStorage.setItem(MATCH,JSON.stringify(state));}
 export function loadMatch(){try{return JSON.parse(localStorage.getItem(MATCH)||'null');}catch{return null;}}
