@@ -307,3 +307,20 @@ test('v109 Vol. 3: openings at the start of a hand, long talk never when someone
   const app=read('../dist/app.js');assert.match(app,/tavernEvent\('round_start',\{\}\)/);assert.match(app,/const beat=lines\[index\+1\]\?120:450/);
   assert.match(app,/const dawdle=\{edrin:\.035,gorvan:\.03,kesh:\.025\}/,'Edrin and Kesh no longer linger');
 });
+
+test('v110 rule: a stalling player always gets an exchange the table has not had yet this match (if one fits)',()=>{
+  let clock=100000;const d=createTavernDirector({seats:{p1:'ragna',p2:'edrin',p3:'kesh'},random:()=>.99,now:()=>clock,locale:()=>'en'});
+  // No odds, no allowance: right away, even with random() rolling against everything else.
+  const first=d.event('stall',{current:'p0',minCards:7});assert.equal(first.banter,'ragna_edrin_play_already','a slow player hears about it first');
+  const heard=new Set([first.banter]);
+  for(let i=0;i<12;i++){clock+=1000;const plan=d.event('stall',{current:'p0',minCards:7});if(!plan.banter)break;assert.ok(!heard.has(plan.banter),'never one already heard this match');heard.add(plan.banter);
+    const b=TAVERN_BANTER.find(x=>x.id===plan.banter);assert.ok([].concat(b.on).some(t=>t==='idle'||t==='slow'),`${b.id}: only talk that fits any moment`);}
+  assert.ok(heard.size>=4,`several in a row while the player keeps stalling (${[...heard].join(', ')})`);
+  assert.equal(d.event('stall',{current:'p0',minCards:7}).banter,null,'once every fitting exchange is spent, nothing');
+  // Truth still applies, and never over a voice.
+  const fresh=()=>createTavernDirector({seats:{p1:'bramm',p2:'veyra'},random:()=>0,now:()=>1e6,locale:()=>'en'});
+  assert.notEqual(fresh().event('stall',{current:'p0',minCards:7}).banter,'bramm_veyra_cursed_table','Bramm is not cursed yet');
+  assert.equal(fresh().event('stall',{current:'p0',minCards:7,busy:true}).lines.length,0);
+  assert.notEqual(createTavernDirector({seats:{p1:'gorvan',p2:'kesh'},random:()=>0,now:()=>1e6,locale:()=>'en'}).event('stall',{current:'p0',minCards:2}).banter,'gorvan_kesh_old_tavern','no long talk when someone is about to win');
+  const app=read('../dist/app.js');assert.match(app,/const TAVERN_STALL_MS=5000/);assert.match(app,/tavernEvent\('stall',\{current:'p0'\}\)/);
+});

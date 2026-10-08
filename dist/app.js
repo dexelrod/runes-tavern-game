@@ -552,11 +552,22 @@ function runBotTurn(playerId,epoch,scheduledTurn){
   try{const plan=keshPlan&&keshPlan.playerId===playerId&&keshPlan.turn===scheduledTurn&&keshPlan.state===state?keshPlan:null,action=plan?plan.action:chooseBotAction(state);if(plan?.tell&&plan.shown)plan.told=true;if(isRagnaDuel()&&playerId==='p1'&&action.type===ACTIONS.PLAY&&lastBotDecision.playerId===playerId)ragnaSlip=lastBotDecision.slip;if(tavernGuests?.seats[playerId]&&action.type===ACTIONS.PLAY&&lastBotDecision.playerId===playerId)tavernGuests.slip[playerId]=lastBotDecision.slip;submit(action);}
   catch(error){console.error('AI turn action failed',error);if(currentPlayer(state).id===playerId&&state.phase==='playing'){try{submit({type:ACTIONS.DRAW,playerId});}catch(fallbackError){console.error('AI fallback draw failed',fallbackError);}}if(state.phase!=='finished'&&currentPlayer(state).kind==='ai'){try{render();}catch(renderError){console.error('AI recovery render failed',renderError);}scheduleGame();}}
 }
+// v110 rule: when the player stalls on their turn (5 s without playing), the guests always start an exchange
+// they have not had yet this match, if one fits. Once a turn; a voice in progress just delays it a moment.
+const TAVERN_STALL_MS=5000;let tavernStallTimer=null;
+function armTavernStall(epoch,turn,delay=TAVERN_STALL_MS){
+  clearTimeout(tavernStallTimer);
+  tavernStallTimer=setTimeout(()=>{
+    if(epoch!==sessionEpoch||!tavernGuests||isPaused()||state?.turn!==turn||currentPlayer(state)?.id!=='p0'||state.phase!=='playing')return;
+    if(motionLocked||tavernGuests.speaking||audioSystem.voiceSource){armTavernStall(epoch,turn,900);return;}
+    tavernEvent('stall',{current:'p0'});
+  },delay);
+}
 function scheduleGame(){
-  clearTimeout(botTimer);clearTimeout(characterSlowTimer);
+  clearTimeout(botTimer);clearTimeout(characterSlowTimer);clearTimeout(tavernStallTimer);
   if(isPaused()||!state||session.phase!=='round'||state.phase==='finished')return;
   const active=currentPlayer(state);
-  if(active.kind==='human'&&tavernGuests){const epoch=sessionEpoch,turn=state.turn;characterSlowTimer=setTimeout(()=>{if(epoch===sessionEpoch&&state?.turn===turn&&currentPlayer(state)?.id==='p0'&&!motionLocked)tavernEvent('slow',{current:'p0'});},12000);return;}
+  if(active.kind==='human'&&tavernGuests){const epoch=sessionEpoch,turn=state.turn;characterSlowTimer=setTimeout(()=>{if(epoch===sessionEpoch&&state?.turn===turn&&currentPlayer(state)?.id==='p0'&&!motionLocked)tavernEvent('slow',{current:'p0'});},12000);armTavernStall(epoch,turn);return;}
   if(active.kind==='human'){const pack=authoredPack();if(pack?.slowPlayerAfter){const epoch=sessionEpoch,turn=state.turn;characterSlowTimer=setTimeout(()=>{if(epoch===sessionEpoch&&state?.turn===turn&&currentPlayer(state)?.id==='p0'&&!motionLocked)runCharacter('slow_player',{playerOnOneCard:state.players[0].hand.length===1});},pack.slowPlayerAfter);}return;}
   const playerId=active.id,epoch=sessionEpoch,scheduledTurn=state.turn;
   // Edrin's eyes sharpen only for decisions that matter, and only now and then.
@@ -1169,7 +1180,7 @@ function render(){
   const placeholder=root.querySelector('[data-character-stage-placeholder]');if(characterStage&&placeholder){placeholder.replaceWith(characterStage);syncCharacterStage(characterStage);}
   bind();
 }
-function pauseGameTimers({leaving=false}={}){clearTimeout(tavernIdleTimer);if(tavernGuests)tavernGuests.speaking=false;clearTimeout(botTimer);clearTimeout(characterSlowTimer);clearTimeout(duelIdleTimer);clearTimeout(duelReactionTimer);clearTimeout(eventTimer);clearTimeout(quipTimer);clearTimeout(roundEndTimer);clearCharacterTimers();audioSystem.stopVoice({restoreMusic:!leaving});runActiveClock(false);}
+function pauseGameTimers({leaving=false}={}){clearTimeout(tavernIdleTimer);clearTimeout(tavernStallTimer);if(tavernGuests)tavernGuests.speaking=false;clearTimeout(botTimer);clearTimeout(characterSlowTimer);clearTimeout(duelIdleTimer);clearTimeout(duelReactionTimer);clearTimeout(eventTimer);clearTimeout(quipTimer);clearTimeout(roundEndTimer);clearCharacterTimers();audioSystem.stopVoice({restoreMusic:!leaving});runActiveClock(false);}
 function resumeGameTimers(){
   if(eventBanner)eventTimer=setTimeout(()=>{eventBanner=null;captionLine='';render();},settings.reducedMotion?200:900);
   if(quip)quipTimer=setTimeout(()=>{quip=null;render();},1800);

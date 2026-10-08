@@ -384,9 +384,39 @@ export function createTavernDirector({seats={},random=Math.random,now=()=>Date.n
     return null;
   }
 
+  // v110 rule: the player stalls on their turn → the table always starts an exchange it has not had yet this
+  // match, if one fits. No odds and no allowance; still only the truth (each exchange's own conditions), never
+  // over a voice, never a long one when someone is down to two cards. Exchanges about a slow player first.
+  function stall(c){
+    if(c.busy||c.muted)return null;
+    const he=locale()==='he',ctx={...c,current:c.current||'p0'};
+    const fits=[];
+    for(const b of TAVERN_BANTER){
+      if(banters.has(b.id))continue;
+      const on=[].concat(b.on),type=on.includes('slow')?'slow':on.includes('idle')?'idle':null;if(!type)continue;
+      const guests=[...new Set(b.lines.map(([guest])=>guest))];if(!guests.every(guest=>seatOf[guest]))continue;
+      if(b.player&&playerBantersThisRound>=T.playerBanterPerRound)continue;
+      if(b.lines.length>=T.longBanterLines&&(ctx.minCards??9)<T.longBanterMinCards)continue;
+      if(b.requires&&!everHeard.has(b.requires))continue;
+      const textOnly=b.audio==='en'&&he;if(textOnly&&!captions())continue;
+      if(b.lines.some(([,voice])=>voice==='ragna_idle_04')&&shouts>=1)continue;
+      if(b.when&&!b.when(ctx,seatOf,type,{spoke,said:voice=>used.has(voice),setbacks:seat=>setbacks[seat]||0}))continue;
+      if(!b.lines.every(([guest,voice])=>available(guest,voice,{textOnly,echo:!!b.echo})))continue;
+      fits.push({b,type,textOnly});
+    }
+    if(!fits.length)return null;
+    const aboutPlayer=fits.filter(f=>f.type==='slow'),pool=aboutPlayer.length?aboutPlayer:fits,{b,textOnly}=pool[Math.floor(random()*pool.length)];
+    const lines=b.lines.map(([guest,voice,pause],index)=>say(seatOf[guest],guest,voice,{...(index?{pause:Math.round((pause??600+Math.floor(random()*900))*T.banterPauseScale)}:{}),...(textOnly?{silent:true}:{})}));
+    if(b.lines.some(([,voice])=>voice==='ragna_idle_04'))shouts++;
+    remember(lines,{banter:b.id,trigger:'stall'});
+    if(b.player)playerBantersThisRound++;
+    return {banter:b.id,lines,after:(b.glance||[]).map(([guest,expression,duration])=>({seat:seatOf[guest],expression,duration}))};
+  }
+
   // One table event → at most one line (or one banter), plus a few silent faces.
   function event(type,c={}){
     if(!guestSeats.length)return {faces:[],lines:[]};
+    if(type==='stall'){const plan=stall(c);return {faces:[],lines:plan?.lines||[],banter:plan?.banter||null,after:plan?.after||[]};}
     const counted=!['idle','round_start','slow','omen','intro','omen_declare','omen_hit','omen_miss'].includes(type);
     // A setback: a Curse taken, a Shield or a King that lands on a seat.
     if(c.victim&&(type==='penalty'||type==='skip'||type==='king'))setbacks[c.victim]=(setbacks[c.victim]||0)+1;

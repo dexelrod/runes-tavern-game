@@ -1,4 +1,4 @@
-# Voiced guests at the Tavern — integration notes (v101, updated v103, v104, v105, v106, v107, v108, v109)
+# Voiced guests at the Tavern — integration notes (v101, updated v103, v104, v105, v106, v107, v108, v109, v110)
 
 Now and then Bramm, Edrin, Ragna, Kesh, Veyra or Gorvan happens to be playing at a Tavern Match, usually in company. They say a handful of approved lines, pull faces at what happens around them, and, rarely, two of them trade lines. The aim is "Bramm happened to be in tonight", not a character mode.
 
@@ -65,6 +65,8 @@ Nine owner-written conversations (53 English recordings; Hebrew as subtitle text
 - **Long conversations** (4+ lines) never start when anyone is down to two cards or fewer (`longBanterMinCards`).
 - **Shorter gaps inside exchanges**: authored pauses × .5 (`banterPauseScale`), and the next speaker comes in 120 ms after a line ends (was 450 ms).
 - **Edrin and Kesh play faster**: their deliberate dawdles are rarer and shorter (Edrin .035, Gorvan .03, Kesh .025; +1.3 s, was +2.8 s), and Kesh's thinking pause is shorter (weighty card 0.8–1.3 s, capped 1.5 s; was 1.25–2.15 s, capped 2.4 s). Measured in a browser: Edrin 1.6 s and Kesh 1.8 s a turn, the same as Ragna.
+
+**v110 rule: a stalling player starts a conversation.** When it is the player's turn and they have not played for 5 s (`TAVERN_STALL_MS` in `app.js`), the guests always start an exchange they have not had yet this match, if one fits: no odds, no chatter allowance, no match maximum. Only exchanges that suit any moment qualify (quiet-stretch ones, and the "slow player" ones, which come first, e.g. Ragna's "The cards won't play themselves."). Each exchange's own conditions still apply (Bramm's setbacks, round 3+ for Remembering Faces, all speakers seated), it waits for any voice in progress, and long ones still never start when someone is down to two cards. Once per player turn. The director's `stall` path (`event('stall')`).
 
 **v104:** Veyra and Gorvan joined the guests (see `VEYRA_INTEGRATION.md` and `GORVAN_INTEGRATION.md`). Banter is now a data-driven **sequence of any length** (`lines`), played as one performance, with dedicated banter recordings catalogued in `dist/duel/banter.js`. Exchanges recorded only in English (every Gorvan conversation) run as Hebrew text only in Hebrew. With voiced guests at the table, the ordinary regulars' text quips come half as often.
 
