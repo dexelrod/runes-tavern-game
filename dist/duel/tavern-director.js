@@ -206,7 +206,26 @@ export const TAVERN_BANTER=Object.freeze([
   // Veyra + Gorvan: energy meets a wall of calm. He treats it as her problem.
   B('gorvan_veyra_signs','omen_miss',[['veyra','veyra_banter_gorvan_01a'],['gorvan','gorvan_idle_05',800]],{audio:'en',when:(c,s)=>c.actor===s.veyra,chance:.5}),
   B('gorvan_veyra_flame','idle',[['veyra','veyra_banter_gorvan_02a'],['gorvan','gorvan_idle_03',900]],{audio:'en',chance:.2}),
-  B('gorvan_veyra_shadow',['intro','idle'],[['veyra','veyra_banter_gorvan_03a'],['gorvan','gorvan_idle_05',900]],{audio:'en',chance:.2})
+  B('gorvan_veyra_shadow',['intro','idle'],[['veyra','veyra_banter_gorvan_03a'],['gorvan','gorvan_idle_05',900]],{audio:'en',chance:.2}),
+
+  // ── v106: thirteen new exchanges (English recordings; Hebrew is subtitle text) ──
+  // The three pairs who had nothing to say to each other.
+  B('veyra_bramm_warning','good_move',[['veyra','veyra_banter_bramm_01a'],['bramm','bramm_banter_veyra_01b',700]],{audio:'en',when:(c,s)=>c.actor===s.bramm}),
+  B('veyra_bramm_destiny','one_card',[['bramm','bramm_banter_veyra_02a'],['veyra','veyra_banter_bramm_02b',700],['bramm','bramm_banter_veyra_02c',550]],{audio:'en',when:(c,s)=>c.actor===s.bramm}),
+  B('edrin_kesh_stone','idle',[['edrin','edrin_banter_kesh_01a'],['kesh','kesh_banter_edrin_01b',900],['edrin','edrin_banter_kesh_01c',650]],{audio:'en'}),
+  B('edrin_kesh_strategy','good_move',[['edrin','edrin_banter_kesh_02a'],['kesh','kesh_banter_edrin_02b',800],['edrin','edrin_banter_kesh_02c',700]],{audio:'en',when:(c,s)=>c.actor===s.kesh}),
+  B('ragna_kesh_thinking','slow',[['ragna','ragna_banter_kesh_01a'],['kesh','kesh_banter_ragna_01b',900],['ragna','ragna_banter_kesh_01c',450]],{audio:'en',when:(c,s)=>c.current===s.kesh}),
+  B('ragna_kesh_course','reverse',[['kesh','kesh_banter_ragna_02a'],['ragna','ragna_banter_kesh_02b',500],['kesh','kesh_banter_ragna_02c',1000],['ragna','ragna_banter_kesh_02d',500]],{audio:'en',when:(c,s)=>c.actor===s.ragna}),
+  // Existing pairs, a second exchange each.
+  B('veyra_ragna_sacred','idle',[['veyra','veyra_banter_ragna_02a'],['ragna','ragna_banter_veyra_02b',600],['veyra','veyra_banter_ragna_02c',500],['ragna','ragna_banter_veyra_02d',600]],{audio:'en'}),
+  B('veyra_edrin_bones','idle',[['veyra','veyra_banter_edrin_02a'],['edrin','edrin_banter_veyra_02b',800],['veyra','veyra_banter_edrin_02c',500],['edrin','edrin_banter_veyra_02d',900]],{audio:'en'}),
+  // Gorvan in his own recorded words.
+  B('gorvan_bramm_speech','penalty',[['gorvan','gorvan_banter_bramm_04a'],['bramm','bramm_banter_gorvan_04b',500],['gorvan','gorvan_banter_bramm_04c',1000]],{audio:'en',when:(c,s)=>c.victim===s.bramm&&(c.amount||0)===4}),
+  B('gorvan_ragna_hurry','slow',[['ragna','ragna_banter_gorvan_03a'],['gorvan','gorvan_banter_ragna_03b',900],['ragna','ragna_banter_gorvan_03c',500],['gorvan','gorvan_banter_ragna_03d',1100]],{audio:'en',when:(c,s)=>c.current===s.gorvan}),
+  B('gorvan_edrin_wine','idle',[['edrin','edrin_banter_gorvan_03a'],['gorvan','gorvan_banter_edrin_03b',800],['edrin','edrin_banter_gorvan_03c',900]],{audio:'en'}),
+  // Best right after Kesh has consulted his stone; otherwise a quiet stretch.
+  B('gorvan_kesh_future',['omen','idle'],[['kesh','kesh_banter_gorvan_03a'],['gorvan','gorvan_banter_kesh_03b',1000]],{audio:'en',when:(c,s,type)=>type!=='omen'||(c.actor===s.kesh&&c.phase==='reading')}),
+  B('gorvan_veyra_seven','penalty',[['veyra','veyra_banter_gorvan_04a'],['gorvan','gorvan_banter_veyra_04b',1000]],{audio:'en',when:(c,s)=>c.source===s.gorvan&&brutal(c)})
 ]);
 
 export const reactionFor=(guest,voice)=>AUTHORED_CHARACTERS[guest]?.reactions.find(item=>item.voice===voice)||(BANTER_RECORDINGS[voice]?.speaker===guest?banterReaction(voice):null);

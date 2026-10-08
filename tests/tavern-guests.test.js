@@ -99,7 +99,7 @@ test('never two lines at once, never a repeat within a match, one line per event
     const voices=said.map(line=>line.voice).filter(v=>v!=='ragna_idle_05');
     assert.equal(new Set(voices).size,voices.length,`${a}+${b} seed ${seed}: a line repeated`);
     // Several lines only as one banter, or a guest's own two-beat performance (Ragna's "Thank you.", Gorvan's retractions).
-    for(const {plan} of plans){if(plan.lines.length>=2)assert.ok(plan.banter||['ragna_idle_05','gorvan_idle_05','gorvan_flavor_03'].includes(plan.lines[1].voice),'several lines only as a banter or a two-beat performance');assert.ok(plan.lines.length<=3);if(!plan.banter)assert.ok(plan.lines.length<=2);}
+    for(const {plan} of plans){if(plan.lines.length>=2)assert.ok(plan.banter||['ragna_idle_05','gorvan_idle_05','gorvan_flavor_03'].includes(plan.lines[1].voice),'several lines only as a banter or a two-beat performance');assert.ok(plan.lines.length<=4,'v106: an exchange runs up to four lines');if(!plan.banter)assert.ok(plan.lines.length<=2);}
   }
   // While anything is playing, nothing else starts.
   const d=createTavernDirector({seats:{p1:'bramm'},random:()=>0,now:()=>99999});
@@ -202,4 +202,38 @@ test('one table-wide voice: guest lines go through the shared voice path; generi
   assert.match(app,/if\(tavernGuests&&\(audioSystem\.voiceSource\|\|tavernGuests\.speaking\|\|tavernGuests\.seats\[quip\?\.player\]\)\)return;/);
   assert.match(app,/if\(!isAuthoredDuel\(\)&&!keshSpoke\)\{/);
   assert.match(app,/function performGuestLines\(lines/);
+});
+
+test('v106 exchanges: each fires in its own moment and never when its words would be untrue',()=>{
+  const ready=seats=>{let clock=100000;const d=createTavernDirector({seats,random:()=>0,now:()=>clock,locale:()=>'en'});for(let i=0;i<6;i++)d.event('move',{actor:null});return d;};
+  // Bramm + Veyra
+  assert.equal(ready({p1:'veyra',p2:'bramm'}).event('good_move',{actor:'p2',victim:'p3'}).banter,'veyra_bramm_warning');
+  assert.equal(ready({p1:'veyra',p2:'bramm'}).event('good_move',{actor:'p0',victim:'p3'}).banter,null,'the warning is for Bramm\'s own move');
+  assert.equal(ready({p1:'veyra',p2:'bramm'}).event('one_card',{actor:'p2'}).banter,'veyra_bramm_destiny');
+  assert.equal(ready({p1:'veyra',p2:'bramm'}).event('one_card',{actor:'p1'}).banter,null,'destiny is Bramm\'s last card');
+  // Edrin + Kesh
+  assert.equal(ready({p1:'edrin',p2:'kesh'}).event('idle',{current:'p0'}).banter,'edrin_kesh_stone');
+  assert.equal(ready({p1:'edrin',p2:'kesh'}).event('good_move',{actor:'p2',victim:'p0'}).banter,'edrin_kesh_strategy');
+  assert.equal(ready({p1:'edrin',p2:'kesh'}).event('good_move',{actor:'p1',victim:'p0'}).banter,null);
+  // Ragna + Kesh
+  assert.equal(ready({p1:'ragna',p2:'kesh'}).event('slow',{current:'p2'}).banter,'ragna_kesh_thinking');
+  assert.equal(ready({p1:'ragna',p2:'kesh'}).event('slow',{current:'p0'}).banter,null,'only when Kesh is the one thinking');
+  assert.equal(ready({p1:'ragna',p2:'kesh'}).event('reverse',{actor:'p1'}).banter,'ragna_kesh_course');
+  assert.equal(ready({p1:'ragna',p2:'kesh'}).event('reverse',{actor:'p0'}).banter,null,'Ragna changed the course herself');
+  // Gorvan's own words
+  assert.equal(ready({p1:'gorvan',p2:'bramm'}).event('penalty',{source:'p0',victim:'p2',amount:4,victimCount:9}).banter,'gorvan_bramm_speech');
+  assert.equal(ready({p1:'gorvan',p2:'bramm'}).event('penalty',{source:'p0',victim:'p2',amount:6,victimCount:9}).banter,null,'"IT WAS FOUR CARDS!" means exactly four');
+  assert.equal(ready({p1:'gorvan',p2:'ragna'}).event('slow',{current:'p1'}).lines.length>=2,true);
+  assert.ok(['gorvan_ragna_hurry','gorvan_ragna_sunrise'].includes(ready({p1:'gorvan',p2:'ragna'}).event('slow',{current:'p1'}).banter));
+  assert.equal(ready({p1:'gorvan',p2:'kesh'}).event('omen',{actor:'p2',phase:'reading'}).banter,'gorvan_kesh_future');
+  assert.equal(ready({p1:'gorvan',p2:'veyra'}).event('penalty',{source:'p1',victim:'p0',amount:4,victimCount:9}).banter,'gorvan_veyra_seven');
+  assert.equal(ready({p1:'gorvan',p2:'veyra'}).event('penalty',{source:'p0',victim:'p1',amount:4,victimCount:9}).banter,null,'the omens follow Gorvan\'s own brutal Curse');
+  // Every pair now has something to say; four-line exchanges arrive whole and in order.
+  for(const [pair,count] of Object.entries(TAVERN_GUEST_PAIRS))assert.ok(count>=2,`${pair} has at least two exchanges`);
+  const sacred=TAVERN_BANTER.find(b=>b.id==='veyra_ragna_sacred');assert.deepEqual(sacred.lines.map(l=>l[1]),['veyra_banter_ragna_02a','ragna_banter_veyra_02b','veyra_banter_ragna_02c','ragna_banter_veyra_02d']);
+  // Recorded in English only: in Hebrew they run as the authored Hebrew text, silently, and only with bubbles on.
+  let clock=1e6;const he=createTavernDirector({seats:{p1:'edrin',p2:'kesh'},random:()=>0,now:()=>clock,locale:()=>'he',captions:()=>true});for(let i=0;i<6;i++)he.event('move',{actor:null});
+  const plan=he.event('good_move',{actor:'p2',victim:'p0'});assert.equal(plan.banter,'edrin_kesh_strategy');assert.ok(plan.lines.every(l=>l.silent));
+  const quiet=createTavernDirector({seats:{p1:'edrin',p2:'kesh'},random:()=>0,now:()=>clock,locale:()=>'he',captions:()=>false});for(let i=0;i<6;i++)quiet.event('move',{actor:null});
+  assert.notEqual(quiet.event('good_move',{actor:'p2',victim:'p0'}).banter,'edrin_kesh_strategy');
 });

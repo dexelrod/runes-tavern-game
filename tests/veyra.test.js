@@ -37,8 +37,8 @@ test('Veyra registers every authored line, all 61 poses, and every delivered voi
   }
   assert.deepEqual([...VEYRA_ENGLISH_ONLY].toSorted(),['veyra_intro_02','veyra_player_good_move_01']);
   const files=fs.readdirSync(new URL('../dist/assets/veyra/voice/',import.meta.url));
-  // 55 lines (two in English only) + her six banter lines in both languages + three English-only Gorvan banter lines.
-  assert.equal(files.length,55*2-2+12+3);assert.ok(files.every(name=>name.endsWith('.mp3')));
+  // 55 lines (two in English only) + her six banter lines in both languages + three English-only Gorvan banter lines + v106's seven (English only).
+  assert.equal(files.length,55*2-2+12+3+7);assert.ok(files.every(name=>name.endsWith('.mp3')));
   for(const deleted of ['veyra_intro_02_he','veyra_player_good_move_01_he','veyra_reverse_01','veyra_reverse_01_he','veyra_reverse_02','veyra_reverse_02_he','veyra_king_01','veyra_king_01_he']){
     assert.ok(!files.includes(`${deleted}.mp3`),`${deleted} stays deleted`);
     assert.ok(!read('../dist/duel/veyra.js').includes(`'${deleted.replace('veyra_','')}'`),`${deleted} is not referenced`);
@@ -234,7 +234,7 @@ test('banter with Kesh, Ragna and Edrin: authored sequences, each one performanc
   assert.deepEqual(byId.veyra_kesh_screaming.lines.map(l=>l[1]),['kesh_banter_veyra_02a','veyra_banter_kesh_02b','kesh_banter_veyra_02c']);
   assert.deepEqual(byId.veyra_ragna_focus.lines.map(l=>l[1]),['veyra_banter_ragna_01a','ragna_banter_veyra_01d'],'the Ragna exchange stays two lines');
   assert.deepEqual(byId.veyra_edrin_signs.lines.map(l=>l[1]),['veyra_banter_edrin_01a','edrin_banter_veyra_01b','veyra_banter_edrin_01c']);
-  for(const b of TAVERN_BANTER.filter(item=>item.id.startsWith('veyra_')))for(const [guest,voice] of b.lines)for(const locale of ['en','he']){const v=resolveCharacterVoice(voice,locale);assert.ok(v,`${voice} ${locale}`);assert.ok(fs.statSync(new URL(v.src)).size>1024);assert.match(v.src,new RegExp(`/assets/${guest}/voice/`));}
+  for(const b of TAVERN_BANTER.filter(item=>item.id.startsWith('veyra_')))for(const [guest,voice] of b.lines)for(const locale of b.audio==='all'?['en','he']:['en']){const v=resolveCharacterVoice(voice,locale);assert.ok(v,`${voice} ${locale}`);assert.ok(fs.statSync(new URL(v.src)).size>1024);assert.match(v.src,new RegExp(`/assets/${guest}/voice/`));}
   // The whole exchange plays as one plan, and nothing else speaks while it runs.
   let clock=1e6;const d=createTavernDirector({seats:{p1:'veyra',p2:'kesh'},random:()=>0,now:()=>clock});for(let i=0;i<5;i++)d.event('move',{actor:'p0'});
   const plan=d.event('idle',{current:'p0'});assert.equal(plan.banter,'veyra_kesh_flame');assert.equal(plan.lines.length,3);assert.deepEqual(plan.lines.map(l=>l.seat),['p1','p2','p1']);

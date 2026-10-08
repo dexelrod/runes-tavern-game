@@ -53,7 +53,54 @@ export const BANTER_RECORDINGS=Object.freeze(Object.fromEntries([
   R('kesh_banter_gorvan_02a','kesh','interesting_choice','You are very patient.','יש לך הרבה סבלנות.',1.88,['en']),
   R('veyra_banter_gorvan_01a','veyra','banter_kesh_correcting','You are making the signs difficult.','אתה מקשה על הסימנים.',2.93,['en']),
   R('veyra_banter_gorvan_02a','veyra','banter_ragna_flame','Why is the flame leaning away from you?','למה הלהבה נוטה ממך?',2.77,['en']),
-  R('veyra_banter_gorvan_03a','veyra','omen_uneasy',"You don't have a normal shadow.",'הצל שלך לא נורמלי.',2.19,['en'])
+  R('veyra_banter_gorvan_03a','veyra','omen_uneasy',"You don't have a normal shadow.",'הצל שלך לא נורמלי.',2.19,['en']),
+  // ── v106: thirteen new exchanges, recorded in English only (Hebrew is subtitle text for now) ──
+  // Bramm + Veyra: the warning is obviously for everyone else; destiny smells of ale.
+  R('veyra_banter_bramm_01a','veyra','omen_uneasy','The cards are warning you.','הקלפים מנסים להזהיר אותך.',2.27,['en']),
+  R('bramm_banter_veyra_01b','bramm','11_showing_off','They ought to warn the others.','שיזהירו את האחרים.',2.19,['en']),
+  R('bramm_banter_veyra_02a','bramm','23_gloating',"One card. That's what destiny looks like.",'קלף אחד. ככה נראה הגורל.',3.87,['en']),
+  R('veyra_banter_bramm_02b','veyra','banter_edrin_exasperated',"Destiny doesn't usually smell of ale.",'בדרך כלל הגורל לא מריח מבירה.',2.85,['en']),
+  R('bramm_banter_veyra_02c','bramm','34_drinking_relaxed','Mine does.','שלי כן.',1.23,['en']),
+  // Edrin + Kesh: the stone does not know who is winning; sometimes it is just strategy.
+  R('edrin_banter_kesh_01a','edrin','idle_distracted',"Does that stone know who's winning?",'האבן הזאת יודעת מי מנצח?',2.35,['en']),
+  R('kesh_banter_edrin_01b','kesh','turning_rune','No.','לא.',0.99,['en']),
+  R('edrin_banter_kesh_01c','edrin','casual_acceptance','Lovely. Neither do I.','יופי. גם אני לא.',2.27,['en']),
+  R('edrin_banter_kesh_02a','edrin','mildly_impressed','Was that part of the prophecy?','זה היה חלק מהנבואה?',2.04,['en']),
+  R('kesh_banter_edrin_02b','kesh','good_move_satisfaction','No. That was strategy.','לא. זו הייתה אסטרטגיה.',2.43,['en']),
+  R('edrin_banter_kesh_02c','edrin','oh_dear','Ah. Dangerous stuff.','אה. עסק מסוכן.',2.51,['en']),
+  // Ragna + Kesh: she has started to recognise his routine, and is not impressed.
+  R('ragna_banter_kesh_01a','ragna','impatient_focus','Is the stone playing for you?','האבן משחקת במקומך?',2.04,['en']),
+  R('kesh_banter_ragna_01b','kesh','close_observation',"I'm thinking.",'אני חושב.',1.23,['en']),
+  R('ragna_banter_kesh_01c','ragna','eyes_on_table','Then think faster.','אז תחשוב מהר יותר.',1.80,['en']),
+  R('kesh_banter_ragna_02a','kesh','reverse_observation',"You've changed the course.",'שינית את הכיוון.',1.88,['en']),
+  R('ragna_banter_kesh_02b','ragna','default_focused',"That's what the card does.",'בשביל זה הקלף.',1.72,['en']),
+  R('kesh_banter_ragna_02c','kesh','dry_amusement','I meant something else.','התכוונתי למשהו אחר.',1.96,['en']),
+  R('ragna_banter_kesh_02d','ragna','calm_after_outburst','Of course you did.','ברור שהתכוונת.',1.57,['en']),
+  // Veyra + Ragna 02: the ward is sacred; so is the ale.
+  R('veyra_banter_ragna_02a','veyra','intro_something_wrong',"You're covering the ward.",'את מכסה את סמל ההגנה.',1.96,['en']),
+  R('ragna_banter_veyra_02b','ragna','default_focused','With my ale.','עם הבירה שלי.',1.80,['en']),
+  R('veyra_banter_ragna_02c','veyra','curse_offended',"It's sacred.",'הוא מקודש.',1.57,['en']),
+  R('ragna_banter_veyra_02d','ragna','strong_move_satisfied','So is mine.','גם היא.',1.23,['en']),
+  // Veyra + Edrin 02: he moved the bones, very considerately.
+  R('veyra_banter_edrin_02a','veyra','intro_bones','Who moved the bones?','מי הזיז את העצמות?',2.12,['en']),
+  R('edrin_banter_veyra_02b','edrin','drinking','I needed room for my drink.','הייתי צריך מקום לכוס שלי.',2.04,['en']),
+  R('veyra_banter_edrin_02c','veyra','draw_no_no_no','You moved the bones?','הזזת את העצמות?',2.04,['en']),
+  R('edrin_banter_veyra_02d','edrin','casual_acceptance','Very carefully.','בזהירות רבה.',2.04,['en']),
+  // Gorvan, in his own words at last: dry, unhurried, almost sincere.
+  R('gorvan_banter_bramm_04a','gorvan','dry_amusement',"One curse, and you're already giving a speech.",'קללה אחת, וכבר התחלת לנאום.',3.47,['en']),
+  R('bramm_banter_gorvan_04b','bramm','32_angry_at_spectators','IT WAS FOUR CARDS!','זה היה ארבעה קלפים!',2.12,['en']),
+  R('gorvan_banter_bramm_04c','gorvan','pleasant','An impressive speech, then.','נאום מרשים, אם כך.',2.19,['en']),
+  R('ragna_banter_gorvan_03a','ragna','impatient_focus','Do you ever hurry?','אתה ממהר לפעמים?',1.65,['en']),
+  R('gorvan_banter_ragna_03b','gorvan','reminiscing','I did once.','פעם אחת.',1.96,['en']),
+  R('ragna_banter_gorvan_03c','ragna','game_gets_interesting','And?','ו...?',0.99,['en']),
+  R('gorvan_banter_ragna_03d','gorvan','neutral',"Didn't suit me.",'לא התאים לי.',1.41,['en']),
+  R('edrin_banter_gorvan_03a','edrin','good_move_casual','Would you like some wine?','רוצה קצת יין?',1.57,['en']),
+  R('gorvan_banter_edrin_03b','gorvan','formal','No, thank you.','לא, תודה.',1.65,['en']),
+  R('edrin_banter_gorvan_03c','edrin','casual_acceptance',"Good. It's awful.",'יופי. הוא נורא.',2.19,['en']),
+  R('kesh_banter_gorvan_03a','kesh','rune_was_wrong','I cannot read your future.','אני לא מצליח לקרוא את העתיד שלך.',2.59,['en']),
+  R('gorvan_banter_kesh_03b','gorvan','pleasant','How refreshing.','איזו הקלה.',1.57,['en']),
+  R('veyra_banter_gorvan_04a','veyra','omen_sudden_certainty','There are seven death omens around your chair.','יש שבעה סימני מוות סביב הכיסא שלך.',3.24,['en']),
+  R('gorvan_banter_veyra_04b','gorvan','dry_amusement','That seems excessive.','קצת מוגזם, לא?',1.96,['en'])
 ].map(item=>[item.voice,item])));
 
 // A banter recording as a reaction the guest seats can perform (the same shape as

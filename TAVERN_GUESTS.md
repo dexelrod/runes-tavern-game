@@ -1,10 +1,28 @@
-# Voiced guests at the Tavern — integration notes (v101, updated v103, v104, v105)
+# Voiced guests at the Tavern — integration notes (v101, updated v103, v104, v105, v106)
 
 Now and then Bramm, Edrin, Ragna, Kesh, Veyra or Gorvan happens to be playing at a Tavern Match, usually in company. They say a handful of approved lines, pull faces at what happens around them, and, rarely, two of them trade lines. The aim is "Bramm happened to be in tonight", not a character mode.
 
 Only existing recordings are used. No new dialogue or audio was created.
 
 **v105: more banter.** The guests trade lines far more readily. Base odds are up (`banterChance` .13 → .22, `idleBanterChance` .14 → .28), each exchange's own authored odds are multiplied by `banterBoost` 1.6 (capped at .85), a match can hold up to **four** exchanges (was two) with a **25 s** gap (was 40 s), at most one a hand. An exchange no longer waits on the per-guest line cap or on a casual line already said this hand; it still needs the table quiet (`casualGap`, `casualEvents`) and every line still has to be literally true. Measured on the test event stream: about **1.5 exchanges per two-guest match** (v104: 0.4), and over 90% of two-guest matches now have at least one (v104: 40%). Most pairs now play through all the exchanges they have, so a pair's exchanges come back more often across evenings. The ordinary regulars' text chatter after a plain card is also up (`TABLE_BANTER_CHANCE` in `app.js`, .1 → .18). Who sits down is unchanged.
+
+**v106: thirteen new exchanges** (owner-written, English recordings only; in Hebrew they run as the authored Hebrew text, silent, with bubbles on — the same rule as the Gorvan exchanges). Every pair of guests now has at least two exchanges, so the seating weights in `TAVERN_GUEST_PAIRS` were updated and the three pairs that used to be rare (Bramm+Veyra, Edrin+Kesh, Kesh+Ragna) now sit down as often as the rest. Exchanges can now run four lines. Kesh now and then sits over his stone a while at a Tavern table (dawdle .05, like Edrin and Gorvan), so Ragna's "Is the stone playing for you?" has a real moment. Measured: about 1.8 exchanges per two-guest match.
+
+| Exchange | Lines | When |
+|---|---|---|
+| `veyra_bramm_warning` | Veyra "The cards are warning you." → Bramm "They ought to warn the others." | Bramm makes a strong move |
+| `veyra_bramm_destiny` | Bramm "One card. That's what destiny looks like." → Veyra "Destiny doesn't usually smell of ale." → Bramm "Mine does." | Bramm reaches one card |
+| `edrin_kesh_stone` | Edrin "Does that stone know who's winning?" → Kesh "No." → Edrin "Lovely. Neither do I." | Quiet stretch |
+| `edrin_kesh_strategy` | Edrin "Was that part of the prophecy?" → Kesh "No. That was strategy." → Edrin "Ah. Dangerous stuff." | Kesh makes a strong move |
+| `ragna_kesh_thinking` | Ragna "Is the stone playing for you?" → Kesh "I'm thinking." → Ragna "Then think faster." | Kesh is slow |
+| `ragna_kesh_course` | Kesh "You've changed the course." → Ragna "That's what the card does." → Kesh "I meant something else." → Ragna "Of course you did." | Ragna plays a Turnabout |
+| `veyra_ragna_sacred` | Veyra "You're covering the ward." → Ragna "With my ale." → Veyra "It's sacred." → Ragna "So is mine." | Quiet stretch |
+| `veyra_edrin_bones` | Veyra "Who moved the bones?" → Edrin "I needed room for my drink." → Veyra "You moved the bones?" → Edrin "Very carefully." | Quiet stretch |
+| `gorvan_bramm_speech` | Gorvan "One curse, and you're already giving a speech." → Bramm "IT WAS FOUR CARDS!" → Gorvan "An impressive speech, then." | Bramm takes exactly four from a Curse |
+| `gorvan_ragna_hurry` | Ragna "Do you ever hurry?" → Gorvan "I did once." → Ragna "And?" → Gorvan "Didn't suit me." | Gorvan is slow |
+| `gorvan_edrin_wine` | Edrin "Would you like some wine?" → Gorvan "No, thank you." → Edrin "Good. It's awful." | Quiet stretch |
+| `gorvan_kesh_future` | Kesh "I cannot read your future." → Gorvan "How refreshing." | Right after Kesh reads his stone, or a quiet stretch |
+| `gorvan_veyra_seven` | Veyra "There are seven death omens around your chair." → Gorvan "That seems excessive." | Gorvan's own brutal Curse |
 
 **v104:** Veyra and Gorvan joined the guests (see `VEYRA_INTEGRATION.md` and `GORVAN_INTEGRATION.md`). Banter is now a data-driven **sequence of any length** (`lines`), played as one performance, with dedicated banter recordings catalogued in `dist/duel/banter.js`. Exchanges recorded only in English (every Gorvan conversation) run as Hebrew text only in Hebrew. With voiced guests at the table, the ordinary regulars' text quips come half as often.
 

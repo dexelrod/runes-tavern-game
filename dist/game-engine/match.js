@@ -38,9 +38,9 @@ export const TAVERN_GUEST_ODDS=Object.freeze({sometimes:Object.freeze({one:.08,t
 // How many curated banter exchanges each pair shares (duel/tavern-director.js →
 // TAVERN_BANTER; a test keeps the two in step). Pairs who can trade lines are
 // strongly preferred: weight 1 + 3 × exchanges, so a pair with none is rare.
-export const TAVERN_GUEST_PAIRS=Object.freeze({'bramm+edrin':3,'bramm+kesh':2,'bramm+ragna':3,'edrin+kesh':0,'edrin+ragna':4,'kesh+ragna':0,
-  'kesh+veyra':2,'ragna+veyra':1,'edrin+veyra':1,'bramm+veyra':0,
-  'bramm+gorvan':3,'edrin+gorvan':2,'gorvan+ragna':2,'gorvan+kesh':2,'gorvan+veyra':3});
+export const TAVERN_GUEST_PAIRS=Object.freeze({'bramm+edrin':3,'bramm+kesh':2,'bramm+ragna':3,'edrin+kesh':2,'edrin+ragna':4,'kesh+ragna':2,
+  'kesh+veyra':2,'ragna+veyra':2,'edrin+veyra':2,'bramm+veyra':2,
+  'bramm+gorvan':4,'edrin+gorvan':3,'gorvan+ragna':3,'gorvan+kesh':3,'gorvan+veyra':4});
 // A little extra weight for established chemistry the owner especially wants heard (Veyra and Kesh).
 export const TAVERN_PAIR_CHEMISTRY=Object.freeze({'kesh+veyra':1.6});
 const pairKey=(a,b)=>[a,b].sort().join('+'),pairWeight=(a,b)=>(1+3*(TAVERN_GUEST_PAIRS[pairKey(a,b)]||0))*(TAVERN_PAIR_CHEMISTRY[pairKey(a,b)]||1);

@@ -564,7 +564,8 @@ function scheduleGame(){
   if(kesh)stageKeshTell(kesh,epoch,wait);
   // Now and then Edrin, at a Tavern table, is simply not paying attention: a long turn the table may remark on.
   // Gorvan, too, is in no hurry: now and then he takes his time over a card (no faster, no slower to decide).
-  const dawdle={edrin:.07,gorvan:.06}[tavernGuests?.seats[playerId]?.id]||0;
+  // Kesh (v106) now and then sits over his stone a while (Ragna: "Is the stone playing for you?").
+  const dawdle={edrin:.07,gorvan:.06,kesh:.05}[tavernGuests?.seats[playerId]?.id]||0;
   if(dawdle&&tavernGuests.dawdled!==scheduledTurn&&Math.random()<dawdle){tavernGuests.dawdled=scheduledTurn;wait+=2800;const timer=setTimeout(()=>{if(epoch===sessionEpoch&&state?.turn===scheduledTurn&&!isPaused())tavernEvent('slow',{current:playerId});},1800);characterSequenceTimers.push(timer);}
   botTimer=setTimeout(()=>runBotTurn(playerId,epoch,scheduledTurn),wait);
 }
