@@ -6,7 +6,7 @@ import { BRAMM_EXPRESSIONS, BRAMM_REACTIONS, BRAMM_VOICE_LIBRARY, brammExpressio
 
 test('Bramm pack registers every supplied voice and expression asset',()=>{
   assert.equal(Object.keys(BRAMM_VOICE_LIBRARY).length,40,'41 recorded lines, one_card_02 retired by the owner');
-  assert.equal(BRAMM_EXPRESSIONS.length,36);
+  assert.equal(BRAMM_EXPRESSIONS.length,37);
   for(const definition of Object.values(BRAMM_VOICE_LIBRARY)){const bytes=fs.readFileSync(fileURLToPath(definition.src));assert.ok(bytes.length>128);}
   for(const reaction of BRAMM_REACTIONS){
     assert.ok(reaction.captions.en);assert.ok(reaction.captions.he);assert.doesNotMatch(reaction.captions.he,/\[[^\]]+\]/);
@@ -107,7 +107,7 @@ test('recent queue prevents an immediate repeated line and round budget resets e
 test('every Bramm expression is reachable in play',()=>{
   const app=fs.readFileSync(new URL('../dist/app.js',import.meta.url),'utf8'),bramm=fs.readFileSync(new URL('../dist/duel/bramm.js',import.meta.url),'utf8'),staging=fs.readFileSync(new URL('../dist/duel/characters.js',import.meta.url),'utf8');
   const manifest=bramm.slice(bramm.indexOf('export const BRAMM_EXPRESSIONS'),bramm.indexOf(']);',bramm.indexOf('export const BRAMM_EXPRESSIONS')));
-  const rest=bramm.replace(manifest,'')+staging+app;
+  const rest=bramm.replace(manifest,'')+staging+app+fs.readFileSync(new URL('../dist/duel/banter.js',import.meta.url),'utf8')+fs.readFileSync(new URL('../dist/duel/tavern-director.js',import.meta.url),'utf8');
   for(const expression of BRAMM_EXPRESSIONS)assert.ok(rest.includes(`'${expression}'`),`${expression} is never shown`);
 });
 test('every new match against Bramm opens with his voiced introduction',()=>{

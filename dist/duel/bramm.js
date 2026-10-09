@@ -53,7 +53,7 @@ export const BRAMM_STATE_EXPRESSIONS=Object.freeze({
 });
 
 export const BRAMM_EXPRESSIONS=Object.freeze([
-  '01_default_smug','02_intro_boast','03_calling_to_tavern','04_smug_challenge','05_impatient','06_mocking_disbelief','07_belly_laugh','08_dismissive_lucky','09_irritated_lucky','10_satisfied_good_move','11_showing_off','12_mock_generous','13_dont_say_anything','14_blame_the_deck','15_defensive_excuse','16_rules_lawyer','17_one_card_sober_shock','18_one_card_denial','19_one_card_desperate','20_one_card_panic','21_sudden_relief','22_fake_calm_after_panic','23_gloating','24_big_victory','25_victory_to_tavern','26_close_win_relief','27_smug_unbeaten','28_good_game_almost_sincere','29_defeated_disbelief','30_defeated_sulk','31_again','32_angry_at_spectators','33_muttering','34_drinking_relaxed','35_drinking_nervous','36_mug_stops_midair'
+  '01_default_smug','02_intro_boast','03_calling_to_tavern','04_smug_challenge','05_impatient','06_mocking_disbelief','07_belly_laugh','08_dismissive_lucky','09_irritated_lucky','10_satisfied_good_move','11_showing_off','12_mock_generous','13_dont_say_anything','14_blame_the_deck','15_defensive_excuse','16_rules_lawyer','17_one_card_sober_shock','18_one_card_denial','19_one_card_desperate','20_one_card_panic','21_sudden_relief','22_fake_calm_after_panic','23_gloating','24_big_victory','25_victory_to_tavern','26_close_win_relief','27_smug_unbeaten','28_good_game_almost_sincere','29_defeated_disbelief','30_defeated_sulk','31_again','32_angry_at_spectators','33_muttering','34_drinking_relaxed','35_drinking_nervous','36_mug_stops_midair','37_not_finished'
 ]);
 export const brammExpressionURL=(name='01_default_smug')=>expressionAsset(BRAMM_EXPRESSIONS.includes(name)?name:'01_default_smug');
 

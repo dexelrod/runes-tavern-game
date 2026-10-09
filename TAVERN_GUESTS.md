@@ -240,3 +240,14 @@ These follow the owner's list exactly, with the deviations below.
 **Gorvan is a Vampire Lord** wherever he is presented: his title on the Duel plate and table plate ("Vampire Lord" / "לורד ערפדים"), the picker, and the home line ("Gorvan, the Vampire Lord, waits."). The house still insists on "Lord"; he still says "Gorvan. Just Gorvan."
 
 **Long names step down instead of being cut.** `NAME_FORMS` + `fitNames()` (app.js): "The Bounty Hunter" → "Bounty Hunter" → "Hunter" (Hebrew "צייד הראשים" → "הצייד"), measured with the real typeface after every render, on resize and when fonts load. Used on seat plates, the round tally and the picker; the full name stays wherever it fits, and screen readers always hear it. The old cramped two-line plate (`.long-name`, .8em) is gone.
+
+## v115 — "A Big, Strong Man" and Edrin's drink
+
+**Four new exchanges, English voice only** (Hebrew runs as authored subtitle text, as with every English-only banter). The 17 recordings shipped untouched (−14.4 to −22.2 LUFS; the shouts are meant to be loud), renamed speaker-first on the way in: `banter_veyra_ragna_bramm_01c` → `bramm_banter_veyra_ragna_01c`, `edrin_banter_ragna_drink_01b` (Ragna's line) → `ragna_banter_edrin_drink_01b`, `edrin_banter_bountyhunter_drink_*` → `…_bounty_hunter_drink_*`.
+
+- `veyra_ragna_bramm_strong_man` (idle / start of a hand, chance .3): Bramm cuts Ragna off mid-word (no gap), Veyra lets "Perhaps" hang, Ragna roars, then a 1.7 s silence before "Harpies." Authored pauses play as written (`pauseScale:1`). Listener faces: as Veyra delivers the line Bramm is still swaggering (`02_intro_boast`) and sours to `29_defeated_disbelief` as the punchline lands, then `09_irritated_lucky` while Ragna laughs and Veyra is `amused`.
+- `edrin_ragna_drink`, `edrin_bramm_drink`, `edrin_hunter_drink`: one joke, three variations. Topic `drink`: at most one a match, open on 40 % of evenings (×0.6 once heard), chance .35, never in the first hand. Edrin wears `scolded` from the moment he is shouted at. After the Hunter's "Thank you." the table stays silent 2.4 s (`hush`); 1.8 s after the other two.
+- New portraits (from `output/sit_down_reactions`, fitted to each set's canvas so a swap never jumps): Edrin `35_scolded`, Ragna `41_sit_down`, Bramm `37_not_finished` (rescaled ×1.17 — the source stopped above the frame bottom), Bounty Hunter `17_sit_down` (the shared 1760 px crop).
+- Ragna has no laughing painting; her "HA! HAHAHA!" uses `round_win_too_easy`. A dedicated laughing face would make the line land better.
+
+**Mechanics added** (tavern-director.js / app.js): a banter line may carry listener reactions — `[guest, voice, pause, {react:[[guest, face, delay ms]]}]` — held until that guest speaks and eased back 1.5 s after the exchange; passing table faces do not override them mid-exchange. `hush` on an exchange keeps the table quiet that long after its last line.

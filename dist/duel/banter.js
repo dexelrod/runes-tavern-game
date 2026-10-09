@@ -225,7 +225,26 @@ export const BANTER_RECORDINGS=Object.freeze(Object.fromEntries([
   R('ragna_chitchat_bounty_hunter_bramm_01e','ragna','enjoying_challenge',"Stop asking questions, Bramm.","תפסיק לשאול שאלות, בראם.",3.40,['en']),
   R('veyra_chitchat_bounty_hunter_kesh_01a','veyra','frustrated',"Nothing. I get absolutely nothing from him.","כלום. אני לא מקבלת ממנו שום דבר.",3.87,['en']),
   R('kesh_chitchat_bounty_hunter_veyra_01b','kesh','dry_amusement',"Perhaps that is the sign.","אולי זה הסימן.",2.35,['en']),
-  R('bounty_hunter_chitchat_veyra_kesh_01c','bounty_hunter','neutral',"Perhaps not.","אולי לא.",1.31,['en'])
+  R('bounty_hunter_chitchat_veyra_kesh_01c','bounty_hunter','neutral',"Perhaps not.","אולי לא.",1.31,['en']),
+  // ── v115: "A Big, Strong Man" (Veyra, Ragna, Bramm) ──
+  R('veyra_banter_ragna_bramm_01a','veyra','friendly_smile',"Hello, Ragna.","שלום, ראגנה.",1.57,['en']),
+  R('ragna_banter_veyra_bramm_01b','ragna','match_win_good_fight',"Veyra! Good, you're here. I've been meaning to ask you something about—","ויירה! טוב שאת כאן. כבר רציתי לשאול אותך משהו לגבי—",4.83,['en']),
+  R('bramm_banter_veyra_ragna_01c','bramm','02_intro_boast',"Ladies! Is there anything a big, strong warrior can do for you?","גבירותיי! יש משהו שלוחם גדול וחזק יכול לעשות בשבילכן?",4.91,['en']),
+  R('veyra_banter_ragna_bramm_01d','veyra','banter_dry',"Hmm. Perhaps. If you see any big, strong warriors around, do send one our way.","הממ. אולי. אם תראה איזה לוחם גדול וחזק בסביבה, תשלח אותו אלינו.",6.19,['en']),
+  R('ragna_banter_veyra_bramm_01e','ragna','round_win_too_easy',"HA! HAHAHA!","הא! האהאהא!",3.16,['en']),
+  R('bramm_banter_veyra_ragna_01f','bramm','30_defeated_sulk',"Harpies. The bloody lot of you.","מכשפות ארורות. שתיכן.",3.87,['en']),
+  R('veyra_banter_ragna_bramm_01g','veyra','amused',"Oh, don't sulk, Bramm. You did ask.","אוי, אל תיעלב, בראם. אתה זה ששאלת.",3.87,['en']),
+  // ── v115: Edrin wants another drink (three variations of one joke) ──
+  R('edrin_banter_ragna_drink_01a','edrin','looking_for_drink',"Right, I think I'll go fetch myself another ale. Anyone want something?","טוב, נראה לי שאלך להביא לעצמי עוד בירה. מישהו רוצה משהו?",5.07,['en']),
+  R('ragna_banter_edrin_drink_01b','ragna','sit_down',"SIT YOUR ARSE DOWN! NOBODY LEAVES UNTIL THIS GAME IS OVER!","שב על התחת שלך! אף אחד לא הולך לשום מקום עד שהמשחק הזה נגמר!",4.75,['en']),
+  R('edrin_banter_ragna_drink_01c','edrin','scolded',"Oh! Right, right. Terribly sorry. Just a thought...","אה! כן, כן. נורא מצטער. סתם רעיון...",4.36,['en']),
+  R('edrin_banter_bramm_drink_01a','edrin','looking_for_drink',"Well, I'm getting rather thirsty. Think I'll pop over to the bar.","טוב, אני מתחיל להיות די צמא. נראה לי שאקפוץ רגע לבר.",4.44,['en']),
+  R('bramm_banter_edrin_drink_01b','bramm','37_not_finished',"YOU SIT DOWN! BRAMM ISN'T FINISHED WITH YOU!","אתה תשב! בראם עוד לא סיים איתך!",3.55,['en']),
+  R('edrin_banter_bramm_drink_01c','edrin','scolded',"Oh, dear. Didn't mean to upset anyone. I'll... I'll stay.","אוי ואבוי. לא התכוונתי להרגיז אף אחד. אני... אני אשאר.",6.27,['en']),
+  R('edrin_banter_bounty_hunter_drink_01a','edrin','looking_for_drink',"Say, I might just go get myself a drink. I'll only be a moment.","תגיד, אולי אלך להביא לעצמי משהו לשתות. זה ייקח רק רגע.",4.60,['en']),
+  R('bounty_hunter_banter_edrin_drink_01b','bounty_hunter','sit_down',"SIT. DOWN.","שב. עכשיו.",2.04,['en']),
+  R('edrin_banter_bounty_hunter_drink_01c','edrin','scolded',"Oh! Yes. Of course. Sorry. Sorry...","אה! כן. כמובן. סליחה. סליחה...",4.91,['en']),
+  R('bounty_hunter_banter_edrin_drink_01d','bounty_hunter','neutral',"Thank you.","תודה.",0.91,['en'],'edrin')
 ].map(item=>[item.voice,item])));
 
 // A banter recording as a reaction the guest seats can perform (the same shape as

@@ -19,7 +19,7 @@ const seeded=seed=>mulberry32(seed);
 test('Edrin registers every authored line, expression and recorded voice file',()=>{
   assert.equal(EDRIN_REACTIONS.length,31);
   assert.equal(Object.keys(EDRIN_VOICE_LIBRARY).length,31);
-  assert.equal(EDRIN_EXPRESSIONS.length,34);
+  assert.equal(EDRIN_EXPRESSIONS.length,35);
   for(const reaction of EDRIN_REACTIONS){
     for(const key of ['id','trigger','voice','expression','priority','duration'])assert.ok(reaction[key],`${reaction.id} ${key}`);
     assert.ok(EDRIN_EXPRESSIONS.includes(reaction.expression),`${reaction.id} maps to a real expression`);
@@ -35,7 +35,7 @@ test('Edrin registers every authored line, expression and recorded voice file',(
 });
 
 test('every Edrin expression is reachable in play, and expressions share one anchored canvas',()=>{
-  const sources=read('../dist/duel/edrin.js').replace(/export const EDRIN_EXPRESSION_FILES=[\s\S]*?\}\);/,'')+read('../dist/duel/characters.js')+read('../dist/app.js');
+  const sources=read('../dist/duel/edrin.js').replace(/export const EDRIN_EXPRESSION_FILES=[\s\S]*?\}\);/,'')+read('../dist/duel/characters.js')+read('../dist/app.js')+read('../dist/duel/banter.js');
   for(const expression of EDRIN_EXPRESSIONS)assert.ok(sources.includes(`'${expression}'`),`${expression} is never shown`);
   for(const expression of EDRIN_EXPRESSIONS){const bytes=fs.readFileSync(fileURLToPath(edrinExpressionURL(expression)));const vp8x=bytes.indexOf('VP8X');assert.ok(vp8x>0,'extended WebP with alpha');const w=1+bytes.readUIntLE(vp8x+12,3),h=1+bytes.readUIntLE(vp8x+15,3);assert.deepEqual([w,h],[512,768],expression);}
 });

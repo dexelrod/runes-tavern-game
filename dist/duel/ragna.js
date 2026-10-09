@@ -28,7 +28,9 @@ export const RAGNA_EXPRESSION_FILES=Object.freeze({
   round_loss_frustrated:'31_round_loss_frustrated',round_loss_again:'32_round_loss_again',round_loss_respect:'33_round_loss_respect',
   match_win_good_fight:'34_match_win_good_fight',match_win_rematch:'35_match_win_rematch',
   match_loss_fair_enough:'36_match_loss_fair_enough',match_loss_energized:'37_match_loss_energized',match_loss_respect:'38_match_loss_respect',
-  noise_fury:'39_noise_fury',self_mistake:'40_self_mistake'
+  noise_fury:'39_noise_fury',self_mistake:'40_self_mistake',
+  // v115: "SIT YOUR ARSE DOWN!"
+  sit_down:'41_sit_down'
 });
 export const RAGNA_EXPRESSIONS=Object.freeze(Object.keys(RAGNA_EXPRESSION_FILES));
 export const RAGNA_DEFAULT_EXPRESSION='default_focused';

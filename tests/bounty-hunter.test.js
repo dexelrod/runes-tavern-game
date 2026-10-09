@@ -22,18 +22,18 @@ const seeded=seed=>mulberry32(seed);
 const line=id=>BOUNTY_HUNTER_REACTIONS.find(item=>item.id===id);
 const hunterBanter=TAVERN_BANTER.filter(b=>b.lines.some(([guest])=>guest==='bounty_hunter'));
 
-test('the Bounty Hunter: 63 approved lines, English recordings only, 16 states on 15 paintings at the shared canvas',()=>{
-  assert.equal(BOUNTY_HUNTER_REACTIONS.length,63);assert.equal(Object.keys(BOUNTY_HUNTER_VOICE_LIBRARY).length,63);assert.equal(BOUNTY_HUNTER_EXPRESSIONS.length,16);
+test('the Bounty Hunter: 63 approved lines, English recordings only, 17 states on 16 paintings at the shared canvas',()=>{
+  assert.equal(BOUNTY_HUNTER_REACTIONS.length,63);assert.equal(Object.keys(BOUNTY_HUNTER_VOICE_LIBRARY).length,63);assert.equal(BOUNTY_HUNTER_EXPRESSIONS.length,17);
   const files=fs.readdirSync(new URL('../dist/assets/bounty_hunter/voice/',import.meta.url));
-  // 63 lines of his own + 33 of his own banter / three-person recordings.
-  assert.equal(files.length,96);assert.ok(files.every(name=>name.endsWith('.mp3')&&!name.endsWith('_he.mp3')),'English recordings only — no Hebrew audio invented');
+  // 63 lines of his own + 33 of his own banter / three-person recordings + 2 of the v115 drink exchange.
+  assert.equal(files.length,98);assert.ok(files.every(name=>name.endsWith('.mp3')&&!name.endsWith('_he.mp3')),'English recordings only — no Hebrew audio invented');
   for(const reaction of BOUNTY_HUNTER_REACTIONS){
     assert.ok(BOUNTY_HUNTER_EXPRESSIONS.includes(reaction.expression),reaction.id);
     for(const locale of ['en','he']){const voice=resolveBountyHunterVoice(reaction.voice,locale);assert.ok(voice,`${reaction.voice} ${locale}`);assert.doesNotMatch(voice.src,/_he\.mp3$/);assert.equal(voice.audioLocale,'en');assert.ok(fs.readFileSync(fileURLToPath(voice.src)).length>1024);}
   }
   // The fixed stare is the neutral painting held longer (the pack's design): one file, two states.
   assert.equal(BOUNTY_HUNTER_EXPRESSION_FILES.fixed_stare,BOUNTY_HUNTER_EXPRESSION_FILES.neutral);
-  const images=fs.readdirSync(new URL('../dist/assets/bounty_hunter/expressions/',import.meta.url));assert.equal(images.length,15);
+  const images=fs.readdirSync(new URL('../dist/assets/bounty_hunter/expressions/',import.meta.url));assert.equal(images.length,16);
   for(const expression of BOUNTY_HUNTER_EXPRESSIONS){const bytes=fs.readFileSync(fileURLToPath(bountyHunterExpressionURL(expression)));const vp8x=bytes.indexOf('VP8X');const w=1+bytes.readUIntLE(vp8x+12,3),h=1+bytes.readUIntLE(vp8x+15,3);assert.deepEqual([w,h],[640,640],expression);}
 });
 
@@ -132,9 +132,9 @@ test('the rare look belongs to one line: "Maybe later." alone uses rare_amusemen
 test('banter: every partner, every supplied exchange, whole and in order — English audio only, Hebrew text-only',()=>{
   const partners=new Set(hunterBanter.flatMap(b=>b.lines.map(([guest])=>guest)).filter(g=>g!=='bounty_hunter'));
   assert.deepEqual([...partners].toSorted(),['bramm','edrin','gorvan','kesh','ragna','veyra']);
-  assert.equal(hunterBanter.length,17);assert.equal(hunterBanter.filter(b=>new Set(b.lines.map(([g])=>g)).size===3).length,4,'four three-person sequences');
+  assert.equal(hunterBanter.length,18);assert.equal(hunterBanter.filter(b=>new Set(b.lines.map(([g])=>g)).size===3).length,4,'four three-person sequences');
   const used=new Set(hunterBanter.flatMap(b=>b.lines.map(([,voice])=>voice)));
-  const recordings=Object.values(BANTER_RECORDINGS).filter(r=>/bounty_hunter/.test(r.voice));assert.equal(recordings.length,66);
+  const recordings=Object.values(BANTER_RECORDINGS).filter(r=>/bounty_hunter/.test(r.voice));assert.equal(recordings.length,70);
   for(const r of recordings){assert.ok(used.has(r.voice),`${r.voice} is used`);assert.deepEqual([...r.takes],['en']);assert.ok(r.captions.he);assert.equal(resolveCharacterVoice(r.voice,'he'),null,'no Hebrew take');assert.ok(fs.statSync(new URL(`../dist/assets/${r.speaker}/voice/${r.voice}.mp3`,import.meta.url)).size>1024);}
   for(const b of hunterBanter){assert.equal(b.audio,'en');
     // File names carry the order (a, b, c …): each exchange plays in authored order.

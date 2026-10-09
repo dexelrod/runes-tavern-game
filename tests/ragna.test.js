@@ -19,7 +19,7 @@ const seeded=seed=>mulberry32(seed);
 const ready=(clock=()=>60000,random=()=>0)=>{const r=createRagnaController({random,now:clock});for(let i=0;i<4;i++)r.observe('ragna_move');return r;};
 
 test('Ragna registers every authored line, all 40 expressions and every delivered voice file',()=>{
-  assert.equal(RAGNA_REACTIONS.length,41);assert.equal(Object.keys(RAGNA_VOICE_LIBRARY).length,41);assert.equal(RAGNA_EXPRESSIONS.length,40);
+  assert.equal(RAGNA_REACTIONS.length,41);assert.equal(Object.keys(RAGNA_VOICE_LIBRARY).length,41);assert.equal(RAGNA_EXPRESSIONS.length,41);
   for(const reaction of RAGNA_REACTIONS){
     for(const key of ['id','trigger','voice','expression','priority','duration'])assert.ok(reaction[key],`${reaction.id} ${key}`);
     assert.ok(RAGNA_EXPRESSIONS.includes(reaction.expression),`${reaction.id} maps to a real expression`);
@@ -34,7 +34,7 @@ test('Ragna registers every authored line, all 40 expressions and every delivere
 });
 
 test('every Ragna expression is reachable in play',()=>{
-  const sources=read('../dist/duel/ragna.js').replace(/export const RAGNA_EXPRESSION_FILES=[\s\S]*?\}\);/,'');
+  const sources=read('../dist/duel/ragna.js').replace(/export const RAGNA_EXPRESSION_FILES=[\s\S]*?\}\);/,'')+read('../dist/duel/banter.js')+read('../dist/duel/tavern-director.js');
   for(const expression of RAGNA_EXPRESSIONS)assert.ok(sources.includes(`'${expression}'`),`${expression} is never shown`);
 });
 
@@ -43,8 +43,8 @@ test('the deleted player-draw take is neither referenced nor shipped',()=>{
   assert.ok(!sources.includes('player_draw_01'));
   const files=fs.readdirSync(new URL('../dist/assets/ragna/voice/',import.meta.url));
   assert.ok(!files.some(name=>name.startsWith('ragna_player_draw_01')));
-  // 81 takes of her own, plus her side of the Veyra (2) and Gorvan (2, English only) banter, and v106's eight (English only).
-  assert.equal(files.filter(name=>!name.includes('_banter_')&&!name.includes('_chitchat_')).length,81);assert.equal(files.length,107);assert.ok(files.every(name=>name.endsWith('.mp3')));
+  // 81 takes of her own, plus her side of the Veyra (2) and Gorvan (2, English only) banter, v106's eight, and v115's three (English only).
+  assert.equal(files.filter(name=>!name.includes('_banter_')&&!name.includes('_chitchat_')).length,81);assert.equal(files.length,110);assert.ok(files.every(name=>name.endsWith('.mp3')));
 });
 
 test('bubbles show the exact authored transcript, acting directions removed, Hebrew untouched',()=>{

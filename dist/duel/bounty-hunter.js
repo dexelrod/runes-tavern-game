@@ -25,8 +25,8 @@ import { createVoiceCatalog, lineFactory, normalizeLocale } from './authored-pac
 // practical risk assessor; there are no bounty mechanics of any kind.
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Character pack (bounty_hunter_character_pack, design C, locked). 16 seated states,
-// 15 paintings (the fixed stare is the neutral painting held longer — by design).
+// Character pack (bounty_hunter_character_pack, design C, locked). 17 seated states,
+// 16 paintings (the fixed stare is the neutral painting held longer — by design).
 // Every pose is the same 1760 px crop of its shared 2048 px canvas (x 144–1904,
 // y 160–1920: the union of every pose's bounds), scaled uniformly to 640×640, so a
 // swap never jumps. Never mirrored: the straps, belt case and wear are asymmetric;
@@ -35,7 +35,9 @@ export const BOUNTY_HUNTER_EXPRESSION_FILES=Object.freeze({
   neutral:'01_neutral',attention:'02_attention',approval:'03_approval',doubtful:'04_doubtful',fixed_stare:'01_neutral',
   dismissal:'06_dismissal',focus:'07_focus',resigned:'08_resigned',rare_amusement:'09_rare_amusement',
   partner_left:'10_partner_left',partner_right:'11_partner_right',hand_glance:'12_hand_glance',adjustment:'13_adjustment',
-  card_inspect:'14_card_inspect',card_place:'15_card_place',firm_stop:'16_firm_stop'
+  card_inspect:'14_card_inspect',card_place:'15_card_place',firm_stop:'16_firm_stop',
+  // v115: the one time he raises his voice ("SIT. DOWN."). Same 1760 px crop as every pose.
+  sit_down:'17_sit_down'
 });
 export const BOUNTY_HUNTER_EXPRESSIONS=Object.freeze(Object.keys(BOUNTY_HUNTER_EXPRESSION_FILES));
 export const BOUNTY_HUNTER_DEFAULT_EXPRESSION='neutral';

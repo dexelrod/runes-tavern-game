@@ -23,7 +23,9 @@ export const EDRIN_EXPRESSION_FILES=Object.freeze({
   round_win_surprised:'20_round_win_surprised',round_win_casual:'21_round_win_casual',round_win_looking_for_drink:'22_round_win_looking_for_drink',
   round_loss:'23_round_loss',round_loss_distracted:'24_round_loss_distracted',match_win_surprised:'25_match_win_surprised',match_win_content:'26_match_win_content',
   match_loss_content:'27_match_loss_content',match_loss_confused:'28_match_loss_confused',match_loss_brightening:'29_match_loss_brightening',
-  apologetic:'30_apologetic',oh_dear:'31_oh_dear',drinking:'32_drinking',mug_in_wrong_hand_search:'33_mug_in_wrong_hand_search',focused:'34_focused'
+  apologetic:'30_apologetic',oh_dear:'31_oh_dear',drinking:'32_drinking',mug_in_wrong_hand_search:'33_mug_in_wrong_hand_search',focused:'34_focused',
+  // v115: shouted back into his chair (the drink exchanges).
+  scolded:'35_scolded'
 });
 export const EDRIN_EXPRESSIONS=Object.freeze(Object.keys(EDRIN_EXPRESSION_FILES));
 export const EDRIN_DEFAULT_EXPRESSION='default';

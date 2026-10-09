@@ -695,9 +695,9 @@ function setGuestFace(seatId,expression,duration=1700,toward=null){
 }
 function tavernEvent(type,context={}){
   if(!tavernGuests||view!=='game'||isPaused())return false;
-  const plan=tavernGuests.director.event(type,{round:session?.round||1,minCards:state?Math.min(...state.players.map(p=>p.hand.length)):9,...context,busy:tavernGuests.speaking||!!audioSystem.voiceSource,muted:guestsMuted()});
-  for(const face of plan.faces)if(!(tavernGuests.speaking&&tavernGuests.speakingSeat===face.seat))setGuestFace(face.seat,face.expression,face.duration,face.toward);
-  if(plan.lines.length){performGuestLines(plan.lines,{result:type==='round_end'||type==='match_end',after:plan.after||[]});if(plan.banter)rememberBanter(plan.banter);persist();return true;}
+  const plan=tavernGuests.director.event(type,{round:session?.round||1,minCards:state?Math.min(...state.players.map(p=>p.hand.length)):9,...context,busy:tavernGuests.speaking||!!audioSystem.voiceSource||Date.now()<(tavernGuests.quietUntil||0),muted:guestsMuted()});
+  for(const face of plan.faces)if(!(tavernGuests.speaking&&(tavernGuests.speakingSeat===face.seat||tavernGuests.reacting?.has(face.seat))))setGuestFace(face.seat,face.expression,face.duration,face.toward);
+  if(plan.lines.length){performGuestLines(plan.lines,{result:type==='round_end'||type==='match_end',after:plan.after||[],hush:plan.hush||0});if(plan.banter)rememberBanter(plan.banter);persist();return true;}
   return false;
 }
 // A dedicated banter recording, in the player's language (no take in that language: words only).
@@ -706,19 +706,23 @@ function resolveBanterLine(reaction){const locale=settings.language==='he'?'he':
 function rememberBanter(id){const heard=new Set(settings.heardBanter||[]);if(heard.has(id))return;heard.add(id);settings.heardBanter=[...heard];saveSettings(settings);}
 // Lines play one at a time; a banter holds the table's one voice until its last line ends.
 // A `silent` line (an English-only exchange in Hebrew) shows its authored words without a voice.
-function performGuestLines(lines,{result=false,after=[]}={}){
-  const guests=tavernGuests,epoch=sessionEpoch;if(!guests)return;guests.speaking=true;lastQuipAt=Date.now();
+// v115: a line's `react` makes listeners pull a face as it plays (held until they speak; eased back after the
+// exchange). `hush`: after the last line the table stays quiet that long.
+function performGuestLines(lines,{result=false,after=[],hush=0}={}){
+  const guests=tavernGuests,epoch=sessionEpoch;if(!guests)return;guests.speaking=true;guests.reacting=new Map();lastQuipAt=Date.now();
   const step=index=>{
     if(epoch!==sessionEpoch||tavernGuests!==guests)return;
     // v107: once an exchange about the player ends, a listener may glance at them (silent face, then back).
-    if(index>=lines.length){guests.speaking=false;guests.speakingSeat=null;if(!result)for(const seat of new Set(lines.map(item=>item.seat)))if(AUTHORED_CHARACTERS[guests.seats[seat]?.id]?.looks)setGuestFace(seat,null);for(const look of after)if(look.seat)setGuestFace(look.seat,look.expression,look.duration);return;}
+    if(index>=lines.length){guests.speaking=false;guests.speakingSeat=null;if(hush)guests.quietUntil=Date.now()+hush;if(!result)for(const [seat,face] of guests.reacting)setGuestFace(seat,face,1500);guests.reacting.clear();if(!result)for(const seat of new Set(lines.map(item=>item.seat)))if(AUTHORED_CHARACTERS[guests.seats[seat]?.id]?.looks)setGuestFace(seat,null);for(const look of after)if(look.seat)setGuestFace(look.seat,look.expression,look.duration);return;}
     const line=lines[index],pack=AUTHORED_CHARACTERS[line.guest],resolved=line.reaction.category==='banter'?resolveBanterLine(line.reaction):pack.resolveReaction(line.reaction,settings.language),localized=line.silent?{...resolved,voice:null}:resolved;
     // v113: a speaker with authored looks turns toward whoever the line is addressed to, from the
     // real seating; a listener with looks (in this exchange) turns toward the speaker.
     guests.speakingSeat=line.seat;setGuestFace(line.seat,(pack.looks&&localized.look&&lookFace(line.seat,localized.look))||localized.expression,0);
     if(lines.length>1)for(const other of new Set(lines.map(item=>item.seat)))if(other!==line.seat&&AUTHORED_CHARACTERS[tavernGuests.seats[other]?.id]?.looks)setGuestFace(other,'@look',0,line.seat);
+    guests.reacting.delete(line.seat);
+    for(const react of line.react||[]){if(react.seat===line.seat)continue;const show=()=>{if(epoch!==sessionEpoch||tavernGuests!==guests||!guests.speaking||guests.speakingSeat===react.seat)return;guests.reacting.set(react.seat,react.expression);setGuestFace(react.seat,react.expression,0);};if(react.delay>0&&!settings.reducedMotion)characterSequenceTimers.push(setTimeout(show,react.delay));else show();}
     // v109: inside an exchange the next speaker comes in quickly (120 ms after a line, was 450).
-    let done=false;const finish=()=>{if(done||epoch!==sessionEpoch)return;done=true;const beat=lines[index+1]?120:450;const timer=setTimeout(()=>{if(epoch!==sessionEpoch||tavernGuests!==guests)return;if(quip?.player===line.seat){quip=null;}if(!result)setGuestFace(line.seat,null);render();const next=lines[index+1];const gap=setTimeout(()=>step(index+1),next?(settings.reducedMotion?200:next.pause??350):0);characterSequenceTimers.push(gap);},settings.reducedMotion?120:beat);characterSequenceTimers.push(timer);};
+    let done=false;const finish=()=>{if(done||epoch!==sessionEpoch)return;done=true;const beat=lines[index+1]?120:450;const timer=setTimeout(()=>{if(epoch!==sessionEpoch||tavernGuests!==guests)return;if(quip?.player===line.seat){quip=null;}if(!result&&!lines[index+1]?.react?.some(r=>r.seat===line.seat&&!r.delay))setGuestFace(line.seat,null);render();const next=lines[index+1];const gap=setTimeout(()=>step(index+1),next?(settings.reducedMotion?200:next.pause??350):0);characterSequenceTimers.push(gap);},settings.reducedMotion?120:beat);characterSequenceTimers.push(timer);};
     const bubble=()=>{if(epoch!==sessionEpoch||tavernGuests!==guests)return;clearTimeout(quipTimer);quip={player:line.seat,text:localized.caption,lang:localized.locale,guest:true};lastQuipAt=Date.now();render();};
     // Captions on: the bubble shows the exact line. Captions off: voice only — unless the voice cannot play, then the words still reach the table.
     if(localized.voice)void speakCharacterVoice(localized,{locked:result,onEnded:finish}).then(node=>{if(!node){if(!settings.captions)bubble();const timer=setTimeout(finish,localized.duration||2400);characterSequenceTimers.push(timer);}});
@@ -1501,7 +1505,7 @@ window.TavernDebug=Object.freeze({
   cooldown:()=>tavernGuests?.director.cooldown()||null,
   event:(type,context={})=>tavernEvent(type,context),
   say:voice=>{if(!tavernGuests)return null;const plan=tavernGuests.director.force(voice);if(plan)performGuestLines(plan.lines);return plan?.lines.map(line=>line.voice)||null;},
-  banter:id=>{if(!tavernGuests)return null;const plan=tavernGuests.director.forceBanter(id);if(plan)performGuestLines(plan.lines);return plan?.lines.map(line=>line.voice)||null;},
+  banter:id=>{if(!tavernGuests)return null;const plan=tavernGuests.director.forceBanter(id);if(plan)performGuestLines(plan.lines,{hush:plan.hush||0});return plan?.lines.map(line=>line.voice)||null;},
   face:(seat,expression,ms=2400)=>{if(!tavernGuests?.seats[seat])return false;setGuestFace(seat,expression,ms);return tavernGuests.seats[seat].face;},
   setLanguage:language=>{settings.language=language==='he'?'he':'en';saveSettings(settings);if(tavernGuests)void audioSystem.preloadVoice(settings.language,[...new Set(Object.values(tavernGuests.seats).map(item=>item.id))].flatMap(allTavernVoices));render();return settings.language;},
   // Every face and every allowlisted Tavern voice of the seated guests, for the active language.

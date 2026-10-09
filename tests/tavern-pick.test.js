@@ -49,7 +49,7 @@ test('the conversation count is read from the real banter table', ()=>{
     assert.equal(tavernExchangesAmong([a,b]).length,TAVERN_BANTER.filter(item=>cast(item).every(g=>g===a||g===b)).length,pair);
   }
   assert.equal(tavernExchangesAmong(['bounty_hunter','gorvan']).length,3);
-  assert.equal(tavernExchangesAmong(['edrin','ragna']).length,6);
+  assert.equal(tavernExchangesAmong(['edrin','ragna']).length,7);
   assert.ok(tavernExchangesAmong(['bounty_hunter','edrin','gorvan']).some(b=>b.id==='hunter_vampire_trio'));
   // "needs": the vampire gossip needs Gorvan at the table even though he does not speak in it.
   for(const b of TAVERN_BANTER.filter(item=>item.needs))assert.ok(!tavernExchangesAmong(b.lines.map(([guest])=>guest)).includes(b));
