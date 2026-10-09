@@ -179,6 +179,38 @@ console.log('Tavern Match: voiced guests, and the Settings switch');
   check(!any,'with the Settings choice "Off", no voiced guest sits down');
   check(errors.length===0,`no console errors (${errors.join(' | ')})`);await context.close();}
 
+console.log('v114: choosing the Tavern company');
+{const {page,context,errors}=await open({width:390,height:844},{language:'en'},true);
+  await page.click('[data-tavern]');await page.waitForFunction(()=>window.RunesQA.snapshot().view==='game',null,{timeout:8000}).catch(()=>{});
+  check(await page.locator('.screen-tavern-pick').count()===0&&(await snapshot(page)).view==='game','setting off (default): Tavern Match deals at once');
+  await context.close();}
+for(const [size,language] of [[{width:390,height:844},'en'],[{width:320,height:568},'he'],[{width:844,height:390},'en'],[{width:1366,height:768},'he']]){
+  const {page,context,errors}=await open(size,{language,tavernPickGuests:true},size.width<900);
+  await page.click('[data-tavern]');await page.waitForTimeout(250);
+  check(await page.locator('.screen-tavern-pick .pick-tile').count()===7,`${size.width}×${size.height} ${language}: the picker shows the seven voiced regulars`);
+  check(await page.locator('[data-pick-sit]').isDisabled(),'sitting down waits for three');
+  await page.click('[data-pick="bounty_hunter"]');
+  const lit=await page.evaluate(()=>[...document.querySelectorAll('.pick-tile.is-lit')].map(n=>n.dataset.pick));
+  check(lit.length===2&&lit.includes('gorvan'),`one pick lights two (${lit.join(', ')})`);
+  await page.click('[data-pick="gorvan"]');check(await page.locator('.pick-tile.is-lit').count()===1,'two picks light one');
+  await page.click('[data-pick="edrin"]');
+  const fit=await page.evaluate(()=>[...document.querySelectorAll('.pick-plate b,.pick-plate small,.pick-sit,.pick-hint')].every(n=>n.scrollWidth<=n.clientWidth+1)&&[...document.querySelectorAll('.pick-tile,.pick-sit')].every(n=>{const r=n.getBoundingClientRect();return r.left>=-1&&r.right<=innerWidth+1;}));
+  check(fit,'nothing on the picker is cut off or off-screen');
+  await page.click('[data-pick-sit]');await page.waitForTimeout(1500);
+  const seated=(await saved(page)).roster.slice(1).map(p=>p.nameKey).sort().join(',');
+  check(seated==='bounty_hunter,edrin,gorvan',`the chosen three sit down (${seated})`);
+  const names=await page.evaluate(()=>[...document.querySelectorAll('.seat-name b')].map(b=>({t:b.textContent,ok:b.scrollWidth<=b.clientWidth+1})));
+  check(names.every(n=>n.ok),`every seat name is whole (${names.map(n=>n.t).join(' · ')})`);
+  check(errors.length===0,`no console errors (${errors.join(' | ')})`);await context.close();}
+{const {page,context,errors}=await open({width:1366,height:768},{language:'en'});
+  await page.evaluate(()=>window.TavernDebug.startWith(['bounty_hunter','gorvan','edrin']));await page.waitForTimeout(1200);
+  const name=()=>page.evaluate(()=>[...document.querySelectorAll('.seat-name b')].find(b=>b.dataset.fit)?.textContent);
+  check((await name())==='The Bounty Hunter','a wide table shows the full name');
+  await page.setViewportSize({width:390,height:844});await page.waitForTimeout(300);const narrow=await name();
+  check(['Bounty Hunter','Hunter'].includes(narrow),`a narrow table shortens it (${narrow})`);
+  await page.setViewportSize({width:1366,height:768});await page.waitForTimeout(300);check((await name())==='The Bounty Hunter','widening brings the full name back');
+  check(errors.length===0,`no console errors (${errors.join(' | ')})`);await context.close();}
+
 await browser.close();
 console.log(failures.length?`\n${failures.length} check(s) failed`:'\nAll smoke checks passed');
 process.exit(failures.length?1:0);

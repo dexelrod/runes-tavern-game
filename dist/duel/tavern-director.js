@@ -333,6 +333,29 @@ export const allTavernVoices=guest=>[...new Set(Object.values(TAVERN_GUEST_POOLS
   .concat(Object.values(FOLLOW_UPS).map(item=>item.voice).filter(voice=>voice.startsWith(`${guest}_`)))
   .concat(TAVERN_BANTER.flatMap(b=>b.lines).filter(([who])=>who===guest).map(([,voice])=>voice)))];
 
+// ── Choosing the company (v114) ──────────────────────────────────────────────
+// Settings → "Choose your Tavern opponents": the player seats three voiced guests. As they pick,
+// the seats that would talk most with the ones already chosen light up. "Talk" is counted from
+// TAVERN_BANTER itself: an exchange is possible at a table when everyone in it (and anyone it
+// `needs` present) is seated.
+const banterCast=b=>[...new Set([...b.lines.map(([guest])=>guest),...[].concat(b.needs||[])])];
+export const tavernExchangesAmong=(group=[])=>TAVERN_BANTER.filter(b=>banterCast(b).every(guest=>group.includes(guest)));
+const pickCombos=(items,k)=>k===0?[[]]:items.flatMap((item,i)=>pickCombos(items.slice(i+1),k-1).map(rest=>[item,...rest]));
+// `talk[id]`: exchanges this guest would add with the ones already picked. `suggested`: the guests
+// that complete the liveliest table — first by conversations with the picked guests, then by all
+// conversations at the table; ties keep the cast's order, so the advice never flickers.
+export function recommendTavernCompany(picked=[],pool=Object.keys(AUTHORED_CHARACTERS)){
+  const chosen=picked.filter(id=>pool.includes(id)).slice(0,3),open=pool.filter(id=>!chosen.includes(id)),need=3-chosen.length;
+  const talk=Object.fromEntries(open.map(id=>[id,chosen.length?tavernExchangesAmong([...chosen,id]).filter(b=>{const cast=banterCast(b);return cast.includes(id)&&cast.some(guest=>chosen.includes(guest));}).length:0]));
+  if(!chosen.length||need<=0)return {suggested:[],talk,table:need<=0?tavernExchangesAmong(chosen).length:0};
+  let best=null;
+  for(const rest of pickCombos(open,need)){
+    const table=tavernExchangesAmong([...chosen,...rest]),withPicked=table.filter(b=>banterCast(b).some(guest=>chosen.includes(guest))).length;
+    if(!best||withPicked>best.withPicked||(withPicked===best.withPicked&&table.length>best.table))best={rest,withPicked,table:table.length};
+  }
+  return {suggested:best.rest,talk,table:best.table};
+}
+
 // `seats` maps seat id → guest id (e.g. {p2:'ragna',p3:'bramm'}). `heard` lists the
 // banter exchanges this player has heard on earlier evenings (for running jokes).
 export function createTavernDirector({seats={},random=Math.random,now=()=>Date.now(),locale=()=>'en',captions=()=>true,initial=null,heard=[]}={}){

@@ -13,7 +13,7 @@ import { AUTHORED_CHARACTERS, VOICED_OPPONENTS, authoredCharacter, resolveCharac
 import { debugMarkEdrinVoiceMissing, edrinEventFor } from './duel/edrin.js';
 import { RAGNA_DOUBLE_LINES, debugMarkRagnaVoiceMissing, ragnaEventFor } from './duel/ragna.js';
 import { debugMarkKeshVoiceMissing, keshDebugMissingVoices, keshDecisionIsMajor, keshEventFor, keshExpressionURL, keshTellFor, keshUnrecorded } from './duel/kesh.js';
-import { allTavernVoices, createTavernDirector } from './duel/tavern-director.js';
+import { allTavernVoices, createTavernDirector, recommendTavernCompany } from './duel/tavern-director.js';
 import { duelEventFor } from './duel/authored-pack.js';
 import { debugMarkVeyraVoiceMissing, veyraDebugMissingVoices, VEYRA_ENGLISH_ONLY } from './duel/veyra.js';
 import { debugMarkGorvanVoiceMissing } from './duel/gorvan.js';
@@ -45,6 +45,19 @@ function colorRuneHTML(color,className='color-rune'){return runeSVG(color,classN
 
 function displayName(player){if(!player)return'';if(player.id==='p0')return isEnglish()?'You':player.name;if(!isEnglish())return player.name;const key=player.nameKey||player.duelOpponentId;return key?(playerNames[key]||localizeDuelOpponent(getDuelOpponent(key),'en')?.name||player.name):(playerNames[player.name]||player.name);}
 function displayOpponent(opponent){return localizeDuelOpponent(opponent,settings.language);}
+// v114: a name too long for its plate steps down to a shorter form instead of being cut off:
+// "The Bounty Hunter" → "Bounty Hunter" → "Hunter" (Hebrew: "צייד הראשים" → "הצייד"). The full
+// name stays wherever it fits; fitNames() picks the longest form that fits after every render
+// and on resize. Screen readers always hear the full name (the seat's aria-label carries it).
+const NAME_FORMS=Object.freeze({bounty_hunter:Object.freeze({en:Object.freeze(['The\u00a0Bounty Hunter','Bounty Hunter','Hunter']),he:Object.freeze(['צייד הראשים','הצייד'])})});
+function nameFitAttr(key){const forms=NAME_FORMS[key]?.[isEnglish()?'en':'he'];return forms?` data-fit="${forms.join('|')}"`:'';}
+const playerKey=player=>player?.id==='p0'?null:player?.nameKey||player?.duelOpponentId||null;
+function fitNames(scope=root){
+  for(const node of scope.querySelectorAll('[data-fit]')){
+    const forms=node.dataset.fit.split('|');
+    for(let i=0;i<forms.length;i++){if(node.textContent!==forms[i])node.textContent=forms[i];if(i===forms.length-1||node.scrollWidth<=node.clientWidth+1){node.classList.toggle('name-fit-short',i>0);break;}}
+  }
+}
 function cardOptions(options={}){return {...options,language:settings.language};}
 let botTimer=null,eventTimer=null,quipTimer=null,roundEndTimer=null,duelReactionTimer=null,duelIdleTimer=null,deckAudioTimer=null,characterSlowTimer=null,musicRestoreTimer=null,eventBanner=null,quip=null,duelReaction='idle',lastDuelReactionAt=0,lastLogLength=0,lastCounts={},lastHands={},lastQuipAt=0,takiRun=0,lastRenderedTopId=null,sessionEpoch=0,roundResultVisible=false,landingCards=new Map(),propRattled=new Set(),screenReaderLine='',captionLine='',characterCaptionLine='',characterCaptionLocale='en',blockAiUntil=0,motionLocked=false,pendingAction=null,deckSettling=false,characterController=null,characterExpression='01_default_smug',characterPreviousExpression='01_default_smug',characterExpressionTimer=null,characterSwapTimer=null,characterSequenceTimers=[],characterControllerFor=null,edrinConsideredTurn=null,pendingBotTurn=null;
 const dialogueHe={
@@ -757,11 +770,11 @@ function homeHTML(){
   const featured=displayOpponent(getDuelOpponent(featuredDuelOpponent())),featuredRecord=recordText(settings.duelRecords?.[featured.id]);
   const t=en?{
     resumeKicker:'Your seat is kept',resume:{duel:'Continue the Duel',tavern:'Continue the Tavern Match',quick:'Continue Quick Play'},
-    quick:'Quick Play',quickSub:'One hand with strangers',tavern:'Tavern Match',tavernSub:'Five rounds with the regulars',
+    quick:'Quick Play',quickSub:'One hand with strangers',tavern:'Tavern Match',tavernSub:tavernPickOn()?'Five rounds · you choose the company':'Five rounds with the regulars',
     duel:'Duel',duelSub:DUEL_HOME_LINES.en[featured.id],record:`You <bdi>${featuredRecord.won}</bdi> · ${featured.name} <bdi>${featuredRecord.lost}</bdi>`,rules:'House rules',settings:'Settings'
   }:{
     resumeKicker:'המקום שלכם שמור',resume:{duel:'להמשיך בדו־קרב',tavern:'להמשיך במשחק הפונדק',quick:'להמשיך במשחק המהיר'},
-    quick:'משחק מהיר',quickSub:'יד אחת עם זרים',tavern:'משחק פונדק',tavernSub:'חמישה סיבובים מול הקבועים',
+    quick:'משחק מהיר',quickSub:'יד אחת עם זרים',tavern:'משחק פונדק',tavernSub:tavernPickOn()?'חמישה סיבובים · אתם בוחרים את החברה':'חמישה סיבובים מול הקבועים',
     duel:'דו־קרב',duelSub:DUEL_HOME_LINES.he[featured.id],record:`אתם <bdi>${featuredRecord.won}</bdi> · ${featured.name} <bdi>${featuredRecord.lost}</bdi>`,rules:'חוקי הבית',settings:'הגדרות'
   };
   const resumeMeta=!resumable?'':savedSession.mode==='duel'
@@ -789,8 +802,8 @@ const DUEL_KICKERS=Object.freeze({
   he:{bramm:'אלוף הבית',edrin:'שלושים שנה ליד השולחן הזה',ragna:'רוצה יותר זהב על השולחן',kesh:'קורא את השולחן לפי הסימנים',veyra:'מזהה קללה אמיתית כשהיא רואה אחת',gorvan:'הבית מתעקש על ״לורד״',bounty_hunter:'יש לו זמן להרוג'}
 });
 const DUEL_HOME_LINES=Object.freeze({
-  en:{bramm:'Bramm waits. “Still unbeaten.”',edrin:'Edrin has saved you a seat.',ragna:'Ragna waits. “Sit straight.”',kesh:'Kesh waits. “The signs are quiet tonight.”',veyra:'Veyra waits. “Oh. This will be interesting.”',gorvan:'Gorvan waits. “Shall we?”',bounty_hunter:'The Bounty Hunter waits. “Hello.”'},
-  he:{bramm:'בראם מחכה. ״עדיין בלתי־מנוצח.״',edrin:'אדרין שמר לכם מקום.',ragna:'ראגנה מחכה. ״לשבת ישר.״',kesh:'קֶשׁ מחכה. ״הסימנים שקטים הלילה.״',veyra:'ויירה מחכה. ״או. זה הולך להיות מעניין.״',gorvan:'גורבן מחכה. ״שנתחיל?״',bounty_hunter:'צייד הראשים מחכה. ״שלום.״'}
+  en:{bramm:'Bramm waits. “Still unbeaten.”',edrin:'Edrin has saved you a seat.',ragna:'Ragna waits. “Sit straight.”',kesh:'Kesh waits. “The signs are quiet tonight.”',veyra:'Veyra waits. “Oh. This will be interesting.”',gorvan:'Gorvan, the Vampire Lord, waits. “Shall we?”',bounty_hunter:'The Bounty Hunter waits. “Hello.”'},
+  he:{bramm:'בראם מחכה. ״עדיין בלתי־מנוצח.״',edrin:'אדרין שמר לכם מקום.',ragna:'ראגנה מחכה. ״לשבת ישר.״',kesh:'קֶשׁ מחכה. ״הסימנים שקטים הלילה.״',veyra:'ויירה מחכה. ״או. זה הולך להיות מעניין.״',gorvan:'גורבן, לורד הערפדים, מחכה. ״שנתחיל?״',bounty_hunter:'צייד הראשים מחכה. ״שלום.״'}
 });
 let duelIndex=Math.floor(Math.random()*VOICED_OPPONENTS.length);
 const featuredDuelOpponent=()=>VOICED_OPPONENTS[duelIndex]||VOICED_OPPONENTS[0];
@@ -841,6 +854,61 @@ function bindDuelCarousel(){
   sync();
 }
 function startDuelWith(id,button){if(root.querySelector('[data-opponent].loading,[data-random-opponent].loading'))return;settings.duelOpponent=id;saveSettings(settings);clearMatch();button?.classList.add('loading');button?.setAttribute('aria-busy','true');return startSession('duel').catch(error=>{console.error('Unable to prepare duel assets',error);button?.classList.remove('loading');button?.setAttribute('aria-busy','false');});}
+// ── Tavern Match: choosing the company (v114) ─────────────────────────────────
+// Settings → "Choose your Tavern opponents" (off by default). When it is on, every new Tavern Match
+// starts here: the player seats three of the voiced cast. Once one or two are chosen, the guests
+// who would talk most with them are lit like a seat by the candles (recommendTavernCompany counts
+// the real banter exchanges). "Or let the evening decide" keeps the usual roll for the company.
+let tavernPicks=[];
+const tavernPickOn=()=>!!settings.tavernPickGuests&&settings.tavernGuestMode!=='off';
+function openTavernPick(){
+  tavernPicks=(settings.tavernPicks||[]).filter(id=>VOICED_GUEST_KEYS.includes(id)).slice(0,3);
+  view='tavernSelect';sheet=null;render();
+}
+const pickName=id=>displayOpponent(getDuelOpponent(id)).name.replace(/\u00a0/g,' ');
+function joinNames(names){const en=isEnglish();if(names.length<2)return names[0]||'';return en?`${names.slice(0,-1).join(', ')} and ${names.at(-1)}`:`${names.slice(0,-1).join(', ')} ו${names.at(-1)}`;}
+const TALK_ICON='<svg viewBox="0 0 16 14" aria-hidden="true"><path d="M2.2 1.5h11.6c.7 0 1.2.5 1.2 1.2v6.1c0 .7-.5 1.2-1.2 1.2H7.4L4 12.6V10H2.2C1.5 10 1 9.5 1 8.8V2.7c0-.7.5-1.2 1.2-1.2z"/></svg>';
+function tavernSelectHTML(){
+  const en=isEnglish(),picks=tavernPicks,full=picks.length>=3,advice=recommendTavernCompany(picks,VOICED_GUEST_KEYS);
+  const picked=picks.map(pickName),need=3-picks.length;
+  const hint=!picks.length?(en?'Pick three. Once you choose, the lit seats are the best company.':'בחרו שלושה. אחרי הבחירה הראשונה, המקומות המוארים הם החברה הטובה ביותר.')
+    :full?(advice.table?(en?`${advice.table} conversations can happen at this table.`:`${advice.table} שיחות יכולות לקרות סביב השולחן הזה.`):(en?'A quiet table tonight.':'שולחן שקט הלילה.'))
+    :(en?`The lit seats have the most to say to ${joinNames(picked)}.`:`למקומות המוארים יש הכי הרבה מה לומר ל${joinNames(picked)}.`);
+  const tile=id=>{
+    const opponent=displayOpponent(getDuelOpponent(id)),index=picks.indexOf(id),on=index>=0,lit=advice.suggested.includes(id),talk=on||full?0:advice.talk[id]||0;
+    const title=opponent.descriptor.split(' · ')[0],name=opponent.name;
+    const talkLabel=en?`${talk} ${talk===1?'conversation':'conversations'} with ${joinNames(picked)}`:`${talk===1?'שיחה אחת':`${talk} שיחות`} עם ${joinNames(picked)}`;
+    const label=`${name.replace(/\u00a0/g,' ')}, ${title}${lit?(en?' — good company':' — חברה טובה'):''}`;
+    return `<button class="pick-tile opponent-${id} ${on?'is-picked':''} ${lit?'is-lit':''} ${full&&!on?'is-resting':''}" data-pick="${id}" aria-pressed="${on}" aria-label="${label}">
+      <span class="pick-portrait"><img src="${AUTHORED_CHARACTERS[id].expressionURL(AUTHORED_CHARACTERS[id].defaultExpression)}" alt="" draggable="false">${on?`<i class="pick-seal" aria-hidden="true">${index+1}</i>`:''}</span>
+      <span class="pick-plate"><b${nameFitAttr(id)}>${name}</b><small>${title}</small></span>
+      ${talk&&picks.length?`<span class="pick-talk" title="${talkLabel}" aria-label="${talkLabel}">${TALK_ICON}<bdi>${talk}</bdi></span>`:''}
+    </button>`;};
+  const sit=full?(en?'Sit down at the table':'לשבת לשולחן'):(en?`Choose ${['','one','two','three'][need]} more`:`לבחור עוד ${['','אחד','שניים','שלושה'][need]}`);
+  return `<main class="app-shell screen-select screen-tavern-pick ${settings.reducedMotion?'reduced-motion':''}" dir="${direction()}">${worldSceneHTML('select')}<section class="pick-layer">
+    <header class="select-head"><button class="icon-button back-button" data-home aria-label="${en?'Back':'חזרה'}"><span aria-hidden="true">${en?'‹':'›'}</span></button><div><small>${en?'Tavern Match · five rounds':'משחק פונדק · חמישה סיבובים'}</small><h1>${en?'Who joins you tonight?':'מי יצטרף אליכם הערב?'}</h1></div></header>
+    <p class="pick-hint" role="status" aria-live="polite">${hint}</p>
+    <div class="pick-grid ${advice.suggested.length?'has-advice':''}" role="group" aria-label="${en?'Choose three opponents':'בחירת שלושה יריבים'}">${VOICED_GUEST_KEYS.map(tile).join('')}</div>
+    <div class="pick-controls">
+      <button class="primary-button pick-sit" data-pick-sit ${full?'':'disabled aria-disabled="true"'}>${sit}</button>
+      <button class="random-regular" data-pick-random><img src="./assets/props/gambling/dice-pair.png" alt="" draggable="false"><span>${en?'Or let the evening decide':'או שהערב יחליט'}</span></button>
+    </div>
+  </section></main>`;
+}
+function bindTavernPick(){
+  if(view!=='tavernSelect')return;
+  root.querySelectorAll('[data-pick]').forEach(button=>button.onclick=()=>{
+    const id=button.dataset.pick,index=tavernPicks.indexOf(id);tapFeedback('play',settings);
+    if(index>=0)tavernPicks.splice(index,1);
+    // A full table swaps out the most recent choice rather than refusing the tap.
+    else{if(tavernPicks.length>=3)tavernPicks.pop();tavernPicks.push(id);void AUTHORED_CHARACTERS[id]?.preload();}
+    render();requestAnimationFrame(()=>root.querySelector(`[data-pick="${id}"]`)?.focus({preventScroll:true}));
+  });
+  const begin=(guests,button)=>{if(root.querySelector('.pick-controls .loading'))return;button?.classList.add('loading');button?.setAttribute('aria-busy','true');clearMatch();
+    startSession('tavern',null,{guests}).catch(error=>{console.error('Unable to prepare the Tavern table',error);button?.classList.remove('loading');button?.setAttribute('aria-busy','false');});};
+  root.querySelector('[data-pick-sit]')?.addEventListener('click',event=>{if(tavernPicks.length<3)return;settings.tavernPicks=[...tavernPicks];saveSettings(settings);begin([...tavernPicks],event.currentTarget);});
+  root.querySelector('[data-pick-random]')?.addEventListener('click',event=>begin(null,event.currentTarget));
+}
 function tableEngravingHTML(){return `<svg class="table-engraving" viewBox="0 0 1000 620" preserveAspectRatio="none" aria-hidden="true"><g><path d="M162 323C185 169 330 91 505 91c177 0 319 77 339 231"/><path d="M842 345C811 491 671 548 501 548c-171 0-310-57-341-204"/></g><g class="engraving-marks"><path d="m149 324 28-29 28 29-28 29zM823 324l28-29 28 29-28 29z"/><path d="m487 91 16-20 16 20-16 20zM487 548l16-20 16 20-16 20z"/></g></svg>`;}
 function cardBackStackHTML(className,count=2){const back=cardHTML(null,cardOptions({hidden:true,small:true})).replace(/ aria-label="[^"]+"/,'');return `<span class="${className}" aria-hidden="true">${back.repeat(count)}</span>`;}
 // Living tavern: flickering light sources, rising embers and drifting dust over the painted room.
@@ -938,7 +1006,7 @@ function seatHTML(player,position){
   const label=active?(en?`${name}'s turn, ${cardCountLabel(count)}`:`התור של ${name}, ${cardCountLabel(count)}`):`${name}, ${cardCountLabel(count)}`;
   return `<div class="seat seat-${position} ${seatFigureHTML(player)?'has-figure':''} ${duelOpponent?`duel-seat opponent-${duelOpponent.id}`:''} ${active?'active':''} ${count===1&&state.phase==='playing'?'last-card':''} ${stopped?'sealed':''} ${propRattled.has(player.id)?'rattled':''} ${winning?'winner-seat':''}" data-player-id="${player.id}" data-seat="${position}" role="group" aria-label="${label}">
     ${seatFigureHTML(player)}
-    <div class="seat-plate">${house}<span class="seat-name ${name.length>12?'long-name':''}"><b>${name}</b>${epithet?`<small>${epithet}</small>`:''}</span><span class="seat-count" title="${cardCountLabel(count)}"><i class="mini-back" aria-hidden="true"></i><bdi>${count}</bdi></span></div>
+    <div class="seat-plate">${house}<span class="seat-name"><b${nameFitAttr(playerKey(player))}>${name}</b>${epithet?`<small>${epithet}</small>`:''}</span><span class="seat-count" title="${cardCountLabel(count)}"><i class="mini-back" aria-hidden="true"></i><bdi>${count}</bdi></span></div>
     ${seatScoreHTML(player)}
     <div class="seat-fan" data-hand-anchor aria-hidden="true">${backs}</div>
     ${revealedHandHTML(player)}
@@ -1075,7 +1143,7 @@ function summaryHTML(){
     return `<div class="result-slip ${slipEnter} final-slip ${session.championId==='p0'?'you-won':''}" role="dialog" aria-labelledby="result-title"><small>${session.mode==='duel'?(en?'Final score':'תוצאה סופית'):(en?'End of the evening':'סוף הערב')}</small><h2 id="result-title">${title}</h2><ol class="standings">${scoreRows}</ol><div class="result-actions">${actions}</div></div>`;
   }
   const losers=session.roster.filter(p=>p.id!==result.winnerId);
-  const breakdown=losers.map(p=>`<span><small>${displayName(p)}</small><bdi>${result.remaining[p.id]}</bdi></span>`).join('<i aria-hidden="true">+</i>');
+  const breakdown=losers.map(p=>`<span><small${nameFitAttr(playerKey(p))}>${displayName(p)}</small><bdi>${result.remaining[p.id]}</bdi></span>`).join('<i aria-hidden="true">+</i>');
   const nextLabel=session.suddenDeath?(en?'Play the deciding hand':'ליד המכרעת'):(en?'Next round':'לסיבוב הבא');
   const kicker=result.suddenDeath?(en?'Deciding hand':'יד מכרעת'):(en?`Round <bdi>${result.round}</bdi> of <bdi>${session.totalRounds}</bdi>`:`סיבוב <bdi>${result.round}</bdi> מתוך <bdi>${session.totalRounds}</bdi>`);
   return `<div class="result-slip ${slipEnter} round-slip" role="dialog" aria-labelledby="result-title"><small>${kicker}</small><h2 id="result-title">${winnerLine(winner)}</h2><div class="tally"><div class="tally-sum">${breakdown}</div><strong class="tally-total"><bdi>+${result.points}</bdi></strong></div>${session.suddenDeath?`<p class="tie-note">${en?'Tied at the top — one more hand decides it.':'שוויון בראש הטבלה — יד אחת נוספת תכריע.'}</p>`:''}<ol class="standings compact">${scoreRows}</ol><div class="result-actions"><button class="primary-button" data-next>${nextLabel}</button><button class="text-button" data-home>${en?'Save and leave':'לשמור ולצאת'}</button></div></div>`;
@@ -1128,14 +1196,18 @@ function sheetHTML(){
 }
 function settingsHTML(){
   const en=isEnglish(),c=en
-    ?{title:'Settings',language:'Language',sound:'Sound',gameSounds:'Game sounds',music:'Music',ambience:'Tavern ambience',gameplay:'Table',dialogue:'Character voices & reactions',tavernGuests:'Voiced characters at the Tavern',guestModes:{off:'Off',sometimes:'Sometimes',often:'Every evening'},captions:'Captions',hints:'Highlight playable cards',tableMessages:'Hide table messages',accessibility:'Comfort',haptics:'Vibration',motion:'Reduce motion',contrast:'High card contrast',close:'Done',on:'On',off:'Off'}
-    :{title:'הגדרות',language:'שפה',sound:'צליל',gameSounds:'צלילי משחק',music:'מוזיקה',ambience:'אווירת פונדק',gameplay:'שולחן',dialogue:'קולות ותגובות של דמויות',tavernGuests:'דמויות מדברות במשחק הפונדק',guestModes:{off:'כבוי',sometimes:'לפעמים',often:'בכל ערב'},captions:'כתוביות',hints:'הדגשת קלפים שאפשר לשחק',tableMessages:'הסתרת הודעות שולחן',accessibility:'נוחות',haptics:'רטט',motion:'צמצום תנועה',contrast:'ניגודיות גבוהה בקלפים',close:'סיום',on:'פועל',off:'כבוי'};
+    ?{title:'Settings',language:'Language',sound:'Sound',gameSounds:'Game sounds',music:'Music',ambience:'Tavern ambience',gameplay:'Table',dialogue:'Character voices & reactions',tavernGuests:'Voiced characters at the Tavern',pickGuests:'Choose your Tavern opponents',pickGuestsBlocked:'Needs voiced characters at the Tavern',guestModes:{off:'Off',sometimes:'Sometimes',often:'Every evening'},captions:'Captions',hints:'Highlight playable cards',tableMessages:'Hide table messages',accessibility:'Comfort',haptics:'Vibration',motion:'Reduce motion',contrast:'High card contrast',close:'Done',on:'On',off:'Off'}
+    :{title:'הגדרות',language:'שפה',sound:'צליל',gameSounds:'צלילי משחק',music:'מוזיקה',ambience:'אווירת פונדק',gameplay:'שולחן',dialogue:'קולות ותגובות של דמויות',tavernGuests:'דמויות מדברות במשחק הפונדק',pickGuests:'בחירת יריבים למשחק הפונדק',pickGuestsBlocked:'דורש דמויות מדברות במשחק הפונדק',guestModes:{off:'כבוי',sometimes:'לפעמים',often:'בכל ערב'},captions:'כתוביות',hints:'הדגשת קלפים שאפשר לשחק',tableMessages:'הסתרת הודעות שולחן',accessibility:'נוחות',haptics:'רטט',motion:'צמצום תנועה',contrast:'ניגודיות גבוהה בקלפים',close:'סיום',on:'פועל',off:'כבוי'};
   const toggle=(label,key)=>`<div class="setting-row toggle-row"><span class="setting-label" id="setting-${key}">${label}</span><button class="switch ${settings[key]?'on':''}" role="switch" data-toggle="${key}" aria-labelledby="setting-${key}" aria-checked="${!!settings[key]}"><i aria-hidden="true"></i><span class="switch-state">${settings[key]?c.on:c.off}</span></button></div>`;
   const audio=(label,key,volumeKey)=>{const value=Math.round((settings[volumeKey]??0)*100);return `<div class="setting-row audio-row ${settings[key]?'':'muted'}"><span class="setting-label" id="setting-${key}">${label}</span><div class="audio-controls"><input id="volume-${volumeKey}" type="range" min="0" max="100" step="5" value="${value}" style="--value:${value}%" data-volume="${volumeKey}" data-channel="${key}" aria-labelledby="setting-${key}" aria-valuetext="${value}%"><output for="volume-${volumeKey}"><bdi>${value}%</bdi></output><button class="switch ${settings[key]?'on':''}" role="switch" data-toggle="${key}" aria-labelledby="setting-${key}" aria-checked="${!!settings[key]}"><i aria-hidden="true"></i><span class="switch-state">${settings[key]?c.on:c.off}</span></button></div></div>`;};
   const fromPause=view==='game';
   // Off · Sometimes · Every evening — how often the voiced cast sits in at a Tavern Match.
   const guestModeRow=`<div class="setting-row choice-row guest-mode-row"><span class="setting-label" id="setting-guest-mode">${c.tavernGuests}</span><div class="ink-choice" role="radiogroup" aria-labelledby="setting-guest-mode">${['off','sometimes','often'].map(mode=>`<button role="radio" data-guest-mode="${mode}" aria-checked="${settings.tavernGuestMode===mode}" class="${settings.tavernGuestMode===mode?'on':''}">${c.guestModes[mode]}</button>`).join('<i aria-hidden="true">·</i>')}</div></div>`;
-  const body=`<div class="setting-row language-row"><span class="setting-label" id="setting-language">${c.language}</span><div class="ink-choice" role="radiogroup" aria-labelledby="setting-language"><button role="radio" data-language="he" aria-checked="${settings.language==='he'}" class="${settings.language==='he'?'on':''}" lang="he">עברית</button><i aria-hidden="true">·</i><button role="radio" data-language="en" aria-checked="${settings.language==='en'}" class="${settings.language==='en'?'on':''}" lang="en">English</button></div></div><section class="settings-section"><h3>${c.sound}</h3>${audio(c.gameSounds,'sound','sfxVolume')}${audio(c.music,'music','musicVolume')}${audio(c.ambience,'ambience','ambienceVolume')}</section><section class="settings-section"><h3>${c.gameplay}</h3>${toggle(c.dialogue,'dialogue')}${guestModeRow}${toggle(c.captions,'captions')}${toggle(c.hints,'playableHints')}${toggle(c.tableMessages,'hideTableMessages')}</section><section class="settings-section"><h3>${c.accessibility}</h3>${toggle(c.haptics,'haptics')}${toggle(c.motion,'reducedMotion')}${toggle(c.contrast,'highContrastCards')}</section><p class="build-mark">RUNES v${APP_VERSION}</p><div class="sheet-actions"><button class="secondary-button" data-close-sheet>${fromPause?(en?'Back to the pause menu':'חזרה לתפריט'):c.close}</button></div>`;
+  // v114: pick the three voiced guests before every Tavern Match (off by default). It only means
+  // something while voiced characters may sit at the Tavern, so it rests disabled when they are off.
+  const pickBlocked=settings.tavernGuestMode==='off',pickOn=!!settings.tavernPickGuests;
+  const pickRow=`<div class="setting-row toggle-row pick-guests-row ${pickBlocked?'is-disabled':''}"><span class="setting-label" id="setting-tavernPickGuests">${c.pickGuests}${pickBlocked?`<small class="setting-note">${c.pickGuestsBlocked}</small>`:''}</span><button class="switch ${pickOn?'on':''}" role="switch" data-toggle="tavernPickGuests" aria-labelledby="setting-tavernPickGuests" aria-checked="${pickOn}" ${pickBlocked?'disabled':''}><i aria-hidden="true"></i><span class="switch-state">${pickOn?c.on:c.off}</span></button></div>`;
+  const body=`<div class="setting-row language-row"><span class="setting-label" id="setting-language">${c.language}</span><div class="ink-choice" role="radiogroup" aria-labelledby="setting-language"><button role="radio" data-language="he" aria-checked="${settings.language==='he'}" class="${settings.language==='he'?'on':''}" lang="he">עברית</button><i aria-hidden="true">·</i><button role="radio" data-language="en" aria-checked="${settings.language==='en'}" class="${settings.language==='en'?'on':''}" lang="en">English</button></div></div><section class="settings-section"><h3>${c.sound}</h3>${audio(c.gameSounds,'sound','sfxVolume')}${audio(c.music,'music','musicVolume')}${audio(c.ambience,'ambience','ambienceVolume')}</section><section class="settings-section"><h3>${c.gameplay}</h3>${toggle(c.dialogue,'dialogue')}${guestModeRow}${pickRow}${toggle(c.captions,'captions')}${toggle(c.hints,'playableHints')}${toggle(c.tableMessages,'hideTableMessages')}</section><section class="settings-section"><h3>${c.accessibility}</h3>${toggle(c.haptics,'haptics')}${toggle(c.motion,'reducedMotion')}${toggle(c.contrast,'highContrastCards')}</section><p class="build-mark">RUNES v${APP_VERSION}</p><div class="sheet-actions"><button class="secondary-button" data-close-sheet>${fromPause?(en?'Back to the pause menu':'חזרה לתפריט'):c.close}</button></div>`;
   return sheetFrame('settings','settings-title',c.title,body,{closeLabel:en?'Close settings':'לסגור את ההגדרות'});
 }
 
@@ -1148,13 +1220,13 @@ function render(){
   document.documentElement.lang=settings.language;document.documentElement.dir=direction();document.documentElement.classList.toggle('hc-cards',!!settings.highContrastCards);
   document.querySelector('meta[name="description"]')?.setAttribute('content',isEnglish()?'RUNES — a card game around a tavern table: Quick Play, a five-round Tavern Match, and Duels with the regulars.':'רונות — משחק קלפים סביב שולחן פונדק: משחק מהיר, משחק פונדק בן חמישה סיבובים ודו־קרב מול הקבועים.');
   const openSheet=root.querySelector('.tavern-sheet'),sheetScroll=openSheet?{kind:openSheet.className,top:openSheet.scrollTop}:null;
-  root.innerHTML=view==='home'?homeHTML():view==='duelSelect'?duelSelectHTML():gameHTML();
+  root.innerHTML=view==='home'?homeHTML():view==='duelSelect'?duelSelectHTML():view==='tavernSelect'?tavernSelectHTML():gameHTML();
   // Changing screens is a change of light, not a page load: the new view comes up out of the dark.
   if(view!==lastRenderedView){root.firstElementChild?.classList.add('screen-enter');lastRenderedView=view;}
   // Re-rendering while a sheet is open (a toggle, a language switch) keeps its scroll position.
   const reopened=root.querySelector('.tavern-sheet');if(sheetScroll&&reopened&&reopened.className===sheetScroll.kind)reopened.scrollTop=sheetScroll.top;
   const placeholder=root.querySelector('[data-character-stage-placeholder]');if(characterStage&&placeholder){placeholder.replaceWith(characterStage);syncCharacterStage(characterStage);}
-  bind();
+  bind();fitNames();
 }
 function pauseGameTimers({leaving=false}={}){clearTimeout(tavernIdleTimer);clearTimeout(tavernStallTimer);if(tavernGuests)tavernGuests.speaking=false;clearTimeout(botTimer);clearTimeout(characterSlowTimer);clearTimeout(duelIdleTimer);clearTimeout(duelReactionTimer);clearTimeout(eventTimer);clearTimeout(quipTimer);clearTimeout(roundEndTimer);clearCharacterTimers();audioSystem.stopVoice({restoreMusic:!leaving});runActiveClock(false);}
 function resumeGameTimers(){
@@ -1227,7 +1299,12 @@ function bind(){
   // A random regular: one of the ten unvoiced opponents, never the same twice running.
   root.querySelector('[data-random-opponent]')?.addEventListener('click',event=>{const pool=DUEL_OPPONENTS.filter(item=>!AUTHORED_CHARACTERS[item.id]).map(item=>item.id),fresh=pool.filter(id=>id!==settings.lastRandomOpponent),id=fresh[Math.floor(Math.random()*fresh.length)];settings.lastRandomOpponent=id;startDuelWith(id,event.currentTarget);});
   bindDuelCarousel();
-  root.querySelector('[data-tavern]')?.addEventListener('click',()=>{clearMatch();startSession('tavern');});
+  root.querySelector('[data-tavern]')?.addEventListener('click',()=>{
+    // With "Choose your Tavern opponents" on, every new evening starts at the picker; a saved match is only
+    // cleared once the player actually sits down.
+    if(tavernPickOn()){if(view==='game'){clearMatch();goHome();}openTavernPick();return;}
+    clearMatch();startSession('tavern');});
+  bindTavernPick();
   root.querySelector('[data-quick]')?.addEventListener('click',()=>{clearMatch();startSession('quick');});
   root.querySelector('[data-resume]')?.addEventListener('click',event=>{const button=event.currentTarget;if(button.classList.contains('loading'))return;button.classList.add('loading');button.setAttribute('aria-busy','true');const saved=loadMatch();startSession(saved?.mode||'tavern',saved);});
   root.querySelector('[data-next]')?.addEventListener('click',startNextHand);
@@ -1438,7 +1515,9 @@ document.addEventListener('visibilitychange',()=>{
 });
 window.addEventListener('pagehide',()=>{flushPendingAction();persist();suspendAudio();});
 let handLayoutFrame=0;
-window.addEventListener('resize',()=>{cancelAnimationFrame(handLayoutFrame);handLayoutFrame=requestAnimationFrame(layoutHand);},{passive:true});
+window.addEventListener('resize',()=>{cancelAnimationFrame(handLayoutFrame);handLayoutFrame=requestAnimationFrame(()=>{layoutHand();fitNames();});},{passive:true});
+// Names are fitted with the real typeface: measure again once the web fonts have arrived.
+document.fonts?.ready?.then(()=>fitNames());
 // Warm the card-face artwork so masked SVGs never paint blank on first use.
 for(const name of ['number-1','number-3','number-4','number-5','number-6','number-7','number-8','number-9','shield','curse-plus-2','turnabout','quickstep','crossbow','runed-crossbow','rune','king']){const image=new Image();image.decoding='async';image.src=`./assets/cards/${name}.svg`;}
 registerWebMCP();render();

@@ -33,7 +33,8 @@ test('layout is driven by shared table variables, not per-screen magic offsets',
   assert.ok((css.match(/@media/g)||[]).length<=14,'breakpoints stay few and named');
   // Six voiced characters now have a few framing rules each (v104).
   // v105: + the Shield "Blocked" seal over the player's hand.
-  assert.ok(css.length<95000,'stylesheet stays a single readable system');
+  // v114: + the Tavern company picker (its narrow/short variants are container queries, not new breakpoints).
+  assert.ok(css.length<103000,'stylesheet stays a single readable system');
 });
 
 test('cards scale as one object and stay opaque when unplayable',()=>{

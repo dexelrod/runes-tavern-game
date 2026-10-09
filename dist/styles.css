@@ -200,7 +200,6 @@ html[lang=he] :is(.sheet-lede,.setting-label,.rule-card p,.rule-scoring p,.stand
 .seat-name b{overflow:hidden;font:700 13px/1.15 var(--display);white-space:nowrap;text-overflow:ellipsis}
 .seat-name small{overflow:hidden;color:var(--ink-soft);font:italic 500 10.5px/1.1 var(--display);white-space:nowrap;text-overflow:ellipsis}
 /* v113: a long name ("The Bounty Hunter") wraps onto two tight lines at a narrow seat instead of being cut off. */
-.seat:not(.duel-seat) .seat-name.long-name b{white-space:normal;text-overflow:clip;line-height:1;letter-spacing:-.02em;font-size:.8em}
 .seat-count{display:flex;align-items:center;gap:4px;padding-inline-start:4px;font:700 14px/1 var(--display);font-variant-numeric:lining-nums tabular-nums;color:var(--ink)}
 .mini-back{width:7px;height:10px;border-radius:1px;background:linear-gradient(#7a2940,#531827);box-shadow:inset 0 0 0 1px #c2914a99}
 .house-pin{display:grid;place-items:center;width:16px;height:16px;flex:0 0 auto}
@@ -991,3 +990,84 @@ input[type=range]::-moz-range-thumb{width:14px;height:26px;border:0;border-radiu
 .reduced-motion .shield-block-seal,.reduced-motion .shield-block-label,.reduced-motion .shield-blocked .hand-frame{animation:none!important}
 .reduced-motion .shield-block-seal:after{animation:none!important;opacity:0}
 @media (prefers-reduced-motion:reduce){.shield-block-seal,.shield-block-label,.shield-blocked .hand-frame{animation:none!important}.shield-block-seal:after{animation:none!important;opacity:0}}
+
+/* ── v114: Tavern Match — choosing the company. The same room and light as the Duel table; the
+   voiced cast wait in a row of framed portraits. Chosen ones get a wax seal with their seat
+   number; the best company for them is lit like a seat by the candles. ── */
+.screen-tavern-pick{--rim:calc(100% - clamp(92px,22vh,210px));--rim-curve:3%}
+.pick-layer{position:absolute;inset:0;z-index:1;container:pick/size;display:flex;flex-direction:column;align-items:center;gap:clamp(8px,1.6vh,16px);padding:calc(14px + var(--safe-top)) max(16px,var(--safe-right)) calc(14px + var(--safe-bottom)) max(16px,var(--safe-left));overflow-y:auto;overscroll-behavior:contain}
+.pick-layer>*{flex-shrink:0}
+.pick-layer .select-head{margin-top:0}
+.pick-hint{min-height:2.6em;max-width:560px;margin:0;color:var(--cream-dim);font:italic 500 15px/1.3 var(--display);text-align:center;text-shadow:0 1px 2px #000,0 0 8px #000a;text-wrap:balance}
+html[lang=he] .pick-hint{font-family:var(--ui);font-style:normal}
+.pick-grid{--cols:4;--gap:clamp(8px,1.4vw,16px);display:flex;flex-wrap:wrap;justify-content:center;gap:calc(var(--gap) + 4px) var(--gap);width:min(100%,560px);margin-block:auto}
+.pick-tile{position:relative;display:flex;flex-direction:column;align-items:center;width:calc((100% - (var(--cols) - 1) * var(--gap)) / var(--cols));min-width:0;padding:0;border:0;background:none;color:var(--ink);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:translate .22s ease,filter .3s ease}
+.pick-portrait{position:relative;display:block;width:100%;aspect-ratio:3/4;overflow:hidden;border-radius:4px;background:radial-gradient(ellipse at 50% 30%,#6a4526,#2a1709 75%);box-shadow:inset 0 0 0 2px #ead9af,inset 0 0 0 3px #694c2e,0 3px 0 #2a170e8c,0 6px 10px #0009;transition:box-shadow .3s ease}
+.pick-portrait img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 8%;scale:1.18;translate:0 7%;pointer-events:none}
+.pick-portrait:after{content:"";position:absolute;inset:0;border-radius:4px;box-shadow:inset 0 0 0 3px #ead9af,inset 0 0 0 4px #694c2eaa,inset 0 -18px 14px -10px #1a0d0599;pointer-events:none}
+.pick-plate{position:relative;z-index:1;display:grid;justify-items:center;width:calc(100% + 6px);margin-top:-12px;padding:3px 4px 2px;border-radius:2px 1px 3px 1px;background:linear-gradient(180deg,#d9c08a 0 3px,#f1e3bd 3px,#e6d2a2);box-shadow:inset 0 -1px #b89a62,inset 0 0 8px #8a5f2a40,0 2px 0 #00000033,0 5px 7px -1px #000b;rotate:-.6deg;filter:brightness(.82) saturate(.9);transition:filter .3s ease}
+.pick-tile:nth-child(even) .pick-plate{rotate:.5deg}
+.pick-plate b{max-width:100%;overflow:hidden;font:700 14px/1.15 var(--display);white-space:nowrap;text-overflow:ellipsis}
+.pick-plate small{display:-webkit-box;max-width:100%;overflow:hidden;color:var(--ink-soft);font:italic 500 10.5px/1.15 var(--display);-webkit-box-orient:vertical;-webkit-line-clamp:2;text-wrap:balance}
+html[lang=he] .pick-plate small{font-family:var(--ui);font-style:normal}
+.pick-tile:hover .pick-plate,.pick-tile.is-picked .pick-plate,.pick-tile.is-lit .pick-plate{filter:none}
+.pick-tile:focus-visible{outline:none}
+.pick-tile:focus-visible .pick-portrait{box-shadow:inset 0 0 0 2px #ead9af,inset 0 0 0 3px #694c2e,0 0 0 2px #f3dfb2,0 6px 10px #0009}
+/* Chosen: lifted off the bench, a gold frame and a wax seal with the seat number. */
+.pick-tile.is-picked{translate:0 -4px}
+.pick-tile.is-picked .pick-portrait{box-shadow:inset 0 0 0 2px #f2c46f,inset 0 0 0 4px #8a5a1e,0 0 0 2px #f2c46f,0 0 18px 2px #f2b44f66,0 8px 12px #000b}
+.pick-tile.is-picked .pick-portrait:after{box-shadow:inset 0 0 0 3px #f2c46f,inset 0 0 0 5px #8a5a1eaa,inset 0 -18px 14px -10px #1a0d0599}
+.pick-seal{position:absolute;z-index:2;top:6px;inset-inline-end:6px;display:grid;place-items:center;width:24px;height:24px;border-radius:50% 46% 52% 48%;background:radial-gradient(circle at 38% 32%,#c4453a,#8e1f1a 60%,#5e100d);color:#f6e3b4;font:700 13px/1 var(--display);font-style:normal;text-shadow:0 1px 0 #3a0806;box-shadow:inset 0 0 0 2px #a8302a,inset 0 -2px 3px #0006,0 2px 3px #0009}
+/* The best company for the ones already chosen: lit like a seat by the candles. */
+.pick-tile.is-lit .pick-portrait{box-shadow:inset 0 0 0 2px #ffd88a,inset 0 0 0 3px #8a5a1e,0 0 0 2px #ffcf7acc,0 0 26px 8px #ffa83c99,0 6px 10px #0009;animation:pick-candle 2.6s ease-in-out infinite}
+.pick-tile.is-lit .pick-portrait:before{content:"";position:absolute;inset:0;z-index:1;background:radial-gradient(ellipse 90% 70% at 50% 100%,#ffb35a55,transparent 70%),linear-gradient(180deg,#ffd9a018,transparent 40%);mix-blend-mode:screen;pointer-events:none}
+.pick-tile.is-lit .pick-portrait img{filter:brightness(1.1) sepia(.1) saturate(1.08)}
+@keyframes pick-candle{50%{box-shadow:inset 0 0 0 2px #ffd88a,inset 0 0 0 3px #8a5a1e,0 0 0 2px #ffcf7a,0 0 36px 12px #ffa83cbb,0 6px 10px #0009}}
+/* While there is advice, the rest of the bench sits a little further from the candles. */
+.pick-grid.has-advice .pick-tile:not(.is-lit):not(.is-picked){filter:brightness(.7) saturate(.85)}
+.pick-grid.has-advice .pick-tile:not(.is-lit):not(.is-picked):hover{filter:brightness(.92)}
+.reduced-motion .pick-tile.is-lit .pick-portrait{animation:none}
+.pick-tile.is-resting{filter:brightness(.62) saturate(.8)}
+.pick-tile.is-resting:hover{filter:brightness(.85)}
+/* How many conversations a guest has with the ones already chosen. */
+.pick-talk{position:absolute;z-index:2;top:6px;inset-inline-start:6px;display:inline-flex;align-items:center;gap:3px;padding:2px 6px 2px 5px;border-radius:2px;background:#1d0e06d9;color:var(--cream-dim);font:700 12px/1 var(--display);box-shadow:inset 0 0 0 1px #e9cf9a44,0 2px 3px #0008}
+.pick-talk svg{width:12px;height:11px;fill:currentColor;opacity:.85}
+.pick-tile.is-lit .pick-talk{background:#f2c46f;color:#3a1f0a;box-shadow:inset 0 0 0 1px #8a5a1e,0 0 8px #ffae4a99,0 2px 3px #0008}
+.pick-controls{display:flex;flex-direction:column;align-items:center;gap:8px;width:100%}
+.pick-sit{min-width:min(100%,300px)}
+.pick-sit[disabled]{opacity:.62;cursor:default;filter:saturate(.7)}
+.pick-sit.loading,.pick-controls .random-regular.loading{opacity:.6;pointer-events:none}
+@container pick (min-width:600px) and (orientation:portrait){
+  .pick-grid{width:min(100%,680px)}
+  .pick-plate b{font-size:16px}
+  .pick-plate small{font-size:12px}
+}
+@container pick (min-width:740px) and (min-height:560px) and (orientation:landscape){
+  .pick-grid{--cols:7;width:min(100%,1080px)}
+  .pick-portrait{aspect-ratio:4/5}
+  .pick-plate b{font-size:15px}
+  .pick-plate small{font-size:11.5px}
+}
+@container pick (max-height:480px) and (min-width:560px){
+  .pick-layer{gap:6px;padding-top:calc(8px + var(--safe-top))}
+  .pick-layer .select-head{min-height:44px}
+  .pick-layer .select-head h1{font-size:22px}
+  .pick-hint{min-height:0;font-size:13px}
+  .pick-grid{--cols:7;width:min(100%,760px);margin-block:0}
+  .pick-portrait{aspect-ratio:1/1}
+  .pick-plate b{font-size:12px}
+  .pick-plate small{display:none}
+  .pick-controls{flex-direction:row;justify-content:center;gap:14px}
+  .pick-sit{min-height:42px}
+}
+@container pick (max-width:360px){
+  .pick-plate b{font-size:12.5px}
+  .pick-plate small{font-size:9.5px}
+  .pick-hint{font-size:14px}
+}
+/* Settings: a switch that only applies while another setting allows it. */
+.setting-note{display:block;margin-top:2px;color:var(--ink-soft);font:italic 500 13px/1.2 var(--display)}
+html[lang=he] .setting-note{font-family:var(--ui);font-style:normal}
+.pick-guests-row .setting-label{flex-wrap:wrap}
+.pick-guests-row.is-disabled .setting-label{opacity:.62}
+.pick-guests-row.is-disabled .switch{opacity:.5;cursor:not-allowed}

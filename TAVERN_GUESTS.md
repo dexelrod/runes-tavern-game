@@ -228,3 +228,15 @@ These follow the owner's list exactly, with the deviations below.
   - Kesh is 1.09× (was 1.20×).
   - Bramm and Edrin are 1.84× (was 1.90×), for a safety margin.
   - The ordinary regulars already fit.
+
+## v114 — choosing the company, Gorvan's title, names that fit
+
+**Settings → Table → "Choose your Tavern opponents"** (`tavernPickGuests`, **off by default**). Off: a Tavern Match starts exactly as before (the evening rolls for its company by "Voiced characters at the Tavern"). On: every new Tavern Match — from the home screen or "Another evening" — opens a picker of the seven voiced regulars first; the player seats three (`createTavernMatch({guests})`, seats shuffled as usual; the choice is saved with the match and restored on reload). The switch rests disabled while "Voiced characters at the Tavern" is Off. A saved match is only cleared once the player sits down, so backing out of the picker keeps it.
+
+- **Advice:** once one or two are chosen, `recommendTavernCompany` (duel/tavern-director.js) lights the guests that complete the liveliest table — first by exchanges with the ones already chosen, then by every exchange possible at that table (ties keep the cast order, so the advice never flickers). Counts come from `TAVERN_BANTER` itself (`tavernExchangesAmong`, honouring `needs`), and each open seat carries a small badge: how many conversations it has with the chosen ones. Lit seats glow like a seat by the candles; the rest of the bench dims.
+- Chosen seats get a gold frame and a wax seal with their seat number; tapping a fourth swaps out the latest pick. The last trio is remembered (`tavernPicks`) and preselected next time. "Or let the evening decide" keeps the usual roll.
+- Layout: 4 + 3 on phones and tablet portrait, one row of seven on wide and short-landscape screens (container queries, no new breakpoints).
+
+**Gorvan is a Vampire Lord** wherever he is presented: his title on the Duel plate and table plate ("Vampire Lord" / "לורד ערפדים"), the picker, and the home line ("Gorvan, the Vampire Lord, waits."). The house still insists on "Lord"; he still says "Gorvan. Just Gorvan."
+
+**Long names step down instead of being cut.** `NAME_FORMS` + `fitNames()` (app.js): "The Bounty Hunter" → "Bounty Hunter" → "Hunter" (Hebrew "צייד הראשים" → "הצייד"), measured with the real typeface after every render, on resize and when fonts load. Used on seat plates, the round tally and the picker; the full name stays wherever it fits, and screen readers always hear it. The old cramped two-line plate (`.long-name`, .8em) is gone.
