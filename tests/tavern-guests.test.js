@@ -5,7 +5,7 @@ import { TAVERN_BANTER, TAVERN_GUEST_POOLS, TAVERN_TIMING, allTavernVoices, crea
 import { BANTER_RECORDINGS } from '../dist/duel/banter.js';
 import { AUTHORED_CHARACTERS } from '../dist/duel/characters.js';
 import { mulberry32 } from '../dist/game-engine/cards.js';
-import { TAVERN_GUEST_ODDS, TAVERN_GUEST_PAIRS, VOICED_TAVERN_GUESTS, createTavernMatch, restoreSession, serializeSession, tavernGuestsFor } from '../dist/game-engine/match.js';
+import { TAVERN_GUEST_MODES, TAVERN_GUEST_PAIRS, TAVERN_REGULARS, VOICED_TAVERN_GUESTS, createTavernMatch, restoreSession, serializeSession, tavernGuestsFor } from '../dist/game-engine/match.js';
 import { chooseBotAction } from '../dist/game-ai/bot.js';
 import { TAVERN_PRESSURE_PROFILE, TAVERN_VETERAN_PROFILE, PRESSURE_PROFILE, VETERAN_PROFILE } from '../dist/game-ai/veteran.js';
 import { applyAction, createInitialState } from '../dist/game-engine/engine.js';
@@ -155,26 +155,35 @@ test('semantic safety: every line is true for the seat that says it',()=>{
   const muted=always({p2:'bramm'}).event('one_card',{actor:'p0',muted:true});assert.equal(muted.lines.length,0);assert.ok(muted.faces.length>=0);
 });
 
-test('appearance: "Sometimes" seats guests on about a third of evenings, usually three; "Every evening" always seats two or three, mostly three; restored saves keep them',()=>{
-  assert.deepEqual(JSON.parse(JSON.stringify(TAVERN_GUEST_ODDS)),{sometimes:{one:.04,two:.08,three:.23},often:{one:0,two:.15,three:.85}});
-  const count=mode=>{const c=[0,0,0,0];for(let seed=0;seed<6000;seed++)c[tavernGuestsFor(seed,{mode}).filter(p=>p.voiced).length]++;return c.map(n=>n/6000);};
-  const some=count('sometimes');assert.ok(some[1]>.02&&some[1]<.06&&some[2]>.06&&some[2]<.1&&some[3]>.2&&some[3]<.26,some.join());
-  const often=count('often');assert.ok(often[0]===0&&often[1]===0&&often[2]>.11&&often[2]<.19&&often[3]>.81,often.join());
-  assert.ok(count('off')[0]===1);
+test('appearance (v116): voiced characters on → every Tavern table is three of the voiced cast; off → the unvoiced regulars; restored saves keep them',()=>{
+  assert.deepEqual([...TAVERN_GUEST_MODES],['off','often']);
+  const regular=new Set(TAVERN_REGULARS.map(p=>p.nameKey));
+  for(let seed=0;seed<3000;seed++){
+    const on=tavernGuestsFor(seed,{mode:'often'});assert.equal(on.length,3);assert.ok(on.every(p=>p.voiced&&!regular.has(p.nameKey)),`seed ${seed}`);assert.equal(new Set(on.map(p=>p.nameKey)).size,3);
+    // An older 'sometimes' means on as well.
+    assert.ok(tavernGuestsFor(seed,{mode:'sometimes'}).every(p=>p.voiced));
+    const off=tavernGuestsFor(seed,{mode:'off'});assert.equal(off.length,3);assert.ok(off.every(p=>!p.voiced&&regular.has(p.nameKey)));
+    assert.ok(tavernGuestsFor(seed,{voiced:false}).every(p=>!p.voiced));
+  }
+  // Every member of the cast gets evenings.
+  const seen=new Set();for(let seed=0;seed<3000;seed++)for(const p of tavernGuestsFor(seed))seen.add(p.nameKey);assert.deepEqual([...seen].toSorted(),VOICED_TAVERN_GUESTS.map(g=>g.nameKey).toSorted());
+  // Named guests (picker / QA): fewer than three → the evening fills the rest from the voiced cast, never a regular.
   const m=createTavernMatch({seed:11,guests:['bramm','ragna']});const back=restoreSession(JSON.parse(JSON.stringify(serializeSession?serializeSession(m):m)));
   assert.deepEqual(back.roster.map(p=>p.nameKey),m.roster.map(p=>p.nameKey));
-  assert.deepEqual(m.roster.filter(p=>p.voiced).map(p=>p.nameKey).toSorted(),['bramm','ragna']);
+  const seated=m.roster.filter(p=>p.id!=='p0');assert.ok(seated.every(p=>p.voiced));assert.ok(['bramm','ragna'].every(id=>seated.some(p=>p.nameKey===id)));
   const trio=createTavernMatch({seed:12,guests:['bramm','ragna','kesh']});assert.equal(trio.roster.filter(p=>p.voiced).length,3);
+  assert.ok(createTavernMatch({seed:13,guestMode:'off'}).roster.filter(p=>p.id!=='p0').every(p=>!p.voiced));
   const app=read('../dist/app.js');assert.match(app,/createTavernMatch\(\{seed:Date\.now\(\),guestMode:settings\.tavernGuestMode,guests\}\)/);
-  assert.match(app,/data-guest-mode="\$\{mode\}"/);assert.match(read('../dist/platform/storage.js'),/tavernGuestMode:'often',captions:true/,'v111: Every evening and captions on by default');
+  assert.match(app,/role="switch" data-guest-mode=/);assert.match(read('../dist/platform/storage.js'),/tavernGuestMode:'often',captions:true/,'v111: Every evening and captions on by default');
   assert.match(app,/session\.tavernDirector=tavernGuests\.director\.snapshot\(\)/,'the director\'s memory (lines used, banters) is saved with the match');
 });
 
 test('pairs who can banter are strongly preferred, and the pair table matches the banter list',()=>{
   const shared={};for(const b of TAVERN_BANTER){const key=[...new Set(b.lines.map(([guest])=>guest))].sort().join('+');shared[key]=(shared[key]||0)+1;}
   const guests=VOICED_TAVERN_GUESTS.map(g=>g.nameKey);for(let i=0;i<guests.length;i++)for(let j=i+1;j<guests.length;j++){const key=[guests[i],guests[j]].sort().join('+');assert.equal(TAVERN_GUEST_PAIRS[key],shared[key]||0,key);}
-  let banterPairs=0,pairs=0;for(let seed=0;seed<6000;seed++){const g=tavernGuestsFor(seed,{mode:'often'}).filter(p=>p.voiced).map(p=>p.nameKey);if(g.length!==2)continue;pairs++;if(TAVERN_GUEST_PAIRS[g.toSorted().join('+')])banterPairs++;}
-  assert.ok(banterPairs/pairs>.9,`${(100*banterPairs/pairs).toFixed(1)}% of pairs can trade lines`);
+  // v116: every table is three voiced guests; the company is weighted toward the pairs who can trade lines.
+  let talking=0,tables=0;for(let seed=0;seed<6000;seed++){const g=tavernGuestsFor(seed,{mode:'often'}).map(p=>p.nameKey);tables++;const pairs=[[g[0],g[1]],[g[0],g[2]],[g[1],g[2]]].filter(([a,b])=>TAVERN_GUEST_PAIRS[[a,b].sort().join('+')]).length;if(pairs>=2)talking++;}
+  assert.ok(talking/tables>.9,`${(100*talking/tables).toFixed(1)}% of tables have at least two talking pairs`);
 });
 
 test('settings: an older "off" switch stays off; anything unknown becomes the default (v111: "Every evening")',()=>{
@@ -334,6 +343,8 @@ test('v111 defaults: Every evening and captions on — and older saved settings 
   store['taki-pocket-settings']=JSON.stringify({tavernGuestMode:'sometimes',captions:false,language:'he'});
   s=loadSettings();assert.equal(s.tavernGuestMode,'often');assert.equal(s.captions,true);assert.equal(s.language,'he','other choices untouched');
   store['taki-pocket-settings']=JSON.stringify({tavernGuestMode:'off',captions:false});assert.equal(loadSettings().tavernGuestMode,'off','Off stays off');
-  s.tavernGuestMode='sometimes';s.captions=false;saveSettings(s);s=loadSettings();assert.equal(s.tavernGuestMode,'sometimes','a choice made after the change is kept');assert.equal(s.captions,false);
+  s.tavernGuestMode='off';s.captions=false;saveSettings(s);s=loadSettings();assert.equal(s.tavernGuestMode,'off','a choice made after the change is kept');assert.equal(s.captions,false);
+  // v116: the setting is on/off; a stored 'sometimes' reads as on.
+  s.tavernGuestMode='sometimes';s.settingsRevision=110;saveSettings(s);assert.equal(loadSettings().tavernGuestMode,'often');
   delete globalThis.localStorage;
 });

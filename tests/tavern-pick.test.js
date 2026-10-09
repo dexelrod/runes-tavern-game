@@ -34,7 +34,7 @@ test('off: Tavern Match starts straight away with the usual roll; on: the picker
 
 test('three chosen guests are exactly who sits down, and a reload keeps them', ()=>{
   for(const trio of combos(VOICED_GUEST_KEYS,3)){
-    for(const guestMode of ['sometimes','often','off']){
+    for(const guestMode of ['often','off']){
       const match=createTavernMatch({seed:4242,guests:trio,guestMode});
       const seated=match.roster.filter(p=>p.id!=='p0').map(p=>p.nameKey).sort();
       assert.deepEqual(seated,[...trio].sort());

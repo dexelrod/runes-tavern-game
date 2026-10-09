@@ -28,15 +28,14 @@ export const VOICED_TAVERN_GUESTS=Object.freeze([
   {name:'צייד הראשים',nameKey:'bounty_hunter',kind:'ai',archetype:'tavern-bounty',house:'blue',voiced:true}
 ]);
 export const VOICED_GUEST_KEYS=Object.freeze(VOICED_TAVERN_GUESTS.map(guest=>guest.nameKey));
-// Settings → "Voiced characters at the Tavern": off · sometimes (default) · often ("Every evening").
-// Tuning: share of new evenings by number of voiced guests. When guests come, they
-// usually come as company — a pair rather than one alone — and "Every evening"
-// always seats two, now and then three.
+// Settings → "Voiced characters at the Tavern": on (default) · off.
+// v116: the unvoiced regulars no longer sit at a Tavern table. With voiced characters on, every
+// Tavern Match seats three of the voiced cast; the regulars only fill the table when they are off.
+// ('often' is the stored value for on; an older 'sometimes' means on as well.)
 // TAVERN_GUESTS_ENABLED is the code-level kill switch (the player's own choice is in Settings).
 export const TAVERN_GUESTS_ENABLED=true;
-export const TAVERN_GUEST_MODES=Object.freeze(['off','sometimes','often']);
-// v107: when guests come, a full table of three voiced guests is the usual company (was mostly two).
-export const TAVERN_GUEST_ODDS=Object.freeze({sometimes:Object.freeze({one:.04,two:.08,three:.23}),often:Object.freeze({one:0,two:.15,three:.85})});
+export const TAVERN_GUEST_MODES=Object.freeze(['off','often']);
+export const TAVERN_GUEST_SEATS=3;
 // How many curated banter exchanges each pair shares (duel/tavern-director.js →
 // TAVERN_BANTER; a test keeps the two in step). Pairs who can trade lines are
 // strongly preferred: weight 1 + 3 × exchanges, so a pair with none is rare.
@@ -49,21 +48,20 @@ export const TAVERN_PAIR_CHEMISTRY=Object.freeze({'kesh+veyra':1.6});
 const pairKey=(a,b)=>[a,b].sort().join('+'),pairWeight=(a,b)=>(1+3*(TAVERN_GUEST_PAIRS[pairKey(a,b)]||0))*(TAVERN_PAIR_CHEMISTRY[pairKey(a,b)]||1);
 const HUMAN_SEAT=Object.freeze({id:'p0',name:'אתם',nameKey:'you',kind:'human',archetype:'wanderer',house:'yellow'});
 const combos=(items,k)=>k===0?[[]]:items.flatMap((item,i)=>combos(items.slice(i+1),k-1).map(rest=>[item,...rest]));
-export function tavernGuestsFor(seed,{mode='sometimes',voiced=true,guests=null}={}){
+export function tavernGuestsFor(seed,{mode='often',voiced=true,guests=null}={}){
   let value=(seed>>>0)||1;const next=()=>{value=Math.imul(value^(value>>>15),0x2c1b3c6d)>>>0;value=(value+0x9e3779b9)>>>0;return value;};
   const regulars=[...TAVERN_REGULARS];let seated=[];
-  if(!voiced)mode='off';
-  // `guests` (debug/QA) names the voiced guests outright; otherwise the evening rolls for them.
-  if(guests)seated=VOICED_TAVERN_GUESTS.filter(item=>guests.slice(0,3).includes(item.nameKey));
-  else if(TAVERN_GUESTS_ENABLED&&TAVERN_GUEST_ODDS[mode]){
-    const odds=TAVERN_GUEST_ODDS[mode],roll=next()/2**32,count=roll<odds.three?3:roll<odds.three+odds.two?2:roll<odds.three+odds.two+odds.one?1:0;
-    if(count){
-      // Every possible group of that size, weighted by how many banter pairs it contains.
-      const groups=combos(VOICED_TAVERN_GUESTS,count),weights=groups.map(group=>count===1?1:combos(group,2).reduce((sum,[a,b])=>sum+pairWeight(a.nameKey,b.nameKey),0));
-      let pick=next()/2**32*weights.reduce((a,b)=>a+b,0),index=0;while(index<groups.length-1&&(pick-=weights[index])>=0)index++;
-      seated=[...groups[index]];
-    }
+  const on=TAVERN_GUESTS_ENABLED&&voiced&&mode!=='off';
+  // `guests` (the company picker, debug/QA) names voiced guests outright; the evening fills any empty seat.
+  if(guests)seated=VOICED_TAVERN_GUESTS.filter(item=>guests.slice(0,TAVERN_GUEST_SEATS).includes(item.nameKey));
+  if(on&&seated.length<TAVERN_GUEST_SEATS){
+    // Every possible company for the empty seats, weighted by the banter pairs the whole table shares.
+    const pool=VOICED_TAVERN_GUESTS.filter(item=>!seated.includes(item)),groups=combos(pool,TAVERN_GUEST_SEATS-seated.length);
+    const weights=groups.map(group=>{const table=[...seated,...group];return table.length<2?1:combos(table,2).reduce((sum,[a,b])=>sum+pairWeight(a.nameKey,b.nameKey),0);});
+    let pick=next()/2**32*weights.reduce((a,b)=>a+b,0),index=0;while(index<groups.length-1&&(pick-=weights[index])>=0)index++;
+    seated=[...seated,...groups[index]];
   }
+  // Voiced characters off: the unvoiced regulars keep the table.
   while(seated.length<3)seated.push(regulars.splice(next()%regulars.length,1)[0]);
   // Shuffle the seats so a guest can sit anywhere at the table.
   for(let i=seated.length-1;i>0;i--){const j=next()%(i+1);[seated[i],seated[j]]=[seated[j],seated[i]];}
@@ -74,7 +72,7 @@ export const TAVERN_ROSTER=Object.freeze([HUMAN_SEAT,...TAVERN_REGULARS.slice(0,
 const freshRoster=roster=>roster.map(({hand,...player})=>({...player}));
 const scoreMap=roster=>Object.fromEntries(roster.map(p=>[p.id,0]));
 
-export function createTavernMatch({seed=Date.now(),roster=null,voicedGuests=true,guestMode='sometimes',guests=null}={}){
+export function createTavernMatch({seed=Date.now(),roster=null,voicedGuests=true,guestMode='often',guests=null}={}){
   const players=freshRoster(roster||[HUMAN_SEAT,...tavernGuestsFor(seed,{voiced:voicedGuests,mode:guestMode,guests})].map((player,index)=>({...player,id:`p${index}`})));
   return {version:MATCH_VERSION,mode:'tavern',phase:'round',round:1,totalRounds:5,suddenDeath:false,seed,scores:scoreMap(players),roster:players,results:[],championId:null,game:createInitialState({playerCount:4,players,seed})};
 }

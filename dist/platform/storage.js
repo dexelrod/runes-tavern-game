@@ -2,7 +2,9 @@ const SETTINGS='taki-pocket-settings'; const MATCH='taki-pocket-match';
 export const defaults={language:'en',playerCount:3,difficulty:'normal',sound:true,ambience:true,music:true,sfxVolume:.9,ambienceVolume:.18,musicVolume:.14,dialogue:true,tavernGuestMode:'often',captions:true,haptics:true,reducedMotion:false,highContrastCards:false,playableHints:true,hideTableMessages:true,tutorial:true,duelOpponent:'ron',duelRecords:{},tavernPickGuests:false,tavernPicks:[],settingsRevision:110};
 export function loadSettings(){try{const loaded={...defaults,...JSON.parse(localStorage.getItem(SETTINGS)||'{}')};if(![2,3,4,6].includes(loaded.playerCount))loaded.playerCount=defaults.playerCount;if(!['he','en'].includes(loaded.language))loaded.language=defaults.language;
   // v103: the on/off switch became off · sometimes · often. An older "off" stays off.
-  if(!['off','sometimes','often'].includes(loaded.tavernGuestMode))loaded.tavernGuestMode=defaults.tavernGuestMode;if(loaded.tavernGuests===false&&!JSON.parse(localStorage.getItem(SETTINGS)||'{}').tavernGuestMode)loaded.tavernGuestMode='off';delete loaded.tavernGuests;
+  // v116: back to on/off — every Tavern table is voiced unless they are off ("sometimes" → on).
+  if(loaded.tavernGuestMode==='sometimes')loaded.tavernGuestMode='often';
+  if(!['off','often'].includes(loaded.tavernGuestMode))loaded.tavernGuestMode=defaults.tavernGuestMode;if(loaded.tavernGuests===false&&!JSON.parse(localStorage.getItem(SETTINGS)||'{}').tavernGuestMode)loaded.tavernGuestMode='off';delete loaded.tavernGuests;
   // v111: "Every evening" and captions on are the new defaults. Settings saved before then still carry the old
   // defaults (every key is saved at once), so move those over once; a choice made after this is kept.
   const stored=JSON.parse(localStorage.getItem(SETTINGS)||'{}');

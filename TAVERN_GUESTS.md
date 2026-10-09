@@ -251,3 +251,9 @@ These follow the owner's list exactly, with the deviations below.
 - Ragna has no laughing painting; her "HA! HAHAHA!" uses `round_win_too_easy`. A dedicated laughing face would make the line land better.
 
 **Mechanics added** (tavern-director.js / app.js): a banter line may carry listener reactions — `[guest, voice, pause, {react:[[guest, face, delay ms]]}]` — held until that guest speaks and eased back 1.5 s after the exchange; passing table faces do not override them mid-exchange. `hush` on an exchange keeps the table quiet that long after its last line.
+
+## v116 — the voiced cast keeps the Tavern table
+
+With **Voiced characters at the Tavern** on (the default), every Tavern Match now seats three of the voiced cast; the nine unvoiced regulars (Aila, Ron, Bran, Sela, Roderic, Lio, Mograth, Harrow, Rusk) sit down only when the setting is off. The company is still weighted toward guests who share banter (`TAVERN_GUEST_PAIRS`, `TAVERN_PAIR_CHEMISTRY`); when the picker or QA names fewer than three, the evening fills the rest from the voiced cast, never with a regular.
+
+The setting went from Off · Sometimes · Every evening back to an on/off switch (stored as `'often'` / `'off'`; a saved `'sometimes'` loads as on). `TAVERN_GUEST_ODDS` is gone; `TAVERN_GUEST_SEATS = 3`. Quick Play and Duels are unchanged, and a match saved with regulars resumes as it was.
