@@ -72,7 +72,7 @@ export const TAVERN_GUEST_POOLS=Object.freeze({
     other_draw:L('veyra','player_draw_01','player_draw_02'),own_draw:L('veyra','draw_02'),
     curse_taken:L('veyra','curse_01'),curse_landed:L('veyra','curse_02'),stop_given:L('veyra','stop_01'),king:L('veyra','king_02'),
     other_one_card:L('veyra','player_one_card_01','player_one_card_04'),own_one_card:L('veyra','one_card_01','one_card_03'),
-    round_win:L('veyra','round_win_02'),round_loss:L('veyra','round_loss_01','round_loss_02'),
+    round_win:[],round_loss:L('veyra','round_win_02','round_loss_01','round_loss_02'),
     match_win:L('veyra','match_win_02','match_win_03'),match_loss:L('veyra','match_loss_02')
   }),
   // Gorvan: the quietest guest. His title lines are kept for the people who use the

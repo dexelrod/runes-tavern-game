@@ -163,8 +163,9 @@ test('player on one card: alert and focused — one reaction at most, often only
 });
 
 test('results: from the right pool; a round may pass with only a look; a match always gets its line',()=>{
-  const pools={round_win:/^veyra_round_win_02$/,round_loss:/^veyra_round_loss_0[12]$/,match_win:/^veyra_match_win_0[23]$/,match_loss:/^veyra_match_loss_02$/};
+  const pools={round_loss:/^veyra_(round_win_02|round_loss_0[12])$/,match_win:/^veyra_match_win_0[23]$/,match_loss:/^veyra_match_loss_02$/};
   for(const [trigger,pattern] of Object.entries(pools))for(let seed=1;seed<=30;seed++){const r=createVeyraController({random:seeded(seed)}).react(trigger,{},true);assert.match(r.voice,pattern);assert.equal(r.priority,'CRITICAL');assert.equal(r.nextState,'result');}
+  assert.equal(createVeyraController({random:seeded(1)}).react('round_win',{},true),null,'a won round: only the look');
   const pack=AUTHORED_CHARACTERS.veyra;assert.ok(pack.resultVoiceChance('round_win')<1&&pack.resultVoiceChance('round_loss')<1);assert.equal(pack.resultVoiceChance('match_win'),1);assert.equal(pack.resultVoiceChance('match_loss'),1);
   for(const face of Object.values(pack.resultFaces))assert.ok(VEYRA_EXPRESSIONS.includes(face));
   const app=read('../dist/app.js');

@@ -145,7 +145,9 @@ export const VEYRA_REACTIONS=Object.freeze([
 
   // Results: at most one line per hand, from the real match state. A round result may
   // pass with only a look (pack.resultVoiceChance in characters.js); a match never does.
-  line('round_win_02','round_win','round_win','CRITICAL',result),
+  // v117: "Again. I need to see something." is a loss line now (the recording keeps
+  // its round_win_02 file name). A won round passes with only her face.
+  line('round_win_02','round_loss','round_loss','CRITICAL',result),
   line('round_loss_01','round_loss','round_loss','CRITICAL',result),
   line('round_loss_02','round_loss','silent_thinking','CRITICAL',{...result,weight:({close})=>close?1.5:1}),
   line('match_win_02','match_win','match_win','CRITICAL',{...result,weight:({close})=>close?1.4:1}),
