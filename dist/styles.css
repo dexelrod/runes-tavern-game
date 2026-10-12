@@ -189,7 +189,7 @@ html[lang=he] :is(.sheet-lede,.setting-label,.rule-card p,.rule-scoring p,.stand
 /* Never cropped at the sides: a portrait wider than its seat shrinks to fit, scaling about the line where the table rim crosses it so the figure stays seated. */
 .seat-figure>img{display:block;height:calc(var(--fig-h) * 1.06);width:auto;max-width:100%;object-fit:contain;object-position:50% 94%;translate:0 6%;filter:brightness(.82) saturate(.9) drop-shadow(0 6px 8px #0009);transition:filter .5s ease}
 .seat.active .seat-figure>img{filter:brightness(1.02) saturate(1) drop-shadow(0 6px 10px #000a)}
-.sprite-figure .duel-sprite{display:block;width:calc(var(--fig-h) * 1.08);height:calc(var(--fig-h) * 1.08);flex:0 0 auto;background:var(--sprite-sheet,url('./assets/duel-opponents.png')) no-repeat;background-size:500% 500%;background-position:var(--sprite-x) var(--sprite-y);translate:0 9%;filter:brightness(.82) saturate(.9) drop-shadow(0 6px 8px #0009);transition:filter .5s ease;-webkit-mask-image:radial-gradient(ellipse 50% 92% at 50% 45%,#000 62%,transparent 100%);mask-image:radial-gradient(ellipse 50% 92% at 50% 45%,#000 62%,transparent 100%)}
+.sprite-figure .duel-sprite{display:block;width:calc(var(--fig-h) * 1.08);height:calc(var(--fig-h) * 1.08);flex:0 0 auto;background:var(--sprite-sheet,url('./assets/duel-opponents.webp')) no-repeat;background-size:500% 500%;background-position:var(--sprite-x) var(--sprite-y);translate:0 9%;filter:brightness(.82) saturate(.9) drop-shadow(0 6px 8px #0009);transition:filter .5s ease;-webkit-mask-image:radial-gradient(ellipse 50% 92% at 50% 45%,#000 62%,transparent 100%);mask-image:radial-gradient(ellipse 50% 92% at 50% 45%,#000 62%,transparent 100%)}
 .seat.active .sprite-figure .duel-sprite{filter:brightness(1.02) saturate(1) drop-shadow(0 6px 10px #000a)}
 /* Each player has a folded place card standing on the rim: house rune and
    name inked on it, the card count pencilled beside. Whose turn it is is told
@@ -246,7 +246,7 @@ html[lang=he] :is(.sheet-lede,.setting-label,.rule-card p,.rule-scoring p,.stand
 .seat-score.empty{display:none}
 /* Duel opponent: one large figure, centred. Sprites come from the shared sheet. */
 .duel-figure{overflow:hidden}
-.duel-figure .duel-sprite{display:block;width:calc(var(--fig-h) * 1.15);height:calc(var(--fig-h) * 1.15);flex:0 0 auto;background:var(--sprite-sheet,url('./assets/duel-opponents.png')) no-repeat;background-size:500% 500%;background-position:var(--sprite-x) var(--sprite-y);translate:0 8%;filter:brightness(.92) saturate(.92) drop-shadow(0 8px 10px #000a);-webkit-mask-image:radial-gradient(ellipse 50% 92% at 50% 45%,#000 62%,transparent 100%);mask-image:radial-gradient(ellipse 50% 92% at 50% 45%,#000 62%,transparent 100%)}
+.duel-figure .duel-sprite{display:block;width:calc(var(--fig-h) * 1.15);height:calc(var(--fig-h) * 1.15);flex:0 0 auto;background:var(--sprite-sheet,url('./assets/duel-opponents.webp')) no-repeat;background-size:500% 500%;background-position:var(--sprite-x) var(--sprite-y);translate:0 8%;filter:brightness(.92) saturate(.92) drop-shadow(0 8px 10px #000a);-webkit-mask-image:radial-gradient(ellipse 50% 92% at 50% 45%,#000 62%,transparent 100%);mask-image:radial-gradient(ellipse 50% 92% at 50% 45%,#000 62%,transparent 100%)}
 .duel-seat.active .duel-figure .duel-sprite{filter:brightness(1.04) drop-shadow(0 8px 10px #000a)}
 .character-art-stage{position:relative;display:block;height:100%;aspect-ratio:2/3;flex:0 0 auto}
 .duel-figure .character-art-stage{height:calc(var(--fig-h) * 1.85);align-self:flex-start;translate:0 -1%}

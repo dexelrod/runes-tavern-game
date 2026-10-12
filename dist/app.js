@@ -329,7 +329,7 @@ async function animateCardMovement(action){
   const count=draw?Math.min(state.activePenalty?.amount||1,8):1,duration=draw?380:action.playerId==='p0'?340:480;
   audioSystem.setSettings(settings);
   if(draw)await reshuffleIfEmpty(source);
-  if(draw){audioSystem.play(count>1?'drawMultiple':'cardDraw',{delay:70});source?.classList.add('drawing');destination?.classList.add('receiving-card');}
+  if(draw){(count>1?audioSystem.play('drawMultiple',{delay:70}):audioSystem.playCardDraw({delay:70}));source?.classList.add('drawing');destination?.classList.add('receiving-card');}
   else{
     const calmStyle=session.mode==='duel'&&action.playerId==='p1'&&['quiet','measured'].includes(currentDuelOpponent().cardPlayStyle);
     const soft=!!state.taki?.open||calmStyle||(action.playerId!=='p0'&&String(card?.id||'').split('').reduce((sum,char)=>sum+char.charCodeAt(0),0)%3===0);
@@ -349,7 +349,7 @@ async function reshuffleIfEmpty(deck){
 }
 async function prepareHumanDraw(){
   audioSystem.setSettings(settings);await reshuffleIfEmpty(root.querySelector('[data-draw-anchor]'));
-  audioSystem.play((state.activePenalty?.amount||1)>1?'drawMultiple':'cardDraw',{delay:70});
+  ((state.activePenalty?.amount||1)>1?audioSystem.play('drawMultiple',{delay:70}):audioSystem.playCardDraw({delay:70}));
 }
 // Deck → drawn card → your hand. The hand has already opened the card's sorted slot (FLIP in layoutHand);
 // a proxy leaves the deck face-down, turns face-up on the way, and settles exactly into that slot, at its tilt
@@ -792,7 +792,7 @@ function homeHTML(){
     <h1 class="home-title"><span class="tavern-sign"><img class="sign-board" src="./assets/brand/tavern-sign.webp" alt="" draggable="false"><img class="primary-runes-logo" src="./assets/brand/runes-wordmark.svg" alt="${en?'RUNES':'RUNES — רונות'}" draggable="false"></span></h1>
     <nav class="home-choices" aria-label="${en?'Ways to play':'דרכי משחק'}">${resume}
       <button class="home-choice duel-choice" data-duel><span class="choice-object duel-cameo"><span class="portrait-card">${characterArtHTML(featured,{context:'cameo'})}</span></span><span class="choice-copy"><strong>${t.duel}</strong><small>${t.duelSub}</small><em class="choice-record">${t.record}</em></span></button>
-      <button class="home-choice tavern-choice" data-tavern><span class="choice-object"><img class="object-coins" src="./assets/props/gambling/stacked-coins.png" alt="" draggable="false"></span><span class="choice-copy"><strong>${t.tavern}</strong><small>${t.tavernSub}</small></span></button>
+      <button class="home-choice tavern-choice" data-tavern><span class="choice-object"><img class="object-coins" src="./assets/props/gambling/stacked-coins.webp" alt="" draggable="false"></span><span class="choice-copy"><strong>${t.tavern}</strong><small>${t.tavernSub}</small></span></button>
       <button class="home-choice quick-choice" data-open="quick"><span class="choice-object">${cardBackStackHTML('object-cards',3)}</span><span class="choice-copy"><strong>${t.quick}</strong><small>${t.quickSub}</small></span></button>
     </nav>
     <div class="home-tools"><button class="tool-button" data-open="rules">${t.rules}</button><i aria-hidden="true">·</i><button class="tool-button" data-open="settings">${t.settings}</button></div>
@@ -831,7 +831,7 @@ function duelSelectHTML(){
     <div class="duel-controls">
       <div class="duel-dots" role="group" aria-label="${en?'Choose an opponent':'בחירת יריב'}">${dots}</div>
       <button class="primary-button duel-sit" data-opponent="${current.id}">${duelSitLabel(current)}</button>
-      <button class="random-regular" data-random-opponent><img src="./assets/props/gambling/dice-pair.png" alt="" draggable="false"><span>${en?'Or a random regular':'או יריב אקראי מהקבועים'}</span></button>
+      <button class="random-regular" data-random-opponent><img src="./assets/props/gambling/dice-pair.webp" alt="" draggable="false"><span>${en?'Or a random regular':'או יריב אקראי מהקבועים'}</span></button>
       <p class="select-note">${en?'Five rounds, one opponent. Every card left in a losing hand is a point.':'חמישה סיבובים מול יריב אחד. כל קלף שנשאר ביד המפסידה שווה נקודה.'}</p>
     </div>
   </section></main>`;
@@ -895,7 +895,7 @@ function tavernSelectHTML(){
     <div class="pick-grid ${advice.suggested.length?'has-advice':''}" role="group" aria-label="${en?'Choose three opponents':'בחירת שלושה יריבים'}">${VOICED_GUEST_KEYS.map(tile).join('')}</div>
     <div class="pick-controls">
       <button class="primary-button pick-sit" data-pick-sit ${full?'':'disabled aria-disabled="true"'}>${sit}</button>
-      <button class="random-regular" data-pick-random><img src="./assets/props/gambling/dice-pair.png" alt="" draggable="false"><span>${en?'Or let the evening decide':'או שהערב יחליט'}</span></button>
+      <button class="random-regular" data-pick-random><img src="./assets/props/gambling/dice-pair.webp" alt="" draggable="false"><span>${en?'Or let the evening decide':'או שהערב יחליט'}</span></button>
     </div>
   </section></main>`;
 }
@@ -954,10 +954,10 @@ function worldSceneHTML(context='game'){
   return `<div class="scene-world scene-${context}" aria-hidden="true"><div class="tavern-environment"></div>${life}<div class="table-body"><div class="table-surface"></div>${tableMarksHTML(context)}${context==='home'?tableEngravingHTML():''}</div><div class="scene-lighting"><i class="fire-glow"></i><i class="candle-glow"></i><i class="table-light"></i></div></div>`;
 }
 const propAssets=Object.freeze({
-  ceramicCup:'drinks/ceramic-cup.png',darkBottle:'drinks/dark-glass-bottle.png',medievalFlask:'drinks/medieval-flask.png',pewterGoblet:'drinks/pewter-goblet.png',pewterTankard:'drinks/pewter-tankard.png',woodenTankard:'drinks/wooden-tankard.png',
-  bettingToken:'gambling/carved-betting-token.png',dice:'gambling/dice-pair.png',bread:'food/bread-chunk.png',cheese:'food/cheese-wedge.png',nuts:'food/nuts-group.png',
-  key:'personal/iron-key.png',pipe:'personal/smoking-pipe.png',ring:'personal/worn-metal-ring.png',rune:'mystical/carved-rune-token.png',amulet:'mystical/small-amulet.png',map:'bonus/map-scrap.png',
-  purse:'personal/coin-purse.png',arrowhead:'personal/arrowhead-herbs.png',flute:'personal/wooden-flute.png',whetstone:'personal/whetstone.png',inkpot:'personal/inkpot-quill.png',horn:'drinks/drinking-horn.png'
+  ceramicCup:'drinks/ceramic-cup.webp',darkBottle:'drinks/dark-glass-bottle.webp',medievalFlask:'drinks/medieval-flask.webp',pewterGoblet:'drinks/pewter-goblet.webp',pewterTankard:'drinks/pewter-tankard.webp',woodenTankard:'drinks/wooden-tankard.webp',
+  bettingToken:'gambling/carved-betting-token.webp',dice:'gambling/dice-pair.webp',bread:'food/bread-chunk.webp',cheese:'food/cheese-wedge.webp',nuts:'food/nuts-group.webp',
+  key:'personal/iron-key.webp',pipe:'personal/smoking-pipe.webp',ring:'personal/worn-metal-ring.webp',rune:'mystical/carved-rune-token.webp',amulet:'mystical/small-amulet.webp',map:'bonus/map-scrap.webp',
+  purse:'personal/coin-purse.webp',arrowhead:'personal/arrowhead-herbs.webp',flute:'personal/wooden-flute.webp',whetstone:'personal/whetstone.webp',inkpot:'personal/inkpot-quill.webp',horn:'drinks/drinking-horn.webp'
 });
 // Each regular keeps the same things in front of them every evening, so an empty seat still says who sits there.
 // Kesh keeps only his clay cup on the table: his rune stone stays in his hand. Edrin has no drink (he keeps looking for it).
@@ -1021,7 +1021,7 @@ function seatHTML(player,position){
 function seatsHTML(players){const layout=SEAT_LAYOUTS[players.length]||SEAT_LAYOUTS[5];return players.map((player,index)=>seatHTML(player,layout[index]||'n')).join('');}
 function playerPlaceHTML(player){
   const scored=['tavern','duel'].includes(session.mode);
-  return `<div class="player-place" aria-hidden="true">${session.mode==='duel'&&isAuthoredDuel()?'':`<img class="player-drink" src="./assets/props/drinks/wooden-tankard.png" alt="" draggable="false">`}${scored?seatScoreHTML(player):''}</div>`;
+  return `<div class="player-place" aria-hidden="true">${session.mode==='duel'&&isAuthoredDuel()?'':`<img class="player-drink" src="./assets/props/drinks/wooden-tankard.webp" alt="" draggable="false">`}${scored?seatScoreHTML(player):''}</div>`;
 }
 function headScoreHTML(){
   if(!['tavern','duel'].includes(session.mode))return'';

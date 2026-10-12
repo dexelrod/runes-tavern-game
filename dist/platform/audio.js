@@ -15,6 +15,10 @@ export const SOUND_LIBRARY=Object.freeze({
   cardPlayVariation5:{src:asset('card-play-variation-5.wav'),channel:'sfx',volume:.58,cooldown:45,maxVoices:3,rateJitter:.014,volumeJitter:.025},
   cardPlaySoft:{src:asset('card-play-soft.wav'),channel:'sfx',volume:.48,cooldown:45,maxVoices:3,rateJitter:.022,volumeJitter:.04},
   cardDraw:{src:asset('card-draw.wav'),channel:'sfx',volume:.68,cooldown:80,maxVoices:2,rateJitter:.014,volumeJitter:.025},
+  // v118: two more draw takes from the owner's source folder (Card Draw 2/3), rotated like
+  // the card placements. Variation 2 is about 7 dB hotter, so it plays lower.
+  cardDrawVariation1:{src:asset('card-draw-variation-1.wav'),channel:'sfx',volume:.68,cooldown:80,maxVoices:2,rateJitter:.014,volumeJitter:.025},
+  cardDrawVariation2:{src:asset('card-draw-variation-2.wav'),channel:'sfx',volume:.3,cooldown:80,maxVoices:2,rateJitter:.014,volumeJitter:.025},
   drawMultiple:{src:asset('draw-multiple-cards.wav'),channel:'sfx',volume:.72,cooldown:500,maxVoices:1},
   shuffle:{src:asset('shuffle.wav'),channel:'sfx',volume:.58,cooldown:900,maxVoices:1},
   deckPutDown:{src:asset('deck-put-down.wav'),channel:'sfx',volume:.7,cooldown:500,maxVoices:1},
@@ -38,16 +42,21 @@ export const SOUND_LIBRARY=Object.freeze({
 });
 
 export const CARD_PLAY_VARIATIONS=Object.freeze(['cardPlay','cardPlayVariation1','cardPlayVariation2','cardPlayVariation3','cardPlayVariation4','cardPlayVariation5']);
-export const AMBIENCE_TRACKS=Object.freeze(['tavern-loop-1.wav','tavern-loop-2.wav','tavern-loop-3.wav','tavern-loop-4.wav','tavern-loop-5.wav'].map(asset));
-const chunkedTrack=stem=>Object.freeze([1,2,3,4].map(part=>asset(`${stem}-part-${part}.wav`)));
-export const MUSIC_TRACKS=Object.freeze([asset('runes-round.wav'),asset('gambit-by-the-hearth.m4a'),chunkedTrack('soundtrack-3'),chunkedTrack('soundtrack-4')]);
+export const CARD_DRAW_VARIATIONS=Object.freeze(['cardDraw','cardDrawVariation1','cardDrawVariation2']);
+// v118: music and ambience ship as MP3 instead of uncompressed WAV (134 MB → 18 MB). MP3,
+// not AAC: every browser decodes it (open-source Chromium builds have no AAC), and the
+// decoders trim the encoder padding, so the loops stay sample-exact and gapless.
+// The two soundtracks that were split into four WAV chunks are one file each again;
+// loadTrack() still joins an array of chunks should a track ever need splitting.
+export const AMBIENCE_TRACKS=Object.freeze(['tavern-loop-1.mp3','tavern-loop-2.mp3','tavern-loop-3.mp3','tavern-loop-4.mp3','tavern-loop-5.mp3'].map(asset));
+export const MUSIC_TRACKS=Object.freeze([asset('runes-round.mp3'),asset('gambit-by-the-hearth.mp3'),asset('soundtrack-3.mp3'),asset('soundtrack-4.mp3')]);
 const CHANNEL_DEFAULTS={sfx:.9,ambience:.18,music:.14,voice:.92};
 const VOICE_PRIORITY=Object.freeze({LOW:1,MEDIUM:2,HIGH:3,CRITICAL:4});
 
 export class AudioSystem{
   constructor(){
     this.enabled=true;this.channelEnabled={sfx:true,ambience:true,music:true,voice:true};this.channels={...CHANNEL_DEFAULTS};
-    this.context=null;this.channelGains={};this.buffers=new Map();this.loads=new Map();this.activeSfx=new Map();this.lastPlayed=new Map();this.lastCardPlayVariation=null;this.timers=new Set();
+    this.context=null;this.channelGains={};this.buffers=new Map();this.loads=new Map();this.activeSfx=new Map();this.lastPlayed=new Map();this.lastCardPlayVariation=null;this.lastCardDrawVariation=null;this.lastCardDrawAt=-Infinity;this.timers=new Set();
     this.ambienceNode=null;this.ambienceRequest=0;this.ambienceIndex=Math.floor(Math.random()*AMBIENCE_TRACKS.length);
     this.musicNode=null;this.musicRequest=0;this.musicIndex=Math.floor(Math.random()*MUSIC_TRACKS.length);
     this.voiceSource=null;this.voicePriority=0;this.voiceLocked=false;this.voiceRequest=0;this.voiceOnEnded=null;this.voiceName=null;this.voiceInterruptions=0;
@@ -100,6 +109,8 @@ export class AudioSystem{
   }
   async playSfxBuffer(name,definition,{volume,rate},active){const buffer=await this.load(definition.src);if(!buffer||!this.channelEnabled.sfx)return null;const jitter=(amount=0)=>1+(Math.random()*2-1)*amount,node=this.makeSource(buffer,'sfx',{volume:definition.volume*volume*jitter(definition.volumeJitter),rate:Math.max(.75,Math.min(1.25,rate*jitter(definition.rateJitter)))});if(!node)return null;active.add(node);this.activeSfx.set(name,active);node.source.onended=()=>{node.stopped=true;active.delete(node);};try{node.source.start(0);return node;}catch{node.stopped=true;active.delete(node);return null;}}
   playCardPlacement({soft=false,delay=0,volume=1,rate=1}={}){if(soft)return this.play('cardPlaySoft',{delay,volume,rate});const choices=CARD_PLAY_VARIATIONS.filter(name=>name!==this.lastCardPlayVariation),name=choices[Math.floor(Math.random()*choices.length)];this.lastCardPlayVariation=name;return this.play(name,{delay,volume,rate});}
+  // One draw sound per draw, never the same take twice running; the takes share one cooldown.
+  playCardDraw({delay=0,volume=1,rate=1}={}){const stamp=globalThis.performance?.now?.()??Date.now();if(stamp-this.lastCardDrawAt<80)return null;const choices=CARD_DRAW_VARIATIONS.filter(name=>name!==this.lastCardDrawVariation),name=choices[Math.floor(Math.random()*choices.length)],played=this.play(name,{delay,volume,rate});if(played){this.lastCardDrawAt=stamp;this.lastCardDrawVariation=name;}return played;}
   async startLoop(track,channel,request){const buffer=await this.loadTrack(track);if(!buffer||request!==(channel==='music'?this.musicRequest:this.ambienceRequest)||!this.channelEnabled[channel])return null;const node=this.makeSource(buffer,channel,{volume:0,loop:true});if(!node)return null;node.track=track;node.url=Array.isArray(track)?track.join('|'):track;try{node.source.start(0);}catch{return null;}this.fadeNode(node,1,channel==='music'?1800:1500);return node;}
   async startAmbience(){if(!this.enabled||!this.channelEnabled.ambience||this.channels.ambience<=0)return null;if(this.ambienceNode&&!this.ambienceNode.stopped){this.fadeNode(this.ambienceNode,1,700);return this.ambienceNode;}const request=++this.ambienceRequest,node=await this.startLoop(AMBIENCE_TRACKS[this.ambienceIndex],'ambience',request);if(request===this.ambienceRequest)this.ambienceNode=node;return node;}
   fadeNode(node,target,duration,onDone){if(!node||node.stopped)return;const context=this.ensureContext(),param=node.gain.gain;if(!context)return;param.cancelScheduledValues?.(context.currentTime);param.setValueAtTime?.(param.value,context.currentTime);param.linearRampToValueAtTime?.(clamp(target),context.currentTime+duration/1000);if(onDone){const timer=setTimeout(()=>{this.timers.delete(timer);if(!node.stopped)onDone();},duration+25);this.timers.add(timer);}}
